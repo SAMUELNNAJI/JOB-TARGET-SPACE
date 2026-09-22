@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign Up — JobSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="logo" href="index.html"><span class="mark">◉</span><b>Job</b><i>SPACE</i></a>
+    <button class="menu" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav>
+      <a href="index.html">Home</a><a href="about.html">About Us</a>
+      <a href="employers.html">For Employers</a><a href="candidates.html">For Candidates</a>
+      <a href="how-it-works.html">How It Works</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-actions"><a class="outline" href="signin.html">Login</a><a class="button" href="signup.html">Sign Up</a></div>
+  </header>
+  <main>
+    <section class="auth-wrap" style="padding:100px 10% 110px;display:flex;justify-content:center;align-items:center;min-height:70vh">
+      <div id="choiceStep" class="choice-grid">
+        <article class="choice-card" data-target="employer">
+          <i>◈</i><h3>I'm an Employer</h3>
+          <p>Register to submit recruitment requirements and get matched, vetted professionals pushed to your dashboard.</p>
+        </article>
+        <article class="choice-card" data-target="candidate">
+          <i>✦</i><h3>I'm a Candidate</h3>
+          <p>Register to build your profile, add your skills and CV, and join the JobSpace talent pool.</p>
+        </article>
+      </div>
+      <div id="formsStep" class="auth-forms" hidden>
+        <form id="employer" class="auth-card" onsubmit="event.preventDefault();alert('Thanks! (demo)')">
+          <h1>Employer registration</h1><p>Tell us about your company to get started.</p>
+          <label>Company name</label><input placeholder="Your company name" required>
+          <label>Work email</label><input type="email" placeholder="you@company.com" required>
+          <label>Phone number</label><input type="tel" placeholder="+234 800 000 0000">
+          <label>Password</label><input type="password" placeholder="Create a password" required>
+          <button class="button" type="submit">Create employer account　→</button>
+          <div class="auth-features">
+            <div class="auth-feature-pill"><span class="pill-icon">✓</span> Free to start</div>
+            <div class="auth-feature-pill"><span class="pill-icon">✦</span> Vetted talent</div>
+          </div>
+          <p class="auth-foot">Not an employer? <a href="#" data-back="true">Go back</a></p>
+        </form>
+        <form id="candidate" class="auth-card" onsubmit="event.preventDefault();alert('Thanks! (demo)')">
+          <h1>Candidate registration</h1><p>Let's start building your profile.</p>
+          <label>Full name</label><input placeholder="Your full name" required>
+          <label>Email address</label><input type="email" placeholder="you@example.com" required>
+          <label>Phone number</label><input type="tel" placeholder="+234 800 000 0000">
+          <label>Password</label><input type="password" placeholder="Create a password" required>
+          <button class="button" type="submit">Create candidate account　→</button>
+          <div class="auth-features">
+            <div class="auth-feature-pill"><span class="pill-icon">✦</span> Free forever</div>
+            <div class="auth-feature-pill"><span class="pill-icon">↻</span> Priority matching</div>
+          </div>
+          <p class="auth-foot">Not a candidate? <a href="#" data-back="true">Go back</a></p>
+        </form>
+      </div>
+      <p class="auth-foot" style="margin-top:14px">Already have an account? <a href="signin.html">Sign in</a></p>
+    </section>
+  </main>
+  <footer class="site-footer">© 2025 JobSpace <span>Your next chapter starts here.</span></footer>
+  <script src="js/layout.js"></script>
+  <script>
+    const choiceStep=document.getElementById('choiceStep'),formsStep=document.getElementById('formsStep');
+    choiceStep.querySelectorAll('.choice-card').forEach(card=>card.addEventListener('click',()=>{
+      choiceStep.hidden=true;formsStep.hidden=false;
+      formsStep.querySelectorAll('.auth-card').forEach(f=>f.classList.toggle('active',f.id===card.dataset.target));
+    }));
+    formsStep.querySelectorAll('[data-back]').forEach(link=>link.addEventListener('click',e=>{
+      e.preventDefault();formsStep.hidden=true;choiceStep.hidden=false;
+    }));
+    formsStep.querySelectorAll('form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();alert('Thanks! Your registration has been received.');}));
+  </script>
+</body>
+</html>
