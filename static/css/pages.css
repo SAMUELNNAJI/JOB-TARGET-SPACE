@@ -339,6 +339,9 @@
 }
 .auth-card input::placeholder{color:rgba(15,15,15,.55)}
 .auth-card input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(138,3,3,.18)}
+.auth-card .form-errors{margin:5px 0 8px;color:#c40024;font-size:12px;font-weight:600;line-height:1.45}
+.auth-card .form-errors ul{margin:0;padding:0;list-style:none}
+.auth-card input:invalid,.auth-card input[aria-invalid="true"]{border-color:#c40024}
 .auth-row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px;font-size:13px}
 .auth-row label{display:flex;align-items:center;gap:8px;margin:0;font-weight:400;color:var(--muted)}
 .auth-row label input{width:16px;height:16px;accent-color:var(--red)}

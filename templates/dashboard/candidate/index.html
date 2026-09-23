@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Dashboard — JobSpace{% endblock %}
+
+{% block content %}
+<main class="section dashboard-page">
+  <span class="section-label">CANDIDATE DASHBOARD</span>
+  <h1>Welcome, {{ request.user.first_name|default:request.user.username }}.</h1>
+  <p>Manage your profile, discover curated roles, and keep your next move moving.</p>
+  <div class="feature-grid">
+    <article class="feature"><small>PROFILE</small><h2>Build your profile</h2><p>Complete your experience, skills, and preferences so employers can find the right fit.</p><a class="button" href="/candidates/">View candidate resources　→</a></article>
+    <article class="feature"><small>OPPORTUNITIES</small><h2>Find your next role</h2><p>Explore quality opportunities selected for ambitious professionals.</p><a class="button" href="/candidates/">Browse opportunities　→</a></article>
+  </div>
+</main>
+{% endblock %}

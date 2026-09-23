@@ -1,35 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Candidates — JobSpace</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="stylesheet" href="/static/css/pages.css">
-</head>
-<body>
-  <header class="nav">
-    <a class="logo" href="/"><img src="/static/Logo.png" alt="JobSpace"></a>
-    <button class="menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
-    <nav id="primary-nav">
-      <a href="about.html">About Us</a>
-      <a href="employers.html">For Employers</a>
-      <a class="active" href="candidates.html">For Candidates</a>
-      <a href="how-it-works.html">How It Works</a>
-      <a href="contact.html">Contact</a>
-      <a class="drawer-cta outline" href="signin.html">Login</a>
-      <a class="drawer-cta button" href="signup.html">Sign Up</a>
-      <div class="drawer-foot">
-        <small>GET IN TOUCH</small>
-        <a class="drawer-mail" href="mailto:hello@jobspace.com">hello@jobspace.com</a>
-        <a class="drawer-mail" href="tel:+2348000000000">+234 800 000 0000</a>
-      </div>
-    </nav>
-    <div class="nav-actions"><a class="outline" href="signin.html">Login</a><a class="button" href="signup.html">Sign Up</a></div>
-    <div class="nav-overlay"></div>
-  </header>
+{% extends "base.html" %}
+
+{% block title %}Candidates — JobSpace{% endblock %}
+
+{% block content %}
   <main>
     <section class="page-hero" style="--bg:url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1800&q=85')">
       <small class="eyebrow">FOR CANDIDATES</small>
@@ -82,7 +55,4 @@
     </section>
     <section class="quote-band"><h2>Your next role is <em>waiting.</em></h2><a class="button" href="signup.html">Create your profile　→</a></section>
   </main>
-  <footer class="site-footer">&copy; 2025 JobSpace <span>hello@jobspace.com</span></footer>
-  <script src="/static/js/layout.js"></script>
-</body>
-</html>
+{% endblock %}

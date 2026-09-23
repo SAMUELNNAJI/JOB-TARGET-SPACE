@@ -1,0 +1,43 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In — JobSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+</head>
+<body>
+  <main>
+    <section class="auth-shell">
+      <aside class="auth-side">
+        <a class="auth-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a>
+        <div><small class="eyebrow">YOUR NEXT MOVE</small><h2>Welcome back to work that <em>moves you forward.</em></h2><p>Keep your profile, opportunities, and conversations in one focused workspace.</p></div>
+        <span class="auth-side-note">Trusted by ambitious people and teams.</span>
+      </aside>
+      <div class="auth-wrap">
+        <form class="auth-card" method="post">
+          {% csrf_token %}
+          <h1>Welcome back</h1>
+          <p>Sign in to your JobSpace dashboard.</p>
+          {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+          <label for="id_username">Email address</label>
+          {{ form.username }}
+          {% if form.username.errors %}<div class="form-errors">{{ form.username.errors }}</div>{% endif %}
+          <label for="id_password">Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="form-errors">{{ form.password.errors }}</div>{% endif %}
+          <div class="auth-row"><label><input type="checkbox" name="remember_me">Remember me</label><a href="#">Forgot password?</a></div>
+          <button class="button" type="submit">Sign In　→</button>
+          <div class="auth-features"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure login</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> 24/7 access</div></div>
+          <p class="auth-foot">Don't have an account? <a href="/signup/">Create account</a></p>
+        </form>
+        <div class="auth-features-mobile"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure login</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> 24/7 access</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

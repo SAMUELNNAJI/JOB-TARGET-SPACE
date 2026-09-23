@@ -179,12 +179,12 @@ ul {
   padding: 11px 22px;
   font-size: 13.5px;
 }
-.nav a[href="signin.html"]::before {
+.nav a.login-link::before {
   content: "↪";
   font-size: 17px;
   line-height: 1;
 }
-.nav a[href="signup.html"]::before {
+.nav a.signup-link::before {
   content: "+";
   font-size: 18px;
   line-height: 1;
@@ -417,6 +417,13 @@ ul {
   border-radius: 50%;
   background: var(--red);
   box-shadow: 0 0 8px var(--red-glow);
+}
+
+@media (min-width: 901px) {
+  .trust {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
 }
 
 /* slide counter + progress */

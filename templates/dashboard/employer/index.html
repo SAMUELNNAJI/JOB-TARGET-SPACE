@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Employer Dashboard — JobSpace{% endblock %}
+
+{% block content %}
+<main class="section dashboard-page">
+  <span class="section-label">EMPLOYER DASHBOARD</span>
+  <h1>Welcome, {{ request.user.profile.company_name|default:request.user.username }}.</h1>
+  <p>Find vetted professionals and manage your hiring activity from one focused workspace.</p>
+  <div class="feature-grid">
+    <article class="feature"><small>HIRING</small><h2>Find top talent</h2><p>Tell us what your team needs and receive thoughtful, vetted matches.</p><a class="button" href="/employers/">Start hiring　→</a></article>
+    <article class="feature"><small>PLANS</small><h2>Manage your plan</h2><p>Review the hiring options designed for every stage of growth.</p><a class="button" href="/employers/#pricing">View plans　→</a></article>
+  </div>
+</main>
+{% endblock %}

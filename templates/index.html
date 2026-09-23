@@ -1,44 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JobSpace — Find your next opportunity</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
+{% extends "base.html" %}
+{% load static %}
 
-  <header class="nav">
-    <a class="logo" href="/"><img src="/static/Logo.png" alt="JobSpace"></a>
-    <button class="menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
-    <nav id="primary-nav">
-      <a href="about.html">About Us</a>
-      <a href="employers.html">For Employers</a>
-      <a href="candidates.html">For Candidates</a>
-      <a href="how-it-works.html">How It Works</a>
-      <a href="contact.html">Contact</a>
-      <a class="drawer-cta outline" href="signin.html">Login</a>
-      <a class="drawer-cta button" href="signup.html">Sign Up</a>
-      <div class="drawer-foot">
-        <small>GET IN TOUCH</small>
-        <a class="drawer-mail" href="mailto:hello@jobspace.com">hello@jobspace.com</a>
-        <a class="drawer-mail" href="tel:+2348000000000">+234 800 000 0000</a>
-      </div>
-    </nav>
-    <div class="nav-actions">
-      <a class="outline" href="signin.html">Login</a>
-      <a class="button" href="signup.html">Sign Up</a>
-    </div>
-    <div class="nav-overlay"></div>
-  </header>
+{% block title %}JobSpace — Find your next opportunity{% endblock %}
 
+{% block content %}
   <main>
     <section class="hero">
-      <div class="hero-slide active" style="--image:url('/static/hero1.jpg')">
-        <img src="/static/hero1.jpg" alt="JobSpace hero — top talent and real opportunities">
+      <div class="hero-slide active" style="--image:url('/static/images/hero1.jpg')">
+        <img src="/static/images/hero1.jpg" alt="JobSpace hero — top talent and real opportunities">
         <div class="hero-content">
           <small>THE SMARTER WAY TO HIRE &amp; GET HIRED</small>
           <h1>Top Talent.<br><em>Real Opportunities.</em></h1>
@@ -47,8 +16,8 @@
           <div class="trust"><span>✦ Vetted professionals</span><span>◈ Trusted companies</span><span>✓ Secure &amp; reliable</span></div>
         </div>
       </div>
-      <div class="hero-slide" style="--image:url('/static/hero2.jpg')">
-        <img src="/static/hero2.jpg" alt="JobSpace hero — hire smarter, grow faster">
+      <div class="hero-slide" style="--image:url('/static/images/hero2.jpg')">
+        <img src="/static/images/hero2.jpg" alt="JobSpace hero — hire smarter, grow faster">
         <div class="hero-content">
           <small>BUILT FOR AMBITIOUS TEAMS</small>
           <h1>Hire Smarter.<br><em>Grow Faster.</em></h1>
@@ -57,8 +26,8 @@
           <div class="trust"><span>✦ 24h shortlists</span><span>◈ Human vetted</span><span>✓ Flexible plans</span></div>
         </div>
       </div>
-      <div class="hero-slide" style="--image:url('/static/hero3.jpg')">
-        <img src="/static/hero3.jpg" alt="JobSpace hero — your next role starts here">
+      <div class="hero-slide" style="--image:url('/static/images/hero3.jpg')">
+        <img src="/static/images/hero3.jpg" alt="JobSpace hero — your next role starts here">
         <div class="hero-content">
           <small>BUILT FOR AMBITIOUS TALENT</small>
           <h1>Your Next Role<br><em>Starts Here.</em></h1>
@@ -178,27 +147,6 @@
       </div>
     </section>
   </main>
-  <footer id="contact">
-    <div class="footer-top">
-      <div>
-        <small>MAKE YOUR NEXT MOVE MATTER</small>
-        <h2>Let us build your<br>future together.</h2>
-        <p>A better way for talented people and ambitious businesses to find each other.</p>
-        <a class="button" href="signup.html">Get started today -></a>
-      </div>
-    </div>
-    <div class="foot">
-        <div class="foot-brand">
-          <a class="logo" href="/"><img src="/static/Logo.png" alt="JobSpace"></a>
-          <p>A better way for talented people and ambitious businesses to find each other.</p>
-          <div class="socials"><a href="#" aria-label="X">X</a><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Facebook">f</a><a href="#" aria-label="Instagram">o</a></div>
-        </div>
-        <div><b>For talent</b><a href="candidates.html">Browse Jobs</a><a href="signup.html">Create Profile</a><a href="how-it-works.html">Career Advice</a></div>
-        <div><b>For employers</b><a href="employers.html">Hire Talent</a><a href="employers.html#pricing">Subscription Plans</a><a href="signup.html">Post a Job</a></div>
-        <div><b>Company</b><a href="about.html">About Us</a><a href="how-it-works.html">How It Works</a><a href="contact.html">Contact Us</a></div>
-      </div>
-    <div class="copyright"><span>&copy; 2025 JobSpace. All rights reserved.</span><div class="legal"><a href="#">Privacy Policy</a><a href="#">Terms and Conditions</a><a class="up" href="#top" aria-label="Back to top">↑</a></div></div>
-  </footer>
-  <script src="/static/js/main.js"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/main.js' %}"></script>{% endblock %}

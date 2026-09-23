@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard — JobSpace{% endblock %}
+
+{% block content %}
+<main class="section dashboard-page">
+  <span class="section-label">ADMIN DASHBOARD</span>
+  <h1>Welcome, {{ request.user.username }}.</h1>
+  <p>Use the Django admin dashboard to manage users, profiles, and platform data.</p>
+  <a class="button" href="/admin/">Open admin dashboard　→</a>
+</main>
+{% endblock %}
