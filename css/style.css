@@ -1552,15 +1552,15 @@ footer#contact {
   .nav .nav-actions {
     order: 2;
     margin-left: auto;
-    gap: 8px;
+    gap: 4px;
   }
   .nav .nav-actions .outline {
     display: none;
   }
   .nav .nav-actions .button {
     display:inline-flex;
-    padding: 8px 11px;
-    font-size: 11px;
+    padding: 9px 13px;
+    font-size: 11.5px;
   }
   .nav nav.open ~ .nav-actions {
     opacity: 0;
@@ -1573,7 +1573,7 @@ footer#contact {
     align-content: center;
     gap: 5px;
     order: 3;
-    margin-left: auto;
+    margin-left: 4px;
     z-index: 1002;
     width: 38px;
     height: 38px;
@@ -1893,8 +1893,8 @@ footer#contact {
     height: 36px;
   }
   .nav .nav-actions .button {
-    padding: 7px 9px;
-    font-size: 10.5px;
+    padding: 8px 11px;
+    font-size: 11px;
   }
   .hero-content {
     padding: calc(var(--nav-h) + 22px) 18px 34px;
@@ -1932,7 +1932,7 @@ footer#contact {
   .nav .nav-actions {
     display: flex;
     margin-left: auto;
-    gap: 5px;
+    gap: 3px;
   }
   .nav .nav-actions .button {
     display: inline-flex;
