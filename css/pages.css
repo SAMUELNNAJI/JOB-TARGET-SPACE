@@ -379,6 +379,7 @@
   padding:9px 16px;border-radius:999px;
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
 }
+.auth-features-mobile{display:none}
 /* ---------- FALLBACK SITE FOOTER (before layout.js upgrade) ---------- */
 .site-footer{
   display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
@@ -436,6 +437,8 @@
   .auth-shell>.auth-wrap{min-height:auto;padding:36px 18px 54px}
   .auth-shell .choice-grid{grid-template-columns:1fr;max-width:520px}
   .auth-shell .auth-card{padding:26px 22px 22px}
+  .auth-shell .auth-card>.auth-features{display:none}
+  .auth-features-mobile{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:18px auto 0;max-width:540px}
 }
 @media(max-width:480px){
   .page-hero{padding:calc(var(--nav-h) + 34px) 6% 52px}
