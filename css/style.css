@@ -401,9 +401,9 @@ ul {
   display: flex;
   gap: 26px;
   flex-wrap: wrap;
-  font-size: 11.5px;
+  font-size: 13px;
   letter-spacing: 0.04em;
-  color: rgba(20, 20, 20, 0.5);
+  color: #fff;
 }
 .trust span {
   display: flex;
@@ -1780,6 +1780,7 @@ footer#contact {
     width: 100%;
     justify-content: center;
     padding: calc(var(--nav-h) + 24px) 20px 36px;
+    color: #fff;
   }
   .hero-content > small {
     font-size: 11px;
@@ -1788,12 +1789,14 @@ footer#contact {
   .hero-content h1 {
     font-size: clamp(34px, 10vw, 46px);
     margin: 16px 0 14px;
+    color: #fff;
   }
   .hero-content p {
-    font-size: 15.5px;
+    font-size: 18px;
     line-height: 1.6;
     max-width: 48ch;
     margin-bottom: 24px;
+    color: #fff;
   }
   .cta {
     gap: 10px;
@@ -1805,10 +1808,15 @@ footer#contact {
     padding: 12px 18px;
     font-size: 13.5px;
   }
+  .hero-content .outline {
+    color: #fff;
+    border-color: rgba(255,255,255,.6);
+    background: rgba(255,255,255,.1);
+  }
   .trust {
     width: 100%;
     gap: 8px 16px;
-    font-size: 10.5px;
+    font-size: 12px;
     padding-top: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
@@ -1893,7 +1901,9 @@ footer#contact {
     font-size: clamp(31px, 10vw, 38px);
   }
   .hero-content p {
-    font-size: 14.5px;
+    font-size: 18px;
+    line-height: 1.55;
+    color: #fff;
   }
   .cta {
     flex-direction: column;
