@@ -11,15 +11,23 @@
 </head>
 <body>
   <header class="nav">
-    <a class="logo" href="index.html"><span class="mark">◉</span><b>Job</b><i>SPACE</i></a>
-    <button class="menu" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
-    <nav>
+    <a class="logo" href="index.html"><img src="Logo.png" alt="JobSpace"></a>
+    <button class="menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
+    <nav id="primary-nav">
       <a href="about.html">About Us</a>
       <a href="employers.html">For Employers</a><a href="candidates.html">For Candidates</a>
       <a class="active" href="how-it-works.html">How It Works</a>
       <a href="contact.html">Contact</a>
+      <a class="drawer-cta outline" href="signin.html">Login</a>
+      <a class="drawer-cta button" href="signup.html">Sign Up</a>
+      <div class="drawer-foot">
+        <small>GET IN TOUCH</small>
+        <a class="drawer-mail" href="mailto:hello@jobspace.com">hello@jobspace.com</a>
+        <a class="drawer-mail" href="tel:+2348000000000">+234 800 000 0000</a>
+      </div>
     </nav>
     <div class="nav-actions"><a class="outline" href="signin.html">Login</a><a class="button" href="signup.html">Sign Up</a></div>
+    <div class="nav-overlay"></div>
   </header>
   <main>
     <section class="page-hero" style="--bg:url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1800&q=85')">

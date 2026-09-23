@@ -1,19 +1,39 @@
 const menu = document.querySelector('.menu');
-const nav = document.querySelector('nav');
+const nav = document.querySelector('.nav nav');
 const navOverlay = document.querySelector('.nav-overlay');
 function setMenu(open) {
+  if (!nav) return;
   nav.classList.toggle('open', open);
   navOverlay?.classList.toggle('open', open);
-  menu?.setAttribute('aria-expanded', open);
+  menu?.setAttribute('aria-expanded', open ? 'true' : 'false');
+  menu?.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
   document.body.style.overflow = open ? 'hidden' : '';
 }
 menu?.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
 navOverlay?.addEventListener('click', () => setMenu(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setMenu(false)));
+window.addEventListener('resize', () => { if (window.innerWidth > 760) setMenu(false); });
 const backToTop = document.querySelector('.up');
 backToTop?.addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-window.addEventListener('scroll', () => document.querySelector('.nav')?.classList.toggle('scrolled', window.scrollY > 10));
+window.addEventListener('scroll', () => { document.querySelector('.nav')?.classList.toggle('scrolled', window.scrollY > 10); document.body.classList.toggle('scroll-top-visible', window.scrollY > 240); });
+
+const testimonialCards = document.querySelectorAll('.testimonials article');
+if (testimonialCards.length) {
+  if ('IntersectionObserver' in window) {
+    const testimonialObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          testimonialObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .2 });
+    testimonialCards.forEach(card => testimonialObserver.observe(card));
+  } else {
+    testimonialCards.forEach(card => card.classList.add('is-visible'));
+  }
+}
 
 const slides = [...document.querySelectorAll('.hero-slide')];
 const count = document.querySelector('.slide-count b');

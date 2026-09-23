@@ -10,19 +10,18 @@
   <link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
-  <header class="nav">
-    <a class="logo" href="index.html"><span class="mark">◉</span><b>Job</b><i>SPACE</i></a>
-    <button class="menu" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
-    <nav>
-      <a href="about.html">About Us</a>
-      <a href="employers.html">For Employers</a><a href="candidates.html">For Candidates</a>
-      <a href="how-it-works.html">How It Works</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-    <div class="nav-actions"><a class="outline" href="signin.html">Login</a><a class="button" href="signup.html">Sign Up</a></div>
-  </header>
   <main>
-    <section class="auth-wrap" style="padding:100px 10% 110px;display:flex;justify-content:center;align-items:center;min-height:70vh">
+    <section class="auth-shell">
+      <aside class="auth-side">
+        <a class="auth-brand" href="index.html"><img src="Logo.png" alt="JobSpace"></a>
+        <div>
+          <small class="eyebrow">YOUR NEXT MOVE</small>
+          <h2>Welcome back to work that <em>moves you forward.</em></h2>
+          <p>Keep your profile, opportunities, and conversations in one focused workspace.</p>
+        </div>
+        <span class="auth-side-note">Trusted by ambitious people and teams.</span>
+      </aside>
+      <div class="auth-wrap">
       <form class="auth-card" onsubmit="event.preventDefault();alert('Signed in! (demo)')">
         <h1>Welcome back</h1>
         <p>Sign in to your JobSpace dashboard.</p>
@@ -42,9 +41,8 @@
         </div>
         <p class="auth-foot">Don't have an account? <a href="signup.html">Create account</a></p>
       </form>
+      </div>
     </section>
   </main>
-  <footer class="site-footer">© 2025 JobSpace <span>Welcome back.</span></footer>
-  <script src="js/layout.js"></script>
 </body>
 </html>

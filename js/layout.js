@@ -1,11 +1,19 @@
 /* css/style.css is loaded via <link> in every page <head> (prevents FOUC). */
 const footer=document.querySelector('.site-footer'),page=location.pathname.split('/').pop()||'index.html';
-if(footer)footer.outerHTML=`<footer id="contact"><div class="footer-top"><div><small>MAKE YOUR NEXT MOVE MATTER</small><h2>Let’s build your<br>future together.</h2></div><a class="button" href="signup.html">Get started today　→</a></div><div class="foot"><div class="foot-brand"><a class="logo" href="index.html"><span class="mark">◉</span><b>Job</b><i>SPACE</i></a><p>A better way for talented people and ambitious businesses to find each other.</p><div class="socials"><a class="social-btn" href="#" aria-label="X">𝕏</a><a class="social-btn" href="#" aria-label="LinkedIn">in</a><a class="social-btn" href="#" aria-label="Facebook">f</a><a class="social-btn" href="#" aria-label="Instagram">◎</a></div></div><div><b>For talent</b><a href="candidates.html">Browse Jobs</a><a href="signup.html">Create Profile</a><a href="how-it-works.html">Career Advice</a></div><div><b>For employers</b><a href="employers.html">Hire Talent</a><a href="employers.html">Subscription Plans</a><a href="signup.html">Post a Job</a></div><div><b>Company</b><a href="about.html">About Us</a><a href="how-it-works.html">How It Works</a><a href="contact.html">Contact Us</a></div></div><div class="copyright"><span>© 2025 JobSpace. All rights reserved.</span><div class="legal"><a href="#">Privacy Policy</a><a href="#">Terms &amp; Conditions</a><a class="up" href="#top" aria-label="Back to top">↑</a></div></div></footer>`;
+if(footer)footer.outerHTML=`<footer id="contact"><div class="footer-top"><div><small>MAKE YOUR NEXT MOVE MATTER</small><h2>Let’s build your<br>future together.</h2></div><a class="button" href="signup.html">Get started today　→</a></div><div class="foot"><div class="foot-brand"><a class="logo" href="index.html"><img src="Logo.png" alt="JobSpace"></a><p>A better way for talented people and ambitious businesses to find each other.</p><div class="socials"><a class="social-btn" href="#" aria-label="X">𝕏</a><a class="social-btn" href="#" aria-label="LinkedIn">in</a><a class="social-btn" href="#" aria-label="Facebook">f</a><a class="social-btn" href="#" aria-label="Instagram">◎</a></div></div><div><b>For talent</b><a href="candidates.html">Browse Jobs</a><a href="signup.html">Create Profile</a><a href="how-it-works.html">Career Advice</a></div><div><b>For employers</b><a href="employers.html">Hire Talent</a><a href="employers.html">Subscription Plans</a><a href="signup.html">Post a Job</a></div><div><b>Company</b><a href="about.html">About Us</a><a href="how-it-works.html">How It Works</a><a href="contact.html">Contact Us</a></div></div><div class="copyright"><span>© 2025 JobSpace. All rights reserved.</span><div class="legal"><a href="#">Privacy Policy</a><a href="#">Terms &amp; Conditions</a><a class="up" href="#top" aria-label="Back to top">↑</a></div></div></footer>`;
 const menu=document.querySelector('.menu'),menuNav=document.querySelector('.nav nav'),navOverlay=document.querySelector('.nav-overlay');
-function setMenu(open){menuNav.classList.toggle('open',open);navOverlay?.classList.toggle('open',open);menu?.setAttribute('aria-expanded',open);document.body.style.overflow=open?'hidden':'';}
+function setMenu(open){
+  if(!menuNav)return;
+  menuNav.classList.toggle('open',open);
+  navOverlay?.classList.toggle('open',open);
+  menu?.setAttribute('aria-expanded',open?'true':'false');
+  menu?.setAttribute('aria-label',open?'Close navigation':'Open navigation');
+  document.body.style.overflow=open?'hidden':'';
+}
 menu?.addEventListener('click',()=>setMenu(!menuNav.classList.contains('open')));
 navOverlay?.addEventListener('click',()=>setMenu(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
 menuNav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setMenu(false)));
+window.addEventListener('resize',()=>{if(window.innerWidth>760)setMenu(false);});
 document.querySelector('.up')?.addEventListener('click',e=>{e.preventDefault();window.scrollTo({top:0,behavior:'smooth'});});
-window.addEventListener('scroll',()=>document.querySelector('.nav')?.classList.toggle('scrolled',window.scrollY>10));
+window.addEventListener('scroll',()=>{document.querySelector('.nav')?.classList.toggle('scrolled',window.scrollY>10);document.body.classList.toggle('scroll-top-visible',window.scrollY>240);});
