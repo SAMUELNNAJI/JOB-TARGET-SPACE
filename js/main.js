@@ -68,6 +68,36 @@ if (window.gsap) {
     gsap.to(counter, { value: number, duration: 2, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 88%', once: true }, onUpdate() { el.textContent = Math.round(counter.value).toLocaleString() + suffix; } });
   });
 }
+
+const statNumbers = document.querySelectorAll('.stats article > b');
+if (statNumbers.length && !window.gsap) {
+  const countStat = element => {
+    if (element.dataset.counted) return;
+    element.dataset.counted = 'true';
+    const original = element.textContent.trim();
+    const isSupport = original === '24/7';
+    const target = isSupport ? 24 : parseInt(original.replace(/\D/g, ''), 10);
+    const suffix = isSupport ? '/7' : original.replace(/[0-9,]/g, '');
+    const start = performance.now();
+    const duration = 1600;
+    const tick = now => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      element.textContent = Math.round(target * eased).toLocaleString() + suffix;
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const statsObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        countStat(entry.target);
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: .35 });
+  statNumbers.forEach(stat => statsObserver.observe(stat));
+}
 timer = setInterval(() => showSlide(current + 1), 6500);
 
 // Featured jobs: move attention to the next card every five seconds.
