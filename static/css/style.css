@@ -1665,13 +1665,12 @@ footer#contact {
     align-items: stretch;
     justify-content: flex-start;
     gap: 0;
-    /* top row: logo + X are visible inside the drawer */
-    padding: 24px 24px 36px;
+    padding: 16px 24px 24px;
     background: #ededed;
     border-radius: 28px 0 0 28px;
     border: none;
     box-shadow: -20px 0 60px rgba(0,0,0,.18);
-    overflow-y: auto;
+    overflow: hidden;
     overscroll-behavior: contain;
     /* closed: off-screen to the right */
     transform: translateX(110%);
@@ -1686,21 +1685,19 @@ footer#contact {
     visibility: visible;
   }
 
-  /* drawer top row — logo left, X button right */
+  /* spacer that clears the logo / X button row */
   .nav nav::before {
     content: '';
     display: block;
-    height: 52px;
-    margin-bottom: 28px;
+    height: 48px;
+    margin-bottom: 16px;
     flex-shrink: 0;
   }
-  /* logo floats above the drawer (z-index: 996 from .logo rule),
-     hamburger button (z-index: 1002) appears at top-right of the drawer */
 
   /* nav links */
   .nav nav a:not(.drawer-cta):not(.drawer-mail) {
-    padding: 18px 0;
-    font-size: 20px;
+    padding: 13px 0;
+    font-size: 19px;
     font-weight: 600;
     color: #111;
     letter-spacing: -0.01em;
@@ -1732,8 +1729,8 @@ footer#contact {
     justify-content: center;
     gap: 8px;
     width: 100%;
-    padding: 17px 20px;
-    font-size: 16px;
+    padding: 14px 20px;
+    font-size: 15px;
     font-weight: 700;
     border-bottom: 0;
     border-radius: 999px;
@@ -1746,8 +1743,8 @@ footer#contact {
       box-shadow 0.25s;
   }
   .nav nav .drawer-cta.outline {
-    margin-top: 32px;
-    margin-bottom: 12px;
+    margin-top: 20px;
+    margin-bottom: 10px;
     border: 1.5px solid rgba(10,10,10,.13);
     background: #fff;
     color: #111;
@@ -1761,7 +1758,7 @@ footer#contact {
     box-shadow: 0 10px 28px rgba(138,3,3,.32);
   }
   /* logged-in: single dashboard button */
-  .nav nav .drawer-cta:only-of-type { margin-top: 32px; }
+  .nav nav .drawer-cta:only-of-type { margin-top: 20px; }
 
   .nav nav.open .drawer-cta            { opacity: 1; transform: translateX(0); }
   .nav nav.open .drawer-cta:nth-child(7) { transition-delay: 0.32s; }
