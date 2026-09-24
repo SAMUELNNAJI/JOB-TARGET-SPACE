@@ -2,9 +2,10 @@
 
 {% block title %}About JobSpace{% endblock %}
 
+{% load static %}
 {% block page_styles %}
-  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/style.css">
-  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/pages.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
   <style>
     .page-hero .stats-line > div {
       background: rgba(8, 8, 8, 0.58);
@@ -32,7 +33,7 @@
 
     <section class="content">
       <small class="eyebrow">OUR MISSION</small>
-      <h2>Work is more than a job title.</h2>
+      <h2>Work is more than a <em>job title.</em></h2>
       <p>Our mission is to make hiring faster, fairer, and more human — pairing ambitious companies with professionals who are ready to make an impact, backed by rigorous vetting and a platform built for clarity at every step.</p>
       <div class="about-grid">
         <div class="about-tile"><div class="number">01</div><h3>Who we are</h3><p>A team of recruitment specialists and engineers building a more reliable way for businesses and professionals to find each other — with transparency, quality, and heart.</p></div>

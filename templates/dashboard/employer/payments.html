@@ -1,47 +1,28 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Payments - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
 {% block content %}
-<main class="dashboard-content">
-
-  <article class="dashboard-hero">
-    <div class="dashboard-hero-content">
-      <small>PAYMENTS</small>
-      <h1>Clear records.<br><em>Confident hiring.</em></h1>
-      <p>Review subscription payments and transaction references.</p>
+<main class="dashboard-content emp-profile-page">
+  <section class="emp-form-hero">
+    <div class="emp-form-hero-bg"><span class="emp-orb emp-orb--1" style="--orb-color:#12b76a"></span><span class="emp-orb emp-orb--2"></span><div class="emp-hero-grid"></div></div>
+    <div class="emp-form-hero-content">
+      <span class="emp-hero-kicker">PAYMENTS</span>
+      <h1 class="emp-hero-title">Clear records.<br><em>Confident hiring.</em></h1>
+      <p class="emp-hero-sub">Review subscription payments and transaction references for your JobSPACE account.</p>
     </div>
-  </article>
-
-  <section class="dashboard-panel profile-form-panel">
-    <div class="dashboard-panel-head">
-      <h2>Payment history</h2>
-      <span class="verified">{{ page_obj.paginator.count }} records</span>
-    </div>
-    <table class="portal-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Plan</th>
-          <th>Amount</th>
-          <th>Status</th>
-          <th>Reference</th>
-        </tr>
-      </thead>
+    <div class="emp-form-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Transactions</span></div>
+  </section>
+  <div class="emp-shortlist-section">
+    <div class="emp-section-head"><h2 class="emp-panel-title">Payment History</h2><span class="emp-section-count">{{ page_obj.paginator.count }} records</span></div>
+    <table class="portal-table" style="margin:0 24px;width:calc(100% - 48px)">
+      <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead>
       <tbody>
-        {% for payment in page_obj %}
-          <tr>
-            <td>{{ payment.paid_at|date:"d M Y" }}</td>
-            <td>{{ payment.subscription.get_plan_display|default:"Subscription" }}</td>
-            <td style="white-space:nowrap">₦{{ payment.amount|floatformat:0 }}</td>
-            <td><span class="status-badge">{{ payment.get_status_display }}</span></td>
-            <td style="font-size:10px;color:#7a8599">{{ payment.reference }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No payments recorded yet.</td></tr>
-        {% endfor %}
+        {% for payment in page_obj %}<tr><td>{{ payment.paid_at|date:"d M Y" }}</td><td>{{ payment.subscription.get_plan_display|default:"Subscription" }}</td><td style="white-space:nowrap">₦{{ payment.amount|floatformat:0 }}</td><td><span class="status-badge">{{ payment.get_status_display }}</span></td><td style="font-size:10px;color:#7a8599">{{ payment.reference }}</td></tr>
+        {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No payments recorded yet.</td></tr>{% endfor %}
       </tbody>
     </table>
-    {% include "dashboard/pagination.html" %}
-  </section>
-
+    <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
+  </div>
 </main>
 {% endblock %}

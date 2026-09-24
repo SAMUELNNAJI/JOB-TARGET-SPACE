@@ -1,22 +1,35 @@
 {% extends "dashboard/base.html" %}
 {% block title %}{{ section_title }} - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
 {% block content %}
-<main class="dashboard-content">
-  <article class="dashboard-hero">
-    <div class="dashboard-hero-content">
-      <small>EMPLOYER WORKSPACE</small>
-      <h1>{{ section_title }}<br><em>with JobSPACE.</em></h1>
-      <p>{{ section_detail }}</p>
+<main class="dashboard-content emp-profile-page">
+  <section class="emp-form-hero">
+    <div class="emp-form-hero-bg"><span class="emp-orb emp-orb--1"></span><span class="emp-orb emp-orb--2"></span><div class="emp-hero-grid"></div></div>
+    <div class="emp-form-hero-content">
+      <span class="emp-hero-kicker">EMPLOYER WORKSPACE</span>
+      <h1 class="emp-hero-title">{{ section_title }}<br><em>with JobSPACE.</em></h1>
+      <p class="emp-hero-sub">{{ section_detail }}</p>
     </div>
-  </article>
-  <section class="dashboard-panel profile-form-panel">
-    <div class="dashboard-panel-head"><h2>{{ section_title }}</h2><span class="verified">● Employer account</span></div>
-    <p class="dashboard-section-detail">{{ section_detail }}</p>
-    {% if section_title == 'Support' %}
-      <a class="dashboard-button" href="mailto:hello@jobspace.com">Contact JobSPACE support →</a>
-    {% else %}
-      <a class="dashboard-button" href="/dashboard/employer/profile/">Review company profile →</a>
-    {% endif %}
   </section>
+  <div class="emp-section-card">
+    <div class="emp-section-card-icon">
+      {% if section_title == "Support" %}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      {% else %}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      {% endif %}
+    </div>
+    <h3 class="emp-section-card-title">{{ section_title }}</h3>
+    <p class="emp-section-card-desc">{{ section_detail }}</p>
+    <div class="emp-section-card-actions">
+      {% if section_title == "Support" %}
+        <a class="emp-btn emp-btn--primary" href="mailto:hello@jobspace.com"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email JobSPACE Support</a>
+      {% else %}
+        <a class="emp-btn emp-btn--primary" href="/dashboard/employer/profile/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Edit Company Profile</a>
+      {% endif %}
+      <a class="emp-btn emp-btn--ghost" href="/dashboard/employer/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back to Dashboard</a>
+    </div>
+  </div>
 </main>
 {% endblock %}

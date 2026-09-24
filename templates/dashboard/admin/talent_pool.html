@@ -3,33 +3,14 @@
 {% block notification_count %}0{% endblock %}
 {% block content %}
 <main class="dashboard-content adm-home">
-  <section class="dash-hero">
-    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#12b76a"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
-    <div class="dash-hero-content">
-      <span class="dash-hero-kicker">VETTED TALENT POOL</span>
-      <h1 class="dash-hero-title">Quality talent,<br><em>ready for matching.</em></h1>
-      <p class="dash-hero-sub">Only Vetted &amp; Verified candidates are eligible for employer matching. Review and push profiles from here.</p>
-    </div>
-    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Verified</span></div>
-  </section>
+  <section class="dash-hero"><div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#12b76a"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div><div class="dash-hero-content"><span class="dash-hero-kicker">VETTED TALENT POOL</span><h1 class="dash-hero-title">Quality talent,<br><em>ready for matching.</em></h1><p class="dash-hero-sub">Only Vetted &amp; Verified candidates are eligible for employer matching. Review and push profiles from here.</p></div><div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Verified</span></div></section>
   <section class="dashboard-panel admin-table-card">
     <div class="dashboard-panel-head"><h2>Verified talent pool</h2><span class="verified">{{ page_obj.paginator.count }} verified</span></div>
     <div class="admin-filter"><input placeholder="Search candidate or specialization…" id="ts"></div>
-    <table class="portal-table" id="tt">
-      <thead><tr><th>Candidate</th><th>Specialization</th><th>Qualification</th><th>Availability</th><th>Expected salary</th><th>Status</th></tr></thead>
-      <tbody>
-        {% for c in page_obj %}
-          <tr>
-            <td><strong>{{ c.legal_name|default:c.user.username }}</strong><br><span style="font-size:9px;color:#9ca5b6">{{ c.user.email }}</span></td>
-            <td>{{ c.specializations.first|default:"Uncategorized" }}</td>
-            <td>{{ c.primary_degree|default:"Not set" }}</td>
-            <td>{{ c.get_availability_display|default:"Not set" }}</td>
-            <td style="white-space:nowrap">{% if c.expected_salary %}₦{{ c.expected_salary|floatformat:0 }}{% else %}<span style="color:#9ca5b6">Not set</span>{% endif %}</td>
-            <td><span class="status-badge">Verified</span></td>
-          </tr>
-        {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No verified candidates yet.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+    <table class="portal-table" id="tt"><thead><tr><th>Candidate</th><th>Specialization</th><th>Qualification</th><th>Availability</th><th>Expected salary</th><th>Status</th></tr></thead><tbody>
+      {% for c in page_obj %}<tr><td><strong>{{ c.legal_name|default:c.user.username }}</strong><br><span style="font-size:9px;color:#9ca5b6">{{ c.user.email }}</span></td><td>{{ c.specializations.first|default:"Uncategorized" }}</td><td>{{ c.primary_degree|default:"Not set" }}</td><td>{{ c.get_availability_display|default:"Not set" }}</td><td style="white-space:nowrap">{% if c.expected_salary %}₦{{ c.expected_salary|floatformat:0 }}{% else %}<span style="color:#9ca5b6">Not set</span>{% endif %}</td><td><span class="status-badge">Verified</span></td></tr>
+      {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No verified candidates yet.</td></tr>{% endfor %}
+    </tbody></table>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

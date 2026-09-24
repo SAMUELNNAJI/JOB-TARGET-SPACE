@@ -2,9 +2,10 @@
 
 {% block title %}Candidates &mdash; JobSpace{% endblock %}
 
+{% load static %}
 {% block page_styles %}
-  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/style.css">
-  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/pages.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
 {% endblock %}
 
 {% block content %}

@@ -2,7 +2,7 @@ services:
   - type: web
     name: jobspace
     runtime: python
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    buildCommand: "./build.sh"
     startCommand: gunicorn jobspace.wsgi:application --log-file -
     healthCheckPath: /
     envVars:

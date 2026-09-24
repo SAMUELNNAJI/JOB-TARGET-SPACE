@@ -1,4 +1,25 @@
 {% extends "dashboard/base.html" %}
 {% block title %}{{ section_title }} - JobSpace{% endblock %}
 {% block body_class %}candidate-dashboard{% endblock %}
-{% block content %}<main class="dashboard-content"><article class="dashboard-hero"><div class="dashboard-hero-content"><small>CANDIDATE WORKSPACE</small><h1>{{ section_title }}<br><em>That moves you forward.</em></h1><p>{{ section_description }}</p></div></article><section class="dashboard-panel dashboard-section-panel"><div class="dashboard-panel-head"><h2>{{ section_title }}</h2><span class="verified">● Candidate account</span></div><p class="dashboard-section-detail">{{ section_detail }}</p><div class="dashboard-section-grid"><article class="dashboard-stat"><div class="dashboard-stat-icon">✓</div><small>Workspace status</small><strong>Ready</strong></article><article class="dashboard-stat"><div class="dashboard-stat-icon">✦</div><small>Next step</small><strong>Continue</strong></article><article class="dashboard-stat"><div class="dashboard-stat-icon">↗</div><small>Support</small><strong>Available</strong></article></div></section></main>{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
+{% block content %}
+<main class="dashboard-content cand-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">CANDIDATE WORKSPACE</span>
+      <h1 class="dash-hero-title">{{ section_title }}<br><em>moves you forward.</em></h1>
+      <p class="dash-hero-sub">{{ section_description }}</p>
+    </div>
+  </section>
+  <div class="emp-section-card">
+    <div class="emp-section-card-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <h3 class="emp-section-card-title">{{ section_title }}</h3>
+    <p class="emp-section-card-desc">{{ section_detail }}</p>
+    <div class="emp-section-card-actions">
+      <a class="emp-btn emp-btn--primary" href="/dashboard/candidate/profile/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Update Profile</a>
+      <a class="emp-btn emp-btn--ghost" href="/dashboard/candidate/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back to Dashboard</a>
+    </div>
+  </div>
+</main>
+{% endblock %}

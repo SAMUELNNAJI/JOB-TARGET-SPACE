@@ -1,7 +1,0 @@
-OK auth/signin.html
-OK auth/signup.html
-OK base.html
-OK terms.html
-OK privacy.html
-5 ok, 0 errors
-System check identified no issues (0 silenced).

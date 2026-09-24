@@ -1,82 +1,50 @@
 {% extends "dashboard/base.html" %}
-{% load static %}
 {% block title %}Notifications - JobSpace{% endblock %}
 {% block body_class %}candidate-dashboard{% endblock %}
 {% block notification_count %}0{% endblock %}
-
 {% block content %}
-<main class="dashboard-content">
-
-  <article class="dashboard-hero">
-    <div class="dashboard-hero-content">
-      <small>NOTIFICATIONS</small>
-      <h1>Stay in the loop,<br><em>every step.</em></h1>
-      <p>Verification updates, opportunity matches, shortlist alerts and profile reminders — all in one place.</p>
+<main class="dashboard-content cand-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">NOTIFICATIONS</span>
+      <h1 class="dash-hero-title">Stay in the loop,<br><em>every step.</em></h1>
+      <p class="dash-hero-sub">Verification updates, opportunity matches, shortlist alerts and profile reminders — all in one place.</p>
     </div>
-  </article>
-
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Notifications</span></div>
+  </section>
   <section class="notif-page">
-
-    <div class="notif-header">
-      <div>
-        <h2 class="notif-heading">Your notifications</h2>
-        <p class="notif-sub">{{ page_obj.paginator.count }} total &nbsp;·&nbsp; all marked as read</p>
-      </div>
-    </div>
-
+    <div class="notif-header"><div><h2 class="notif-heading">Your notifications</h2><p class="notif-sub">{{ page_obj.paginator.count }} total &nbsp;·&nbsp; all marked as read</p></div></div>
     {% if page_obj.object_list %}
       <div class="notif-list">
         {% for n in page_obj %}
           <div class="notif-item notif-item--{{ n.kind }} {% if not n.is_read %}notif-item--unread{% endif %}">
-
             <div class="notif-icon notif-icon--{{ n.kind }}">
-              {% if n.kind == "verification" %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-              {% elif n.kind == "match" %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              {% elif n.kind == "shortlist" %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              {% elif n.kind == "payment" %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-              {% elif n.kind == "profile" %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              {% else %}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              {% endif %}
+              {% if n.kind == "verification" %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              {% elif n.kind == "match" %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              {% elif n.kind == "shortlist" %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              {% elif n.kind == "payment" %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              {% elif n.kind == "profile" %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              {% else %}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{% endif %}
             </div>
-
             <div class="notif-body">
-              <div class="notif-title-row">
-                <strong class="notif-title">{{ n.title }}</strong>
-                {% if not n.is_read %}<span class="notif-unread-dot"></span>{% endif %}
-              </div>
+              <div class="notif-title-row"><strong class="notif-title">{{ n.title }}</strong>{% if not n.is_read %}<span class="notif-unread-dot"></span>{% endif %}</div>
               <p class="notif-message">{{ n.message }}</p>
-              <time class="notif-time" datetime="{{ n.created_at|date:'c' }}">
-                {{ n.created_at|date:"d M Y · H:i" }}
-              </time>
+              <time class="notif-time" datetime="{{ n.created_at|date:'c' }}">{{ n.created_at|date:"d M Y · H:i" }}</time>
             </div>
-
-            <div class="notif-kind-tag notif-kind-tag--{{ n.kind }}">
-              {{ n.get_kind_display }}
-            </div>
-
+            <div class="notif-kind-tag notif-kind-tag--{{ n.kind }}">{{ n.get_kind_display }}</div>
           </div>
         {% endfor %}
       </div>
-
       {% include "dashboard/pagination.html" %}
-
     {% else %}
       <div class="notif-empty">
-        <div class="notif-empty-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
+        <div class="notif-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
         <h3>No notifications yet</h3>
         <p>Verification updates, opportunity matches, and profile reminders will appear here.</p>
         <a class="dashboard-button" href="/dashboard/candidate/">Back to dashboard</a>
       </div>
     {% endif %}
-
   </section>
 </main>
 {% endblock %}

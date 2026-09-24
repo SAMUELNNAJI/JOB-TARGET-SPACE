@@ -3,31 +3,13 @@
 {% block notification_count %}0{% endblock %}
 {% block content %}
 <main class="dashboard-content adm-home">
-  <section class="dash-hero">
-    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
-    <div class="dash-hero-content">
-      <span class="dash-hero-kicker">REPLACEMENT MANAGEMENT</span>
-      <h1 class="dash-hero-title">Keep every<br><em>promise moving.</em></h1>
-      <p class="dash-hero-sub">Review replacement requests against Basic 30-day and Premium 90-day eligibility windows.</p>
-    </div>
-    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Requests</span></div>
-  </section>
+  <section class="dash-hero"><div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div><div class="dash-hero-content"><span class="dash-hero-kicker">REPLACEMENT MANAGEMENT</span><h1 class="dash-hero-title">Keep every<br><em>promise moving.</em></h1><p class="dash-hero-sub">Review replacement requests against Basic 30-day and Premium 90-day eligibility windows.</p></div><div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Requests</span></div></section>
   <section class="dashboard-panel admin-table-card">
     <div class="dashboard-panel-head"><h2>Replacement requests</h2><span class="verified">{{ page_obj.paginator.count }} total</span></div>
-    <table class="portal-table">
-      <thead><tr><th>Employer</th><th>Candidate</th><th>Reason</th><th>Requested</th><th>Status</th></tr></thead>
-      <tbody>
-        {% for r in page_obj %}
-          <tr>
-            <td><strong>{{ r.employer.company_name|default:r.employer.user.username }}</strong></td>
-            <td>{{ r.candidate.legal_name|default:r.candidate.user.username }}</td>
-            <td style="max-width:240px;white-space:normal">{{ r.reason }}</td>
-            <td>{{ r.created_at|date:"d M Y" }}</td>
-            <td><span class="adm-status-badge adm-status-badge--{{ r.status }}">{{ r.get_status_display }}</span></td>
-          </tr>
-        {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No replacement requests.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+    <table class="portal-table"><thead><tr><th>Employer</th><th>Candidate</th><th>Reason</th><th>Requested</th><th>Status</th></tr></thead><tbody>
+      {% for r in page_obj %}<tr><td><strong>{{ r.employer.company_name|default:r.employer.user.username }}</strong></td><td>{{ r.candidate.legal_name|default:r.candidate.user.username }}</td><td style="max-width:240px;white-space:normal">{{ r.reason }}</td><td>{{ r.created_at|date:"d M Y" }}</td><td><span class="adm-status-badge adm-status-badge--{{ r.status }}">{{ r.get_status_display }}</span></td></tr>
+      {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No replacement requests.</td></tr>{% endfor %}
+    </tbody></table>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

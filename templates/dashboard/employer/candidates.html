@@ -1,53 +1,49 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Candidates Received - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
 {% block content %}
-<main class="dashboard-content">
-
-  <article class="dashboard-hero">
-    <div class="dashboard-hero-content">
-      <small>ADMIN-PUSHED CANDIDATES</small>
-      <h1>Meet your next<br><em>great hire.</em></h1>
-      <p>Only candidates reviewed and specifically pushed by JobSPACE administrators appear here.</p>
+<main class="dashboard-content emp-profile-page">
+  <section class="emp-form-hero">
+    <div class="emp-form-hero-bg"><span class="emp-orb emp-orb--1" style="--orb-color:#2563eb"></span><span class="emp-orb emp-orb--2"></span><div class="emp-hero-grid"></div></div>
+    <div class="emp-form-hero-content">
+      <span class="emp-hero-kicker">ADMIN-PUSHED CANDIDATES</span>
+      <h1 class="emp-hero-title">Meet your next<br><em>great hire.</em></h1>
+      <p class="emp-hero-sub">Only candidates reviewed and specifically pushed by JobSPACE administrators appear here — vetted, verified, and ready.</p>
     </div>
-  </article>
-
-  <section class="dashboard-panel profile-form-panel">
-    <div class="dashboard-panel-head">
-      <h2>Candidates received</h2>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="verified">● Vetted by JobSPACE</span>
-        <span class="verified">{{ page_obj.paginator.count }} total</span>
+    <div class="emp-form-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Candidates</span></div>
+  </section>
+  <div class="emp-shortlist-section">
+    <div class="emp-section-head">
+      <div><h2 class="emp-panel-title">Candidates received</h2></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="emp-avail-badge">● Vetted by JobSPACE</span><span class="emp-section-count">{{ page_obj.paginator.count }} total</span></div>
+    </div>
+    {% if page_obj.object_list %}
+      <div style="padding:0 20px 8px">
+        {% for match in page_obj %}
+          <div class="emp-candidate-row" style="padding:14px 10px">
+            <div class="emp-candidate-avatar">{{ match.profile.user.first_name|default:"?"|slice:":2"|upper }}</div>
+            <div class="emp-candidate-info">
+              <strong>{{ match.profile.legal_name|default:match.profile.user.first_name|default:"Candidate" }}</strong>
+              <span>{{ match.profile.specializations.first|default:"Professional" }}{% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:32 }}{% endif %}</span>
+            </div>
+            <div class="emp-candidate-right">
+              <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
+              {% if match.profile.expected_salary %}<span style="font-size:10px;font-weight:700;color:#3d4a63">₦{{ match.profile.expected_salary|floatformat:0 }}/mo</span>{% endif %}
+              <a class="emp-candidate-btn" href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Shortlist</a>
+            </div>
+          </div>
+        {% endfor %}
       </div>
-    </div>
-
-    {% for match in page_obj %}
-      <article class="job-row">
-        <span class="job-company">{{ match.profile.user.first_name|slice:":2"|upper }}</span>
-        <div>
-          <h3>{{ match.profile.legal_name|default:match.profile.user.first_name }}</h3>
-          <p>
-            {{ match.profile.specializations.first|default:"Professional" }}
-            · {{ match.profile.primary_degree|default:"Qualification pending" }}
-          </p>
-          <p style="color:#9ca5b6;font-size:9px">{{ match.profile.certifications|default:"Verified professional profile" }}</p>
-        </div>
-        <span class="salary">{{ match.profile.get_availability_display|default:"Available" }}</span>
-        <a class="job-apply" href="/dashboard/employer/candidates/{{ match.id }}/shortlist/">
-          Shortlist
-        </a>
-      </article>
-    {% empty %}
-      <div class="empty-state">
-        <div class="dashboard-stat-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        </div>
+      <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
+    {% else %}
+      <div class="emp-empty-state">
+        <div class="emp-empty-icon-wrap"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
         <h3>No candidates received yet</h3>
         <p>JobSPACE administrators will push vetted candidates here when they match your active recruitment requests.</p>
+        <a class="emp-empty-btn" href="/dashboard/employer/requests/">Post a requirement →</a>
       </div>
-    {% endfor %}
-
-    {% include "dashboard/pagination.html" %}
-  </section>
-
+    {% endif %}
+  </div>
 </main>
 {% endblock %}

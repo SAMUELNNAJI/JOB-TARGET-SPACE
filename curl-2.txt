@@ -1,5 +1,13 @@
-﻿/* =============================================================
-   JOBSPACE — GLOBAL STYLESHEET · WHITE / BLACK / RED
+HTTP/1.1 200 OK
+Date: Thu, 24 Sep 2026 17:46:15 GMT
+Server: WSGIServer/0.2 CPython/3.14.5
+Content-Type: text/css
+Content-Length: 44952
+Content-Disposition: inline; filename="style.css"
+Last-Modified: Thu, 24 Sep 2026 17:15:46 GMT
+
+∩╗┐/* =============================================================
+   JOBSPACE ΓÇö GLOBAL STYLESHEET ┬╖ WHITE / BLACK / RED
    Glass-morphism design system shared by every page.
    ============================================================= */
 :root {
@@ -1117,7 +1125,7 @@ ul {
   border-bottom: 0;
 }
 .plan-card li::before {
-  content: "✓";
+  content: "Γ£ô";
   position: absolute;
   left: 4px;
   top: 11px;
@@ -1584,7 +1592,7 @@ footer#contact {
     opacity: 0;
     visibility: hidden;
   }
-  /* hamburger — morphs into a close (X) button */
+  /* hamburger ΓÇö morphs into a close (X) button */
   .menu {
     display: grid;
     place-items: center;
@@ -1772,7 +1780,7 @@ footer#contact {
   .nav nav .drawer-foot a:hover {
     color: var(--red);
   }
-  /* hero — mobile layout that fits the viewport */
+  /* hero ΓÇö mobile layout that fits the viewport */
   .hero {
     height: 100vh;
     height: 100svh;
@@ -1946,7 +1954,7 @@ footer#contact {
     font-size: 29px;
   }
 }
-/* very small phones — the header keeps just the logo + hamburger */
+/* very small phones ΓÇö the header keeps just the logo + hamburger */
 @media (max-width: 400px) {
   .nav .nav-actions {
     display: flex;
@@ -1967,7 +1975,7 @@ footer#contact {
     width: 88vw;
   }
 }
-/* short viewports (landscape phones) — keep the whole hero copy on screen */
+/* short viewports (landscape phones) ΓÇö keep the whole hero copy on screen */
 @media (max-width: 900px) and (max-height: 560px) {
   .hero-content {
     padding: calc(var(--nav-h) + 32px) 20px 50px;
@@ -2048,7 +2056,7 @@ footer#contact {
 
 
 
-/* Dashboard button — solid red, overrides default .button where needed */
+/* Dashboard button ΓÇö solid red, overrides default .button where needed */
 .nav .dashboard-link,
 .nav-actions .dashboard-link {
   display: inline-flex;
@@ -2080,7 +2088,7 @@ footer#contact {
   flex-shrink: 0;
 }
 
-/* ── Nav button SVG icon overrides ── */
+/* ΓöÇΓöÇ Nav button SVG icon overrides ΓöÇΓöÇ */
 .nav a.login-link::before,
 .nav a.signup-link::before { content: none; }
 
@@ -2101,7 +2109,7 @@ footer#contact {
   stroke-linejoin: round;
 }
 
-/* Dashboard button — solid red pill */
+/* Dashboard button ΓÇö solid red pill */
 .nav .dashboard-link,
 .nav-actions .dashboard-link {
   display: inline-flex;

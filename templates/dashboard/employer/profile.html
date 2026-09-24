@@ -1,1 +1,46 @@
-{% extends "dashboard/base.html" %}{% block title %}Company Profile - JobSpace{% endblock %}{% block content %}<main class="dashboard-content"><article class="dashboard-hero"><div class="dashboard-hero-content"><small>COMPANY PROFILE</small><h1>Present your<br><em>best company.</em></h1><p>Keep your corporate details current so JobSPACE can support your recruitment workflow.</p></div></article><section class="dashboard-panel profile-form-panel employer-form"><div class="dashboard-panel-head"><h2>Company information</h2></div><form method="post" class="portal-form">{% csrf_token %}<div class="request-form-grid"><div><label>Corporate registered name</label>{{ form.company_name }}</div><div><label>Industry sector</label>{{ form.industry_sector }}</div><div><label>HR/contact person's name</label>{{ form.hr_contact_name }}</div><div><label>Official email</label>{{ form.email }}</div><div><label>Phone number</label>{{ form.phone }}</div><div class="span-2"><label>Office address</label>{{ form.office_address }}</div></div><button class="dashboard-button form-submit" type="submit">Save company profile →</button></form></section></main>{% endblock %}
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Company Profile - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
+{% block content %}
+<main class="dashboard-content emp-profile-page">
+  <section class="emp-form-hero">
+    <div class="emp-form-hero-bg">
+      <span class="emp-orb emp-orb--1"></span>
+      <span class="emp-orb emp-orb--2"></span>
+      <div class="emp-hero-grid"></div>
+    </div>
+    <div class="emp-form-hero-content">
+      <span class="emp-hero-kicker">COMPANY PROFILE</span>
+      <h1 class="emp-hero-title">Present your<br><em>best company.</em></h1>
+      <p class="emp-hero-sub">Keep your corporate details current so JobSPACE can support your recruitment workflow effectively.</p>
+    </div>
+  </section>
+  {% if messages %}{% for message in messages %}<div class="emp-alert"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>{{ message }}</div>{% endfor %}{% endif %}
+  <div class="emp-form-card">
+    <div class="emp-form-card-head">
+      <div class="emp-form-card-head-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+      <div><h2 class="emp-form-card-title">Company Information</h2><p class="emp-form-card-sub">This information is visible to JobSPACE administrators only — not to candidates.</p></div>
+    </div>
+    <form method="post" class="emp-form">
+      {% csrf_token %}
+      <div class="emp-form-section">
+        <h3 class="emp-form-section-title">Corporate Details</h3>
+        <div class="emp-form-grid">
+          <div class="emp-field emp-field--full"><label class="emp-label">Corporate registered name</label>{{ form.company_name }}{% if form.company_name.errors %}<span class="emp-error">{{ form.company_name.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Industry sector</label>{{ form.industry_sector }}</div>
+          <div class="emp-field"><label class="emp-label">HR / contact person's name</label>{{ form.hr_contact_name }}</div>
+          <div class="emp-field"><label class="emp-label">Official email address</label>{{ form.email }}{% if form.email.errors %}<span class="emp-error">{{ form.email.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Phone number</label>{{ form.phone }}</div>
+          <div class="emp-field emp-field--full"><label class="emp-label">Office address</label>{{ form.office_address }}</div>
+        </div>
+      </div>
+      <div class="emp-form-actions">
+        <button type="submit" class="emp-submit-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Save company profile</button>
+        <a class="emp-cancel-btn" href="/dashboard/employer/">Cancel</a>
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %}
