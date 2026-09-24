@@ -29,13 +29,13 @@ html {
   scroll-behavior: smooth;
 }
 body {
-  color: var(--ink);
+  color: #111111;
   font:
     400 15px/1.65 "DM Sans",
     system-ui,
     sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: var(--black);
+  background: #f2f2f0;
   overflow-x: hidden;
 }
 [hidden] {
@@ -72,7 +72,7 @@ h2,
 h3,
 h4 {
   font-family: "Montserrat", sans-serif;
-  color: var(--white);
+  color: #111111;
   line-height: 1.14;
   letter-spacing: -0.02em;
 }
@@ -179,16 +179,15 @@ ul {
   padding: 11px 22px;
   font-size: 13.5px;
 }
-.nav a.login-link::before {
-  content: "↪";
-  font-size: 17px;
-  line-height: 1;
-}
-.nav a.signup-link::before {
-  content: "+";
-  font-size: 18px;
-  line-height: 1;
-  font-weight: 700;
+
+.nav .dashboard-link svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ---------- BUTTONS ---------- */
@@ -636,6 +635,7 @@ ul {
   font-size: clamp(20px, 2.2vw, 26px);
   line-height: 1.25;
   margin-bottom: 12px;
+  color: #fff;
 }
 .stats-wrap aside p {
   font-size: 13.5px;
@@ -757,6 +757,7 @@ ul {
   font-size: clamp(26px, 2.6vw, 34px);
   font-weight: 800;
   margin-bottom: 14px;
+  color: #fff;
 }
 .feature p {
   font-size: 14px;
@@ -773,6 +774,10 @@ ul {
 /* ---------- HOW IT WORKS (steps) ---------- */
 .works {
   background: var(--black);
+}
+.works h2,
+.works h3 {
+  color: #fff;
 }
 .works-lead {
   color: var(--muted);
@@ -960,6 +965,7 @@ ul {
   font-weight: 700;
   margin-bottom: 9px;
   line-height: 1.3;
+  color: #fff;
 }
 .job-list p {
   font-size: 13px;
@@ -1040,6 +1046,7 @@ ul {
   font-size: clamp(30px, 4vw, 48px);
   font-weight: 800;
   margin-bottom: 13px;
+  color: #fff;
 }
 .pricing-intro p {
   font-size: 14.5px;
@@ -1258,6 +1265,7 @@ ul {
   font-weight: 800;
   line-height: 1.15;
   margin-bottom: 14px;
+  color: #fff;
 }
 .banner p {
   font-size: 15px;
@@ -1337,6 +1345,7 @@ footer#contact {
   font-weight: 800;
   line-height: 1.15;
   margin-bottom: 16px;
+  color: #fff;
 }
 .footer-top p {
   font-size: 14px;
@@ -2035,4 +2044,60 @@ footer#contact {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Nav button SVG icon overrides ── */
+
+/* Remove old pseudo-content icons */
+.nav a.login-link::before,
+.nav a.signup-link::before { content: none; }
+
+/* Login & Sign Up — flex with inline SVG gap */
+.nav a.login-link,
+.nav a.signup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.nav a.login-link svg,
+.nav a.signup-link svg {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Dashboard button — solid red, overrides default .button where needed */
+.nav .dashboard-link,
+.nav-actions .dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--red), var(--red-deep));
+  color: #fff !important;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(138,3,3,.28);
+  transition: transform .25s, box-shadow .25s, background .25s;
+  border: none;
+  text-decoration: none;
+}
+.nav .dashboard-link:hover,
+.nav-actions .dashboard-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(138,3,3,.4);
+  background: linear-gradient(135deg, var(--red-hover), var(--red));
+}
+.nav .dashboard-link svg,
+.nav-actions .dashboard-link svg {
+  width: 15px; height: 15px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  flex-shrink: 0;
 }

@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Candidate Management - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#2563eb"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">CANDIDATE MANAGEMENT</span>
+      <h1 class="dash-hero-title">Protect the quality<br><em>of the talent pool.</em></h1>
+      <p class="dash-hero-sub">Review profiles, credentials, CVs, and verification readiness before adding candidates to the talent pool.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Candidates</span></div>
+  </section>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>All candidates</h2><span class="verified">{{ page_obj.paginator.count }} registered</span></div>
+    <div class="admin-filter">
+      <input placeholder="Search name or email" id="cs">
+      <select id="cf"><option value="">All statuses</option><option>Draft</option><option>Pending Review</option><option>Under Verification</option><option>Vetted &amp; Verified</option><option>Requires Changes</option></select>
+    </div>
+    <table class="portal-table" id="ct">
+      <thead><tr><th>Candidate</th><th>Email</th><th>Specialization</th><th>Completion</th><th>Status</th><th>CV</th><th>Joined</th></tr></thead>
+      <tbody>
+        {% for c in page_obj %}
+          <tr>
+            <td><strong>{{ c.legal_name|default:c.user.username }}</strong></td>
+            <td>{{ c.user.email }}</td>
+            <td>{{ c.specializations.first|default:"Not set" }}</td>
+            <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;border-radius:99px;background:#eef0f5;overflow:hidden"><div style="height:100%;width:{{ c.completion_percentage }}%;background:linear-gradient(90deg,#d90429,#ff6b81);border-radius:99px"></div></div><span style="font-size:10px;font-weight:700;color:#3d4a63;white-space:nowrap">{{ c.completion_percentage }}%</span></div></td>
+            <td><span class="adm-status-badge adm-status-badge--{{ c.verification_status }}">{{ c.get_verification_status_display }}</span></td>
+            <td>{% if c.cv_documents.exists %}<a href="{{ c.cv_documents.first.file.url }}" target="_blank" class="admin-action secondary">View CV</a>{% else %}<span style="color:#9ca5b6;font-size:10px">None</span>{% endif %}</td>
+            <td>{{ c.user.date_joined|date:"d M Y" }}</td>
+          </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No candidates registered.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+<script>
+const cs=document.getElementById('cs'),cf=document.getElementById('cf');
+function f(){const q=cs.value.toLowerCase(),s=cf.value.toLowerCase();document.querySelectorAll('#ct tbody tr').forEach(r=>{const t=r.textContent.toLowerCase(),b=r.querySelector('.adm-status-badge')?.textContent.toLowerCase()??'';r.style.display=t.includes(q)&&(s===''||b.includes(s))?'':'none';});}
+cs.addEventListener('input',f);cf.addEventListener('change',f);
+</script>
+{% endblock %}

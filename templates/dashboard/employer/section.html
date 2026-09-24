@@ -1,0 +1,22 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ section_title }} - JobSpace{% endblock %}
+{% block content %}
+<main class="dashboard-content">
+  <article class="dashboard-hero">
+    <div class="dashboard-hero-content">
+      <small>EMPLOYER WORKSPACE</small>
+      <h1>{{ section_title }}<br><em>with JobSPACE.</em></h1>
+      <p>{{ section_detail }}</p>
+    </div>
+  </article>
+  <section class="dashboard-panel profile-form-panel">
+    <div class="dashboard-panel-head"><h2>{{ section_title }}</h2><span class="verified">● Employer account</span></div>
+    <p class="dashboard-section-detail">{{ section_detail }}</p>
+    {% if section_title == 'Support' %}
+      <a class="dashboard-button" href="mailto:hello@jobspace.com">Contact JobSPACE support →</a>
+    {% else %}
+      <a class="dashboard-button" href="/dashboard/employer/profile/">Review company profile →</a>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

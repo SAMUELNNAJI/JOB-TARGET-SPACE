@@ -10,34 +10,96 @@
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/pages.css' %}">
 </head>
-<body>
-  <main>
-    <section class="auth-shell">
-      <aside class="auth-side">
-        <a class="auth-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a>
-        <div><small class="eyebrow">YOUR NEXT MOVE</small><h2>Welcome back to work that <em>moves you forward.</em></h2><p>Keep your profile, opportunities, and conversations in one focused workspace.</p></div>
-        <span class="auth-side-note">Trusted by ambitious people and teams.</span>
-      </aside>
-      <div class="auth-wrap">
-        <form class="auth-card" method="post">
-          {% csrf_token %}
-          <h1>Welcome back</h1>
-          <p>Sign in to your JobSpace dashboard.</p>
-          {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-          <label for="id_username">Email address</label>
-          {{ form.username }}
-          {% if form.username.errors %}<div class="form-errors">{{ form.username.errors }}</div>{% endif %}
-          <label for="id_password">Password</label>
-          {{ form.password }}
-          {% if form.password.errors %}<div class="form-errors">{{ form.password.errors }}</div>{% endif %}
-          <div class="auth-row"><label><input type="checkbox" name="remember_me">Remember me</label><a href="#">Forgot password?</a></div>
-          <button class="button" type="submit">Sign In　→</button>
-          <div class="auth-features"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure login</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> 24/7 access</div></div>
-          <p class="auth-foot">Don't have an account? <a href="/signup/">Create account</a></p>
-        </form>
-        <div class="auth-features-mobile"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure login</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> 24/7 access</div></div>
+<body class="auth-body">
+<main>
+  <section class="auth-shell">
+
+    {# ── LEFT BRAND PANEL ── #}
+    <aside class="auth-side">
+      <div class="auth-side-grid"></div>
+      <a class="auth-brand" href="/">
+        <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+      </a>
+      <div class="auth-side-body">
+        <span class="auth-side-kicker">YOUR NEXT MOVE</span>
+        <h2 class="auth-side-title">Welcome back to work that<br><em>moves you forward.</em></h2>
+        <p class="auth-side-desc">Your profile, opportunities and conversations — all in one focused workspace built for ambitious professionals.</p>
       </div>
-    </section>
-  </main>
+      <div class="auth-side-pills">
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div><strong>Secure &amp; private</strong><span>Your data is never shared without consent</span></div>
+        </div>
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div><strong>Human support</strong><span>Real people reviewing every match</span></div>
+        </div>
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </div>
+          <div><strong>Priority matching</strong><span>Vetted professionals placed first</span></div>
+        </div>
+      </div>
+    </aside>
+
+    {# ── RIGHT FORM PANEL ── #}
+    <div class="auth-wrap">
+      <form class="auth-card" method="post" autocomplete="on">
+        {% csrf_token %}
+
+        <a class="auth-card-logo" href="/">
+          <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+        </a>
+
+        <h1>Welcome back</h1>
+        <p>Sign in to your JobSpace dashboard to manage your profile and opportunities.</p>
+
+        {% if form.non_field_errors %}
+          <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <label for="{{ form.username.id_for_label }}">Email address</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="form-errors">{{ form.username.errors }}</div>{% endif %}
+
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="form-errors">{{ form.password.errors }}</div>{% endif %}
+
+        <div class="auth-row">
+          <label><input type="checkbox" name="remember_me"> Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button class="button" type="submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Sign in to dashboard
+        </button>
+
+        <div class="auth-features">
+          <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>Secure login</div>
+          <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>Human support</div>
+          <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>24/7 access</div>
+        </div>
+
+        <p class="auth-foot">Don't have an account? <a href="/signup/">Create account</a></p>
+        <p class="auth-foot" style="margin-top:6px;font-size:11px;color:#9aa3b7">By signing in you agree to our <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a></p>
+      </form>
+
+      {# Mobile pill strip #}
+      <div class="auth-features-mobile">
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>Secure login</div>
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>Human support</div>
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>24/7 access</div>
+      </div>
+    </div>
+
+  </section>
+</main>
 </body>
 </html>

@@ -1,0 +1,295 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Verification Status - JobSpace{% endblock %}
+{% block body_class %}candidate-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
+
+{% block content %}
+<main class="dashboard-content vf-page">
+
+  {# ── HERO (colour shifts per status) ── #}
+  <section class="vf-hero vf-hero--{{ profile.verification_status }}">
+    <div class="vf-hero-bg">
+      <span class="vf-hero-orb vf-hero-orb--1"></span>
+      <span class="vf-hero-orb vf-hero-orb--2"></span>
+    </div>
+    <div class="vf-hero-content">
+      <span class="vf-hero-kicker">VERIFICATION STATUS</span>
+      {% if profile.verification_status == "verified" %}
+        <h1 class="vf-hero-title">You're in the<br><em>talent pool!</em></h1>
+        <p class="vf-hero-sub">Your profile is Vetted &amp; Verified. You are now visible to employers through JobSPACE matching.</p>
+      {% elif profile.verification_status == "verifying" %}
+        <h1 class="vf-hero-title">Under<br><em>verification.</em></h1>
+        <p class="vf-hero-sub">Our team is reviewing your CV and credentials. We'll notify you as soon as the process is complete.</p>
+      {% elif profile.verification_status == "pending" %}
+        <h1 class="vf-hero-title">Profile submitted<br><em>for review.</em></h1>
+        <p class="vf-hero-sub">Your profile is in the queue. Our administrators will begin the review shortly.</p>
+      {% elif profile.verification_status == "changes" %}
+        <h1 class="vf-hero-title">Action<br><em>required.</em></h1>
+        <p class="vf-hero-sub">Our team has flagged your profile for updates. Please correct the requested information and resubmit.</p>
+      {% else %}
+        <h1 class="vf-hero-title">Your profile,<br><em>carefully reviewed.</em></h1>
+        <p class="vf-hero-sub">Complete your profile and submit it for vetting. Only verified candidates enter the talent pool.</p>
+      {% endif %}
+    </div>
+
+    {# Status badge in hero #}
+    <div class="vf-hero-badge vf-hero-badge--{{ profile.verification_status }}">
+      {% if profile.verification_status == "verified" %}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      {% elif profile.verification_status == "verifying" %}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      {% elif profile.verification_status == "pending" %}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {% elif profile.verification_status == "changes" %}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      {% else %}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      {% endif %}
+      <strong>{{ profile.get_verification_status_display }}</strong>
+    </div>
+  </section>
+
+  {# ── MAIN CARD ── #}
+  <div class="vf-card">
+
+    {# ── TIMELINE STEPPER ── #}
+    <div class="vf-timeline">
+
+      {# Step 1 — Profile Complete #}
+      <div class="vf-step
+        {% if profile.verification_status != 'draft' %}vf-step--done
+        {% elif profile.completion_percentage >= 80 %}vf-step--done
+        {% else %}vf-step--active{% endif %}">
+        <div class="vf-step-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="vf-step-body">
+          <strong>Profile built</strong>
+          <span>
+            {% if profile.verification_status != 'draft' or profile.completion_percentage >= 80 %}
+              {{ profile.completion_percentage }}% complete — ready to submit
+            {% else %}
+              {{ profile.completion_percentage }}% complete — keep going
+            {% endif %}
+          </span>
+        </div>
+        <div class="vf-step-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+
+      <div class="vf-connector
+        {% if profile.verification_status != 'draft' %}vf-connector--done{% endif %}">
+      </div>
+
+      {# Step 2 — Submitted #}
+      <div class="vf-step
+        {% if profile.verification_status in 'pending verifying verified changes' %}vf-step--done
+        {% elif profile.verification_status == 'draft' %}vf-step--upcoming{% endif %}">
+        <div class="vf-step-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div class="vf-step-body">
+          <strong>Submitted for vetting</strong>
+          <span>
+            {% if profile.submitted_at %}
+              Submitted on {{ profile.submitted_at|date:"d M Y" }}
+            {% elif profile.verification_status == 'draft' %}
+              Not yet submitted
+            {% else %}
+              Profile submitted
+            {% endif %}
+          </span>
+        </div>
+        <div class="vf-step-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+
+      <div class="vf-connector
+        {% if profile.verification_status in 'verifying verified' %}vf-connector--done{% endif %}">
+      </div>
+
+      {# Step 3 — Under verification #}
+      <div class="vf-step
+        {% if profile.verification_status == 'verifying' %}vf-step--active
+        {% elif profile.verification_status == 'verified' %}vf-step--done
+        {% elif profile.verification_status == 'changes' %}vf-step--warn
+        {% else %}vf-step--upcoming{% endif %}">
+        <div class="vf-step-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="vf-step-body">
+          <strong>Under review</strong>
+          <span>
+            {% if profile.verification_status == 'verifying' %}
+              Our team is currently reviewing your profile
+            {% elif profile.verification_status == 'changes' %}
+              Changes requested — see notes below
+            {% elif profile.verification_status == 'verified' %}
+              Review completed successfully
+            {% else %}
+              Awaiting admin review
+            {% endif %}
+          </span>
+        </div>
+        <div class="vf-step-check">
+          {% if profile.verification_status == 'changes' %}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          {% else %}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="vf-connector
+        {% if profile.verification_status == 'verified' %}vf-connector--done{% endif %}">
+      </div>
+
+      {# Step 4 — Verified #}
+      <div class="vf-step
+        {% if profile.verification_status == 'verified' %}vf-step--done vf-step--verified
+        {% else %}vf-step--upcoming{% endif %}">
+        <div class="vf-step-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <div class="vf-step-body">
+          <strong>Vetted &amp; Verified</strong>
+          <span>
+            {% if profile.verification_status == 'verified' %}
+              {% if profile.verified_at %}Verified on {{ profile.verified_at|date:"d M Y" }}{% else %}Profile fully verified{% endif %}
+            {% else %}
+              In the talent pool — visible to employers
+            {% endif %}
+          </span>
+        </div>
+        <div class="vf-step-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+
+    </div>{# /vf-timeline #}
+
+    {# ── CHANGES NOTES (shown only for changes status) ── #}
+    {% if profile.verification_status == "changes" and profile.verification_notes %}
+      <div class="vf-notes-box">
+        <div class="vf-notes-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <strong>Notes from our review team</strong>
+          <p>{{ profile.verification_notes }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {# ── STATUS DETAIL + ACTIONS ── #}
+    <div class="vf-detail">
+
+      {% if profile.verification_status == "draft" %}
+        <div class="vf-detail-text">
+          <h3>Ready to get started?</h3>
+          <p>Complete your profile to at least 80% and upload your CV before submitting. Our team reviews every profile manually.</p>
+        </div>
+        <div class="vf-actions">
+          <a class="vf-btn vf-btn--primary" href="/dashboard/candidate/profile/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Complete profile
+          </a>
+          {% if profile.completion_percentage >= 40 %}
+            <a class="vf-btn vf-btn--secondary" href="/dashboard/candidate/submit/">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+              Submit for vetting
+            </a>
+          {% endif %}
+        </div>
+
+      {% elif profile.verification_status == "pending" %}
+        <div class="vf-detail-text">
+          <h3>Your profile is in the queue</h3>
+          <p>Your profile has been submitted and is waiting for an administrator to begin the review. This usually takes 1–3 business days.</p>
+        </div>
+        <div class="vf-actions">
+          <a class="vf-btn vf-btn--ghost" href="/dashboard/candidate/profile/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Review profile
+          </a>
+        </div>
+
+      {% elif profile.verification_status == "verifying" %}
+        <div class="vf-detail-text">
+          <h3>Your profile is being reviewed</h3>
+          <p>Our administrators are currently examining your CV, credentials, and profile information. You'll receive a notification as soon as the review is complete.</p>
+        </div>
+        <div class="vf-actions">
+          <a class="vf-btn vf-btn--ghost" href="/dashboard/candidate/notifications/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            View notifications
+          </a>
+        </div>
+
+      {% elif profile.verification_status == "changes" %}
+        <div class="vf-detail-text">
+          <h3>Please update your profile</h3>
+          <p>Our review team has requested changes to your profile. Review the notes above, update the relevant sections, and resubmit when ready.</p>
+        </div>
+        <div class="vf-actions">
+          <a class="vf-btn vf-btn--primary" href="/dashboard/candidate/profile/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Update profile
+          </a>
+          <a class="vf-btn vf-btn--secondary" href="/dashboard/candidate/submit/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            Resubmit for review
+          </a>
+        </div>
+
+      {% elif profile.verification_status == "verified" %}
+        <div class="vf-detail-text vf-detail-text--verified">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            Congratulations — you're verified!
+          </h3>
+          <p>Your professional profile is Vetted &amp; Verified and has been added to the JobSPACE talent pool. You may now be matched with top employers. Keep your profile current to maximise your chances.</p>
+        </div>
+        <div class="vf-actions">
+          <a class="vf-btn vf-btn--green" href="/dashboard/candidate/matches/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            View opportunities
+          </a>
+          <a class="vf-btn vf-btn--ghost" href="/dashboard/candidate/profile/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Keep profile current
+          </a>
+        </div>
+      {% endif %}
+
+    </div>{# /vf-detail #}
+
+    {# ── COMPLETION NUDGE (for draft / changes) ── #}
+    {% if profile.verification_status == "draft" or profile.verification_status == "changes" %}
+      <div class="vf-completion-bar">
+        <div class="vf-completion-bar-head">
+          <span>Profile completion</span>
+          <strong>{{ profile.completion_percentage }}%</strong>
+        </div>
+        <div class="vf-completion-track">
+          <div class="vf-completion-fill" style="width:{{ profile.completion_percentage }}%"></div>
+        </div>
+        <p class="vf-completion-hint">
+          {% if profile.completion_percentage < 40 %}
+            Fill in your personal details, specialization, qualifications, and upload your CV to get started.
+          {% elif profile.completion_percentage < 80 %}
+            Almost there — complete your professional pitch and CV upload to be ready for submission.
+          {% else %}
+            Looking good! Submit your profile for review when you're ready.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+
+  </div>{# /vf-card #}
+
+</main>
+{% endblock %}

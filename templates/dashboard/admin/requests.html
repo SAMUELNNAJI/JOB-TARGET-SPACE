@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Recruitment Requests - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#ea580c"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">RECRUITMENT REQUEST MANAGEMENT</span>
+      <h1 class="dash-hero-title">Turn demand into<br><em>the right match.</em></h1>
+      <p class="dash-hero-sub">Review employer requirements and move requests through the controlled workflow towards successful placement.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Requests</span></div>
+  </section>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>All recruitment requests</h2><span class="verified">{{ page_obj.paginator.count }} total</span></div>
+    <div class="admin-filter">
+      <input placeholder="Search employer or position" id="rs">
+      <select id="rf"><option value="">All statuses</option><option>Submitted</option><option>Under Review</option><option>Matching Candidates</option><option>Candidates Available</option><option>Completed</option></select>
+    </div>
+    <table class="portal-table" id="rt">
+      <thead><tr><th>Employer</th><th>Position</th><th>Qualification</th><th>Experience</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead>
+      <tbody>
+        {% for item in page_obj %}
+          <tr>
+            <td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td>
+            <td>{{ item.position }} <span style="color:#9ca5b6">× {{ item.professionals_required }}</span></td>
+            <td>{{ item.minimum_qualification }}</td>
+            <td>{{ item.years_experience }} yr{% if item.years_experience != 1 %}s{% endif %}</td>
+            <td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td>
+            <td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td>
+            <td>{{ item.created_at|date:"d M Y" }}</td>
+          </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No requests yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+<script>
+const rs=document.getElementById('rs'),rf=document.getElementById('rf');
+function fr(){const q=rs.value.toLowerCase(),s=rf.value.toLowerCase();document.querySelectorAll('#rt tbody tr').forEach(r=>{const t=r.textContent.toLowerCase(),b=r.querySelector('.adm-status-badge')?.textContent.toLowerCase()??'';r.style.display=t.includes(q)&&(s===''||b.includes(s))?'':'none';});}
+rs.addEventListener('input',fr);rf.addEventListener('change',fr);
+</script>
+{% endblock %}

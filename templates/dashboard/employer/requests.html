@@ -1,0 +1,68 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Recruitment Requests - JobSpace{% endblock %}
+{% block content %}
+<main class="dashboard-content">
+
+  <article class="dashboard-hero">
+    <div class="dashboard-hero-content">
+      <small>RECRUITMENT REQUESTS</small>
+      <h1>Build the team<br><em>you need.</em></h1>
+      <p>Submit a staffing request and let JobSPACE administrators source and vet the right professionals.</p>
+    </div>
+  </article>
+
+  <section class="dashboard-panel profile-form-panel employer-form">
+    <div class="dashboard-panel-head">
+      <h2>New recruitment request</h2>
+    </div>
+    <form method="post" class="portal-form">
+      {% csrf_token %}
+      <div class="request-form-grid">
+        <div><label>Professional position</label>{{ form.position }}</div>
+        <div><label>Number required</label>{{ form.professionals_required }}</div>
+        <div><label>Minimum qualification</label>{{ form.minimum_qualification }}</div>
+        <div><label>Years of experience</label>{{ form.years_experience }}</div>
+        <div class="span-2"><label>Professional certifications</label>{{ form.certifications }}</div>
+        <div class="span-2"><label>Required skills / proficiencies</label>{{ form.required_skills }}</div>
+        <div><label>Minimum salary (₦)</label>{{ form.salary_min }}</div>
+        <div><label>Maximum salary (₦)</label>{{ form.salary_max }}</div>
+        <div><label>Salary period</label>{{ form.salary_period }}</div>
+      </div>
+      <button class="dashboard-button form-submit" type="submit">Submit staffing request →</button>
+    </form>
+  </section>
+
+  <section class="dashboard-panel profile-form-panel" style="margin-top:16px">
+    <div class="dashboard-panel-head">
+      <h2>Your requests</h2>
+      <span class="verified">{{ page_obj.paginator.count }} total</span>
+    </div>
+    <table class="portal-table">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Required</th>
+          <th>Salary range</th>
+          <th>Status</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+          <tr>
+            <td><strong>{{ item.position }}</strong></td>
+            <td>{{ item.professionals_required }}</td>
+            <td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td>
+            <td><span class="status-badge">{{ item.get_status_display }}</span></td>
+            <td>{{ item.created_at|date:"d M Y" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No recruitment requests yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+
+</main>
+{% endblock %}

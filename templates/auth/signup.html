@@ -4,43 +4,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign Up — JobSpace</title>
+  <title>{% if role == 'employer' %}Employer Registration{% elif role == 'candidate' %}Candidate Registration{% else %}Create Account{% endif %} — JobSpace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/pages.css' %}">
 </head>
-<body>
-  <main>
-    <section class="auth-shell">
-      <aside class="auth-side"><a class="auth-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a><div><small class="eyebrow">MAKE YOUR NEXT MOVE</small><h2>Build a career or team with <em>more intention.</em></h2><p>Choose your path and let JobSpace connect the right people to meaningful opportunities.</p></div><span class="auth-side-note">One platform. Better matches.</span></aside>
-      <div class="auth-wrap">
-        {% if not role %}
-          <div class="choice-grid">
-            <a class="choice-card" href="?role=employer"><i>◈</i><h3>I'm an Employer</h3><p>Register to submit recruitment requirements and get matched with vetted professionals.</p></a>
-            <a class="choice-card" href="?role=candidate"><i>✦</i><h3>I'm a Candidate</h3><p>Register to build your profile and join the JobSpace talent pool.</p></a>
-          </div>
+<body class="auth-body">
+<main>
+  <section class="auth-shell">
+
+    {# ── LEFT BRAND PANEL ── #}
+    <aside class="auth-side">
+      <div class="auth-side-grid"></div>
+      <a class="auth-brand" href="/">
+        <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+      </a>
+      <div class="auth-side-body">
+        <span class="auth-side-kicker">MAKE YOUR NEXT MOVE</span>
+        {% if role == 'employer' %}
+          <h2 class="auth-side-title">Build the team<br><em>you actually need.</em></h2>
+          <p class="auth-side-desc">Submit your requirements and let our team source, vet, and deliver the right professionals directly to your dashboard.</p>
+        {% elif role == 'candidate' %}
+          <h2 class="auth-side-title">Join the talent pool<br><em>that gets noticed.</em></h2>
+          <p class="auth-side-desc">Build your professional profile, get verified by our team, and get matched with employers looking for exactly your skills.</p>
         {% else %}
-          <form class="auth-card" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="role" value="{{ role }}">
-            <h1>{% if role == 'employer' %}Employer registration{% else %}Candidate registration{% endif %}</h1>
-            <p>{% if role == 'employer' %}Tell us about your company to get started.{% else %}Let's start building your profile.{% endif %}</p>
-            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-            {% if role == 'employer' %}<label for="id_company_name">Company name</label>{{ form.company_name }}{% if form.company_name.errors %}<div class="form-errors">{{ form.company_name.errors }}</div>{% endif %}{% else %}<label for="id_full_name">Full name</label>{{ form.full_name }}{% if form.full_name.errors %}<div class="form-errors">{{ form.full_name.errors }}</div>{% endif %}{% endif %}
-            <label for="id_email">Email address</label>{{ form.email }}{% if form.email.errors %}<div class="form-errors">{{ form.email.errors }}</div>{% endif %}
-            <label for="id_phone">Phone number</label>{{ form.phone }}
-            <label for="id_password1">Password</label>{{ form.password1 }}{% if form.password1.errors %}<div class="form-errors">{{ form.password1.errors }}</div>{% endif %}
-            <label for="id_password2">Confirm password</label>{{ form.password2 }}{% if form.password2.errors %}<div class="form-errors">{{ form.password2.errors }}</div>{% endif %}
-            <button class="button" type="submit">Create account　→</button>
-            <div class="auth-features"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure account</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> Priority matching</div></div>
-            <p class="auth-foot">Need a different account type? <a href="/signup/">Go back</a></p>
-          </form>
+          <h2 class="auth-side-title">Build a career or team with<br><em>more intention.</em></h2>
+          <p class="auth-side-desc">Choose your path and let JobSpace connect the right people to meaningful opportunities — every step handled by humans.</p>
         {% endif %}
-        {% if role %}<div class="auth-features-mobile"><div class="auth-feature-pill"><span class="pill-icon">✓</span> Secure account</div><div class="auth-feature-pill"><span class="pill-icon">✦</span> Human support</div><div class="auth-feature-pill"><span class="pill-icon">↻</span> Priority matching</div></div>{% endif %}
-        <p class="auth-foot" style="margin-top:14px">Already have an account? <a href="/signin/">Sign in</a></p>
       </div>
-    </section>
-  </main>
+      <div class="auth-side-pills">
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div><strong>Fully vetted talent</strong><span>Every candidate reviewed by our team</span></div>
+        </div>
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </div>
+          <div><strong>Smart matching</strong><span>Placed by skill, not just keywords</span></div>
+        </div>
+        <div class="auth-side-pill">
+          <div class="auth-side-pill-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div><strong>One platform</strong><span>Better matches. Better outcomes.</span></div>
+        </div>
+      </div>
+    </aside>
+
+    {# ── RIGHT PANEL ── #}
+    <div class="auth-wrap">
+
+      {% if not role %}
+        {# ── ROLE PICKER ── #}
+        <div class="auth-choice-wrap">
+          <div class="auth-choice-heading">
+            <h1>How will you use JobSpace?</h1>
+            <p>Choose the account type that fits your goal.</p>
+          </div>
+          <div class="choice-grid">
+            <a class="choice-card choice-card--employer" href="?role=employer">
+              <div class="choice-card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <h3>I'm an Employer</h3>
+              <p>Submit recruitment requirements and receive vetted professionals matched to your exact needs.</p>
+              <span class="choice-card-arrow">Get started <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+            </a>
+            <a class="choice-card choice-card--candidate" href="?role=candidate">
+              <div class="choice-card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <h3>I'm a Candidate</h3>
+              <p>Build your verified profile, join the talent pool, and get matched with top employers.</p>
+              <span class="choice-card-arrow">Get started <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+            </a>
+          </div>
+          <p class="auth-choice-foot">Already have an account? <a href="/signin/">Sign in</a></p>
+        </div>
+
+      {% else %}
+        {# ── REGISTRATION FORM ── #}
+        <form class="auth-card" method="post" autocomplete="on">
+          {% csrf_token %}
+          <input type="hidden" name="role" value="{{ role }}">
+
+          <a class="auth-card-logo" href="/signup/">
+            <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+          </a>
+
+          <h1>{% if role == 'employer' %}Employer registration{% else %}Candidate registration{% endif %}</h1>
+          <p>{% if role == 'employer' %}Tell us about your company to get started.{% else %}Let's start building your professional profile.{% endif %}</p>
+
+          {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          {% if role == 'employer' %}
+            <label for="{{ form.company_name.id_for_label }}">Company name</label>
+            {{ form.company_name }}
+            {% if form.company_name.errors %}<div class="form-errors">{{ form.company_name.errors }}</div>{% endif %}
+          {% else %}
+            <label for="{{ form.full_name.id_for_label }}">Full name</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}<div class="form-errors">{{ form.full_name.errors }}</div>{% endif %}
+          {% endif %}
+
+          <label for="{{ form.email.id_for_label }}">Email address</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="form-errors">{{ form.email.errors }}</div>{% endif %}
+
+          <label for="{{ form.phone.id_for_label }}">Phone number</label>
+          {{ form.phone }}
+
+          <label for="{{ form.password1.id_for_label }}">Password</label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}<div class="form-errors">{{ form.password1.errors }}</div>{% endif %}
+
+          <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<div class="form-errors">{{ form.password2.errors }}</div>{% endif %}
+
+          <button class="button" type="submit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Create {% if role == 'employer' %}employer{% else %}candidate{% endif %} account
+          </button>
+
+          <div class="auth-features">
+            <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>Secure account</div>
+            <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>Human support</div>
+            <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg></span>Priority matching</div>
+          </div>
+
+          <p class="auth-foot">Wrong account type? <a href="/signup/">Go back</a></p>
+          <p class="auth-foot" style="margin-top:6px">Already have an account? <a href="/signin/">Sign in</a></p>
+          <p class="auth-foot" style="margin-top:6px;font-size:11px;color:#9aa3b7">By signing up you agree to our <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a></p>
+        </form>
+      {% endif %}
+
+      {# Mobile pill strip #}
+      <div class="auth-features-mobile">
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>Secure account</div>
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>Human support</div>
+        <div class="auth-feature-pill"><span class="pill-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg></span>Priority matching</div>
+      </div>
+
+    </div>
+  </section>
+</main>
 </body>
 </html>

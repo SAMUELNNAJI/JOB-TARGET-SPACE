@@ -1,12 +1,244 @@
-{% extends "base.html" %}
-
-{% block title %}Admin Dashboard — JobSpace{% endblock %}
-
+{% extends "dashboard/base.html" %}
+{% block title %}Admin Dashboard - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
 {% block content %}
-<main class="section dashboard-page">
-  <span class="section-label">ADMIN DASHBOARD</span>
-  <h1>Welcome, {{ request.user.username }}.</h1>
-  <p>Use the Django admin dashboard to manage users, profiles, and platform data.</p>
-  <a class="button" href="/admin/">Open admin dashboard　→</a>
+<main class="dashboard-content adm-home">
+
+  <section class="adm-hero">
+    <div class="adm-hero-bg">
+      <span class="adm-orb adm-orb--1"></span>
+      <span class="adm-orb adm-orb--2"></span>
+      <span class="adm-orb adm-orb--3"></span>
+      <div class="adm-hero-grid"></div>
+    </div>
+    <div class="adm-hero-content">
+      <span class="adm-hero-kicker"><span class="adm-kicker-dot"></span>JOBSPACE ADMIN CONTROL CENTER</span>
+      <h1 class="adm-hero-title">The brain behind<br><em>better hiring.</em></h1>
+      <p class="adm-hero-sub">Review, verify, match, and move the JobSPACE ecosystem forward from one operational workspace.</p>
+      <div class="adm-hero-actions">
+        <a class="adm-btn adm-btn--primary" href="/dashboard/admin/matching/">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Open Matching Workspace
+        </a>
+        <a class="adm-btn adm-btn--ghost" href="/dashboard/admin/candidates/">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Review Candidates
+        </a>
+      </div>
+    </div>
+    <div class="adm-hero-stats-box">
+      <div class="adm-hero-stat-row">
+        <div class="adm-hero-vstat"><strong>{{ candidates.count }}</strong><span>Candidates</span></div>
+        <div class="adm-hero-vstat-div"></div>
+        <div class="adm-hero-vstat"><strong>{{ employers.count }}</strong><span>Employers</span></div>
+      </div>
+      <div class="adm-hero-stat-row">
+        <div class="adm-hero-vstat"><strong>{{ verified_candidates.count }}</strong><span>Verified</span></div>
+        <div class="adm-hero-vstat-div"></div>
+        <div class="adm-hero-vstat"><strong>{{ matches.count }}</strong><span>Matches</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="adm-metrics">
+    <article class="adm-metric adm-metric--candidates">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/candidates/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ candidates.count }}</strong>
+      <small class="adm-metric-label">Total Candidates</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--pending">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/candidates/">Review →</a>
+      </div>
+      <strong class="adm-metric-val">{{ pending_candidates.count }}</strong>
+      <small class="adm-metric-label">Pending Reviews</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--verified">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/talent-pool/">Pool →</a>
+      </div>
+      <strong class="adm-metric-val">{{ verified_candidates.count }}</strong>
+      <small class="adm-metric-label">Vetted &amp; Verified</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--employers">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/employers/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ employers.count }}</strong>
+      <small class="adm-metric-label">Total Employers</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--subscriptions">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/subscriptions/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ active_subscriptions.count }}</strong>
+      <small class="adm-metric-label">Active Subscriptions</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--requests">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/requests/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ requests.count }}</strong>
+      <small class="adm-metric-label">Active Requests</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--matches">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/matching/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ matches.count }}</strong>
+      <small class="adm-metric-label">Successful Matches</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--payments">
+      <div class="adm-metric-top">
+        <div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+        <a class="adm-metric-link" href="/dashboard/admin/payments/">View →</a>
+      </div>
+      <strong class="adm-metric-val">{{ payments|length }}</strong>
+      <small class="adm-metric-label">Total Payments</small>
+      <div class="adm-metric-glow"></div>
+    </article>
+  </div>
+
+  <div class="adm-body">
+    <div class="adm-body-left">
+
+      <section class="adm-panel">
+        <div class="adm-panel-head">
+          <div><h2 class="adm-panel-title">Pending Actions</h2><p class="adm-panel-sub">Candidates awaiting verification</p></div>
+          <a class="adm-link" href="/dashboard/admin/candidates/">Review all →</a>
+        </div>
+        {% if pending_candidates %}
+          <div class="adm-action-list">
+            {% for c in pending_candidates|slice:":5" %}
+              <div class="adm-action-row">
+                <div class="adm-action-avatar">{{ c.legal_name|default:c.user.username|slice:":2"|upper }}</div>
+                <div class="adm-action-info">
+                  <strong>{{ c.legal_name|default:c.user.username }}</strong>
+                  <span>{{ c.get_verification_status_display }} · {{ c.completion_percentage }}% complete</span>
+                </div>
+                <div class="adm-action-right">
+                  <span class="adm-status-badge adm-status-badge--{{ c.verification_status }}">{{ c.get_verification_status_display }}</span>
+                  <a class="adm-row-btn" href="/admin/website/profile/">Review</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adm-empty-inline">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>All clear — no pending candidate reviews.</span>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="adm-panel">
+        <div class="adm-panel-head">
+          <div><h2 class="adm-panel-title">Recent Recruitment Requests</h2><p class="adm-panel-sub">Latest employer staffing requirements</p></div>
+          <a class="adm-link" href="/dashboard/admin/requests/">Manage all →</a>
+        </div>
+        <table class="portal-table">
+          <thead><tr><th>Employer</th><th>Position</th><th>Required</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for item in requests|slice:":6" %}
+              <tr>
+                <td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td>
+                <td>{{ item.position }}</td>
+                <td>{{ item.professionals_required }}</td>
+                <td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td>
+                <td>{{ item.created_at|date:"d M Y" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No recruitment requests yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+    <aside class="adm-body-right">
+
+      <div class="adm-panel">
+        <div class="adm-panel-head">
+          <div><h2 class="adm-panel-title">Recent Activity</h2><p class="adm-panel-sub">Latest admin actions</p></div>
+          <a class="adm-link" href="/dashboard/admin/logs/">Full log →</a>
+        </div>
+        {% if logs %}
+          <div class="adm-log-list">
+            {% for log in logs %}
+              <div class="adm-log-row">
+                <div class="adm-log-dot"></div>
+                <div class="adm-log-body"><strong>{{ log.action }}</strong><span>{{ log.subject|truncatechars:48 }}</span></div>
+                <time class="adm-log-time">{{ log.created_at|date:"d M H:i" }}</time>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg><span>No activity logged yet.</span></div>
+        {% endif %}
+      </div>
+
+      <div class="adm-panel">
+        <div class="adm-panel-head">
+          <div><h2 class="adm-panel-title">New Candidates</h2><p class="adm-panel-sub">Recently registered</p></div>
+          <a class="adm-link" href="/dashboard/admin/candidates/">All →</a>
+        </div>
+        <div class="adm-mini-list">
+          {% for c in recent_candidates %}
+            <div class="adm-mini-row">
+              <div class="adm-mini-avatar">{{ c.legal_name|default:c.user.username|slice:":2"|upper }}</div>
+              <div class="adm-mini-info"><strong>{{ c.legal_name|default:c.user.username }}</strong><span>{{ c.user.date_joined|date:"d M Y" }}</span></div>
+              <span class="adm-status-badge adm-status-badge--{{ c.verification_status }}" style="font-size:8px">{{ c.get_verification_status_display }}</span>
+            </div>
+          {% empty %}
+            <p style="font-size:12px;color:#7a8599;padding:8px 0">No candidates yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="adm-panel">
+        <div class="adm-panel-head">
+          <div><h2 class="adm-panel-title">New Employers</h2><p class="adm-panel-sub">Recently registered</p></div>
+          <a class="adm-link" href="/dashboard/admin/employers/">All →</a>
+        </div>
+        <div class="adm-mini-list">
+          {% for e in recent_employers %}
+            <div class="adm-mini-row">
+              <div class="adm-mini-avatar adm-mini-avatar--emp">{{ e.company_name|default:e.user.username|slice:":2"|upper }}</div>
+              <div class="adm-mini-info"><strong>{{ e.company_name|default:e.user.username }}</strong><span>{{ e.industry_sector|default:"Industry not set" }}</span></div>
+            </div>
+          {% empty %}
+            <p style="font-size:12px;color:#7a8599;padding:8px 0">No employers yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="adm-quick">
+        <h3 class="adm-panel-title" style="margin-bottom:12px">Quick Links</h3>
+        <a class="adm-quick-btn" href="/dashboard/admin/candidates/">Candidate Management</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/employers/">Employer Management</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/matching/">Matching &amp; Push</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/talent-pool/">Talent Pool</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/notifications/">All Notifications</a>
+        <a class="adm-quick-btn" href="/admin/">Django Admin</a>
+      </div>
+
+    </aside>
+  </div>
 </main>
 {% endblock %}

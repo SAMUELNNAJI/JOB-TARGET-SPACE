@@ -1,0 +1,46 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Reports &amp; Analytics - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#2563eb;opacity:.35"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">REPORTS &amp; ANALYTICS</span>
+      <h1 class="dash-hero-title">See the network<br><em>getting stronger.</em></h1>
+      <p class="dash-hero-sub">Understand registrations, verification rates, demand, successful matches, and subscription revenue at a glance.</p>
+    </div>
+  </section>
+  <div class="adm-metrics" style="margin-bottom:18px">
+    <article class="adm-metric adm-metric--candidates">
+      <div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div>
+      <strong class="adm-metric-val">{{ candidates.count }}</strong><small class="adm-metric-label">Total Candidates</small><div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--verified">
+      <div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div></div>
+      <strong class="adm-metric-val">{{ verified.count }}</strong><small class="adm-metric-label">Verified Candidates</small><div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--employers">
+      <div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div></div>
+      <strong class="adm-metric-val">{{ employers.count }}</strong><small class="adm-metric-label">Employer Registrations</small><div class="adm-metric-glow"></div>
+    </article>
+    <article class="adm-metric adm-metric--matches">
+      <div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div></div>
+      <strong class="adm-metric-val">{{ matches.count }}</strong><small class="adm-metric-label">Successful Matches</small><div class="adm-metric-glow"></div>
+    </article>
+  </div>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>Platform activity overview</h2></div>
+    <div style="padding:8px 4px 12px;display:flex;flex-direction:column;gap:16px">
+      {% with total=candidates.count %}{% if total > 0 %}
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Candidates registered</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--blue" style="width:100%"></div></div><span class="adm-report-bar-val">{{ candidates.count }}</span></div>
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Vetted &amp; verified</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--green" style="width:{% widthratio verified.count candidates.count 100 %}%"></div></div><span class="adm-report-bar-val">{{ verified.count }}</span></div>
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Employer registrations</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--red" style="width:{% widthratio employers.count candidates.count 100 %}%"></div></div><span class="adm-report-bar-val">{{ employers.count }}</span></div>
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Recruitment requests</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--amber" style="width:{% widthratio requests.count candidates.count 100 %}%"></div></div><span class="adm-report-bar-val">{{ requests.count }}</span></div>
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Successful matches</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--purple" style="width:{% widthratio matches.count candidates.count 100 %}%"></div></div><span class="adm-report-bar-val">{{ matches.count }}</span></div>
+        <div class="adm-report-bar-row"><span class="adm-report-bar-label">Successful payments</span><div class="adm-report-bar-track"><div class="adm-report-bar-fill adm-report-bar-fill--green" style="width:{% widthratio payments.count candidates.count 100 %}%"></div></div><span class="adm-report-bar-val">{{ payments.count }}</span></div>
+      {% else %}<p style="padding:24px;text-align:center;color:#7a8599;font-size:12px">No data yet — metrics will appear once users register.</p>{% endif %}{% endwith %}
+    </div>
+  </section>
+</main>
+{% endblock %}

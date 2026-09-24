@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Payments - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#12b76a"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">PAYMENTS &amp; REVENUE</span>
+      <h1 class="dash-hero-title">Every payment,<br><em>accounted for.</em></h1>
+      <p class="dash-hero-sub">Track subscription revenue, payment status, employer accounts, plan types, and reference IDs across the platform.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Transactions</span></div>
+  </section>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>All payments</h2><span class="verified">{{ page_obj.paginator.count }} records</span></div>
+    <div class="admin-filter">
+      <input placeholder="Search employer or reference" id="ps">
+      <select id="pf"><option value="">All statuses</option><option>Pending</option><option>Successful</option><option>Failed</option></select>
+    </div>
+    <table class="portal-table" id="pt">
+      <thead><tr><th>Employer</th><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th><th>Reference</th></tr></thead>
+      <tbody>
+        {% for p in page_obj %}
+          <tr>
+            <td><strong>{{ p.employer.company_name|default:p.employer.user.username }}</strong></td>
+            <td>{{ p.subscription.get_plan_display|default:"Subscription" }}</td>
+            <td style="white-space:nowrap">₦{{ p.amount|floatformat:0 }}</td>
+            <td>{{ p.paid_at|date:"d M Y" }}</td>
+            <td><span class="status-badge">{{ p.get_status_display }}</span></td>
+            <td style="font-size:10px;color:#7a8599">{{ p.reference }}</td>
+          </tr>
+        {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No payments recorded.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+<script>
+const ps=document.getElementById('ps'),pf=document.getElementById('pf');
+function fp(){const q=ps.value.toLowerCase(),s=pf.value.toLowerCase();document.querySelectorAll('#pt tbody tr').forEach(r=>{const t=r.textContent.toLowerCase(),b=r.querySelector('.status-badge')?.textContent.toLowerCase()??'';r.style.display=t.includes(q)&&(s===''||b.includes(s))?'':'none';});}
+ps.addEventListener('input',fp);pf.addEventListener('change',fp);
+</script>
+{% endblock %}

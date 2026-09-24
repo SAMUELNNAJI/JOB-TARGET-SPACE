@@ -1,15 +1,324 @@
-{% extends "base.html" %}
-
-{% block title %}Candidate Dashboard — JobSpace{% endblock %}
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Candidate Dashboard - JobSpace{% endblock %}
+{% block body_class %}candidate-dashboard{% endblock %}
 
 {% block content %}
-<main class="section dashboard-page">
-  <span class="section-label">CANDIDATE DASHBOARD</span>
-  <h1>Welcome, {{ request.user.first_name|default:request.user.username }}.</h1>
-  <p>Manage your profile, discover curated roles, and keep your next move moving.</p>
-  <div class="feature-grid">
-    <article class="feature"><small>PROFILE</small><h2>Build your profile</h2><p>Complete your experience, skills, and preferences so employers can find the right fit.</p><a class="button" href="/candidates/">View candidate resources　→</a></article>
-    <article class="feature"><small>OPPORTUNITIES</small><h2>Find your next role</h2><p>Explore quality opportunities selected for ambitious professionals.</p><a class="button" href="/candidates/">Browse opportunities　→</a></article>
+<main class="dashboard-content cand-home">
+
+  {# ── WELCOME HERO ── #}
+  <section class="cand-hero">
+    <div class="cand-hero-bg">
+      <span class="cand-hero-orb cand-hero-orb--1"></span>
+      <span class="cand-hero-orb cand-hero-orb--2"></span>
+      <span class="cand-hero-orb cand-hero-orb--3"></span>
+      <div class="cand-hero-grid-lines"></div>
+    </div>
+    <div class="cand-hero-content">
+      <span class="cand-hero-badge">
+        <span class="cand-hero-badge-dot"></span>
+        Good {{ time_of_day|default:"day" }}, {{ request.user.first_name|default:"there" }}
+      </span>
+      <h1 class="cand-hero-title">Your Future<br><em>Starts Here.</em></h1>
+      <p class="cand-hero-sub">Build your profile, get verified, and get matched with top employers — all in one place.</p>
+      <div class="cand-hero-actions">
+        <a class="cand-btn cand-btn--primary" href="/dashboard/candidate/profile/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          Update Profile
+        </a>
+        <a class="cand-btn cand-btn--ghost" href="/dashboard/candidate/verification/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+          Check Verification
+        </a>
+      </div>
+    </div>
+    <div class="cand-hero-visual">
+      <div class="cand-hero-card cand-hero-card--float">
+        <div class="cand-hero-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <strong>Profile Verified</strong>
+          <span>Your credentials are secure</span>
+        </div>
+      </div>
+      <div class="cand-hero-stat-card">
+        <span class="cand-hero-stat-num">{{ profile.completion_percentage }}%</span>
+        <span class="cand-hero-stat-label">Profile Complete</span>
+        <div class="cand-hero-stat-bar">
+          <div class="cand-hero-stat-fill" style="width:{{ profile.completion_percentage }}%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ── STAT CARDS ── #}
+  <div class="cand-stats">
+    <article class="cand-stat cand-stat--verify">
+      <div class="cand-stat-top">
+        <div class="cand-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+        </div>
+        <span class="cand-stat-trend cand-stat-trend--up">Active</span>
+      </div>
+      <strong class="cand-stat-val">{{ profile.get_verification_status_display }}</strong>
+      <small class="cand-stat-label">Verification Status</small>
+      <div class="cand-stat-glow"></div>
+    </article>
+
+    <article class="cand-stat cand-stat--progress">
+      <div class="cand-stat-top">
+        <div class="cand-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <span class="cand-stat-trend cand-stat-trend--neutral">{{ profile.completion_percentage }}%</span>
+      </div>
+      <strong class="cand-stat-val">Profile</strong>
+      <small class="cand-stat-label">Completion Progress</small>
+      <div class="cand-stat-mini-bar"><div style="width:{{ profile.completion_percentage }}%"></div></div>
+      <div class="cand-stat-glow"></div>
+    </article>
+
+    <article class="cand-stat cand-stat--cv">
+      <div class="cand-stat-top">
+        <div class="cand-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        {% if profile.cv_documents.exists %}
+          <span class="cand-stat-trend cand-stat-trend--up">Ready</span>
+        {% else %}
+          <span class="cand-stat-trend cand-stat-trend--warn">Missing</span>
+        {% endif %}
+      </div>
+      <strong class="cand-stat-val">{% if profile.cv_documents.exists %}Uploaded{% else %}Not Yet{% endif %}</strong>
+      <small class="cand-stat-label">CV / Resume Status</small>
+      <div class="cand-stat-glow"></div>
+    </article>
+
+    <article class="cand-stat cand-stat--avail">
+      <div class="cand-stat-top">
+        <div class="cand-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="cand-stat-trend cand-stat-trend--neutral">Status</span>
+      </div>
+      <strong class="cand-stat-val">{{ profile.get_availability_display|default:"Not set" }}</strong>
+      <small class="cand-stat-label">Availability</small>
+      <div class="cand-stat-glow"></div>
+    </article>
   </div>
+
+  {# ── MAIN BODY ── #}
+  <div class="cand-body">
+    <div class="cand-body-left">
+
+      {# ── JOB OPPORTUNITIES ── #}
+      <section class="cand-panel">
+        <div class="cand-panel-head">
+          <div>
+            <h2 class="cand-panel-title">Recent Opportunities</h2>
+            <p class="cand-panel-sub">Hand-picked matches selected by JobSPACE admins</p>
+          </div>
+          <a class="cand-link" href="/dashboard/candidate/matches/">View All →</a>
+        </div>
+        <div class="cand-jobs">
+          <article class="cand-job">
+            <div class="cand-job-logo" style="--logo-bg:#0f3460">AB</div>
+            <div class="cand-job-info">
+              <h3>Software Engineer</h3>
+              <p><span>ABC Solutions Ltd</span> · Lagos · Full-time</p>
+            </div>
+            <div class="cand-job-meta">
+              <span class="cand-job-salary">₦450k – ₦700k</span>
+              <span class="cand-job-tag">Tech</span>
+            </div>
+            <a class="cand-job-btn" href="/dashboard/candidate/matches/">View</a>
+          </article>
+
+          <article class="cand-job">
+            <div class="cand-job-logo" style="--logo-bg:#16793a">GT</div>
+            <div class="cand-job-info">
+              <h3>Marketing Manager</h3>
+              <p><span>GreenTech Global</span> · Abuja · Full-time</p>
+            </div>
+            <div class="cand-job-meta">
+              <span class="cand-job-salary">₦350k – ₦550k</span>
+              <span class="cand-job-tag">Marketing</span>
+            </div>
+            <a class="cand-job-btn" href="/dashboard/candidate/matches/">View</a>
+          </article>
+
+          <article class="cand-job">
+            <div class="cand-job-logo" style="--logo-bg:#252b35">PH</div>
+            <div class="cand-job-info">
+              <h3>Medical Technologist</h3>
+              <p><span>Prime Healthcare</span> · Port Harcourt</p>
+            </div>
+            <div class="cand-job-meta">
+              <span class="cand-job-salary">₦300k – ₦500k</span>
+              <span class="cand-job-tag">Health</span>
+            </div>
+            <a class="cand-job-btn" href="/dashboard/candidate/matches/">View</a>
+          </article>
+        </div>
+      </section>
+
+      {# ── PROFILE PROGRESS ── #}
+      <section class="cand-panel cand-panel--progress">
+        <div class="cand-panel-head">
+          <div>
+            <h2 class="cand-panel-title">Profile Progress</h2>
+            <p class="cand-panel-sub">Complete these steps to improve your match quality</p>
+          </div>
+          <a class="cand-link" href="/dashboard/candidate/profile/">Edit →</a>
+        </div>
+        <div class="cand-progress-steps">
+          <div class="cand-progress-step cand-progress-step--done">
+            <div class="cand-progress-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="cand-progress-info">
+              <strong>Personal Information</strong>
+              <span>Name, contact details &amp; address</span>
+            </div>
+          </div>
+          <div class="cand-progress-step cand-progress-step--done">
+            <div class="cand-progress-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="cand-progress-info">
+              <strong>Professional Specialization</strong>
+              <span>Industry areas &amp; role categories</span>
+            </div>
+          </div>
+          <div class="cand-progress-step cand-progress-step--done">
+            <div class="cand-progress-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="cand-progress-info">
+              <strong>Qualifications &amp; Certifications</strong>
+              <span>Degrees, certificates &amp; skills</span>
+            </div>
+          </div>
+          <div class="cand-progress-step {% if profile.cv_documents.exists %}cand-progress-step--done{% else %}cand-progress-step--pending{% endif %}">
+            <div class="cand-progress-check">
+              {% if profile.cv_documents.exists %}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              {% else %}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {% endif %}
+            </div>
+            <div class="cand-progress-info">
+              <strong>CV Uploaded</strong>
+              <span>PDF or DOCX professional document</span>
+            </div>
+            {% if not profile.cv_documents.exists %}<a class="cand-progress-cta" href="/dashboard/candidate/profile/">Upload now →</a>{% endif %}
+          </div>
+          <div class="cand-progress-step cand-progress-step--pending">
+            <div class="cand-progress-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <div class="cand-progress-info">
+              <strong>Professional Pitch</strong>
+              <span>Short statement about your goals</span>
+            </div>
+            <a class="cand-progress-cta" href="/dashboard/candidate/profile/">Add now →</a>
+          </div>
+        </div>
+        <div class="cand-progress-bar-wrap">
+          <div class="cand-progress-bar-track">
+            <div class="cand-progress-bar-fill" style="width:{{ profile.completion_percentage }}%">
+              <span>{{ profile.completion_percentage }}%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>{# /cand-body-left #}
+
+    <aside class="cand-body-right">
+
+      {# ── PROFILE CARD ── #}
+      <div class="cand-profile-card">
+        <div class="cand-profile-card-bg"></div>
+        <div class="cand-profile-avatar-wrap">
+          <div class="cand-profile-avatar">{{ request.user.first_name|default:'JS'|slice:':2'|upper }}</div>
+          <div class="cand-profile-avatar-ring"></div>
+        </div>
+        <div class="cand-profile-name">{{ request.user.first_name|default:request.user.username }} {{ request.user.last_name }}</div>
+        <div class="cand-profile-role">Professional Candidate</div>
+        <div class="cand-profile-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+          {{ profile.get_verification_status_display }}
+        </div>
+        <div class="cand-profile-details">
+          <div class="cand-profile-detail-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>{{ request.user.email }}</span>
+          </div>
+          <div class="cand-profile-detail-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>{{ profile.phone|default:'Phone not set' }}</span>
+          </div>
+          <div class="cand-profile-detail-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>{{ profile.specializations.first|default:'Specialization not set' }}</span>
+          </div>
+        </div>
+        <a class="cand-profile-edit-btn" href="/dashboard/candidate/profile/">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          Edit Profile
+        </a>
+      </div>
+
+      {# ── QUICK ACTIONS ── #}
+      <div class="cand-quick-actions">
+        <h3 class="cand-panel-title" style="margin-bottom:12px">Quick Actions</h3>
+        <a class="cand-action-btn cand-action-btn--primary" href="/dashboard/candidate/profile/">
+          <div class="cand-action-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </div>
+          <div class="cand-action-copy">
+            <strong>Update Profile</strong>
+            <span>Keep your info current</span>
+          </div>
+          <svg class="cand-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a class="cand-action-btn" href="/dashboard/candidate/verification/">
+          <div class="cand-action-icon cand-action-icon--green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+          </div>
+          <div class="cand-action-copy">
+            <strong>Verification Status</strong>
+            <span>Track your vetting progress</span>
+          </div>
+          <svg class="cand-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+        <a class="cand-action-btn" href="/dashboard/candidate/matches/">
+          <div class="cand-action-icon cand-action-icon--blue">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="cand-action-copy">
+            <strong>View Opportunities</strong>
+            <span>See your matched roles</span>
+          </div>
+          <svg class="cand-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+
+      {# ── TIP CARD ── #}
+      <div class="cand-tip-card">
+        <div class="cand-tip-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <strong>Pro Tip</strong>
+          <p>Candidates with a complete profile and uploaded CV are <em>3× more likely</em> to be matched with a top employer.</p>
+        </div>
+      </div>
+
+    </aside>{# /cand-body-right #}
+  </div>{# /cand-body #}
+
 </main>
 {% endblock %}

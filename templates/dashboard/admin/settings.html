@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Admin Settings - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">ADMIN SETTINGS &amp; SECURITY</span>
+      <h1 class="dash-hero-title">Operate with<br><em>confidence.</em></h1>
+      <p class="dash-hero-sub">Admin access is protected by Django staff/superuser permissions, session authentication, CSRF protection, and auditable actions.</p>
+    </div>
+  </section>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <section class="adm-panel">
+      <div class="adm-panel-head"><div><h2 class="adm-panel-title">Security Controls</h2><p class="adm-panel-sub">Active platform-wide protections</p></div></div>
+      <div class="adm-action-list">
+        {% for label, detail in security_controls %}
+          <div class="adm-action-row">
+            <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="adm-action-info"><strong>{{ label }}</strong><span>{{ detail }}</span></div>
+            <span class="status-badge">Enabled</span>
+          </div>
+        {% empty %}
+          <div class="adm-action-row"><div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="adm-action-info"><strong>Role-based access</strong><span>Staff/superuser Django permission model</span></div><span class="status-badge">Enabled</span></div>
+          <div class="adm-action-row"><div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="adm-action-info"><strong>Session security</strong><span>Django session middleware active</span></div><span class="status-badge">Enabled</span></div>
+          <div class="adm-action-row"><div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="adm-action-info"><strong>CSRF protection</strong><span>Token validation on all POST requests</span></div><span class="status-badge">Enabled</span></div>
+          <div class="adm-action-row"><div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="adm-action-info"><strong>Audit logging</strong><span>All admin actions recorded in AuditLog</span></div><span class="status-badge">Enabled</span></div>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="adm-panel">
+      <div class="adm-panel-head"><div><h2 class="adm-panel-title">Admin Actions</h2><p class="adm-panel-sub">Quick links for administration</p></div></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a class="adm-quick-btn" href="/admin/password_change/">Change admin password</a>
+        <a class="adm-quick-btn" href="/admin/">Django admin panel</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/logs/">View activity logs</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/candidates/">Manage candidates</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/employers/">Manage employers</a>
+        <a class="adm-quick-btn" href="/dashboard/admin/matching/">Matching workspace</a>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}

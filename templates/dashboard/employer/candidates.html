@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Candidates Received - JobSpace{% endblock %}
+{% block content %}
+<main class="dashboard-content">
+
+  <article class="dashboard-hero">
+    <div class="dashboard-hero-content">
+      <small>ADMIN-PUSHED CANDIDATES</small>
+      <h1>Meet your next<br><em>great hire.</em></h1>
+      <p>Only candidates reviewed and specifically pushed by JobSPACE administrators appear here.</p>
+    </div>
+  </article>
+
+  <section class="dashboard-panel profile-form-panel">
+    <div class="dashboard-panel-head">
+      <h2>Candidates received</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="verified">● Vetted by JobSPACE</span>
+        <span class="verified">{{ page_obj.paginator.count }} total</span>
+      </div>
+    </div>
+
+    {% for match in page_obj %}
+      <article class="job-row">
+        <span class="job-company">{{ match.profile.user.first_name|slice:":2"|upper }}</span>
+        <div>
+          <h3>{{ match.profile.legal_name|default:match.profile.user.first_name }}</h3>
+          <p>
+            {{ match.profile.specializations.first|default:"Professional" }}
+            · {{ match.profile.primary_degree|default:"Qualification pending" }}
+          </p>
+          <p style="color:#9ca5b6;font-size:9px">{{ match.profile.certifications|default:"Verified professional profile" }}</p>
+        </div>
+        <span class="salary">{{ match.profile.get_availability_display|default:"Available" }}</span>
+        <a class="job-apply" href="/dashboard/employer/candidates/{{ match.id }}/shortlist/">
+          Shortlist
+        </a>
+      </article>
+    {% empty %}
+      <div class="empty-state">
+        <div class="dashboard-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <h3>No candidates received yet</h3>
+        <p>JobSPACE administrators will push vetted candidates here when they match your active recruitment requests.</p>
+      </div>
+    {% endfor %}
+
+    {% include "dashboard/pagination.html" %}
+  </section>
+
+</main>
+{% endblock %}

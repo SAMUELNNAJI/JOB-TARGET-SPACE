@@ -1,15 +1,331 @@
-{% extends "base.html" %}
-
-{% block title %}Employer Dashboard — JobSpace{% endblock %}
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Employer Dashboard - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
 
 {% block content %}
-<main class="section dashboard-page">
-  <span class="section-label">EMPLOYER DASHBOARD</span>
-  <h1>Welcome, {{ request.user.profile.company_name|default:request.user.username }}.</h1>
-  <p>Find vetted professionals and manage your hiring activity from one focused workspace.</p>
-  <div class="feature-grid">
-    <article class="feature"><small>HIRING</small><h2>Find top talent</h2><p>Tell us what your team needs and receive thoughtful, vetted matches.</p><a class="button" href="/employers/">Start hiring　→</a></article>
-    <article class="feature"><small>PLANS</small><h2>Manage your plan</h2><p>Review the hiring options designed for every stage of growth.</p><a class="button" href="/employers/#pricing">View plans　→</a></article>
+<main class="dashboard-content emp-home">
+
+  {# ── HERO ── #}
+  <section class="emp-hero">
+    <div class="emp-hero-bg">
+      <span class="emp-orb emp-orb--1"></span>
+      <span class="emp-orb emp-orb--2"></span>
+      <span class="emp-orb emp-orb--3"></span>
+      <div class="emp-hero-grid"></div>
+    </div>
+    <div class="emp-hero-content">
+      <span class="emp-hero-kicker">
+        <span class="emp-kicker-dot"></span>
+        Welcome back, {{ employer.company_name|default:request.user.username }}
+      </span>
+      <h1 class="emp-hero-title">Build your<br><em>best team.</em></h1>
+      <p class="emp-hero-sub">JobSPACE sources, vets and delivers the right professionals directly to your dashboard. You focus on choosing — we handle the rest.</p>
+      <div class="emp-hero-actions">
+        <a class="emp-btn emp-btn--primary" href="/dashboard/employer/requests/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Post a Requirement
+        </a>
+        <a class="emp-btn emp-btn--ghost" href="/dashboard/employer/candidates/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          View Candidates
+        </a>
+      </div>
+    </div>
+    <div class="emp-hero-aside">
+      {% if subscription %}
+        <div class="emp-plan-badge emp-plan-badge--active">
+          <div class="emp-plan-badge-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div>
+            <strong>{{ subscription.get_plan_display }} Plan</strong>
+            <span>Active · expires {{ subscription.expires_at|date:"d M Y" }}</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="emp-plan-badge emp-plan-badge--none">
+          <div class="emp-plan-badge-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div>
+            <strong>No active plan</strong>
+            <span>Subscribe to unlock matching</span>
+          </div>
+          <a class="emp-plan-cta" href="/dashboard/employer/subscription/">Subscribe →</a>
+        </div>
+      {% endif %}
+      <div class="emp-hero-vert-stats">
+        <div class="emp-vstat">
+          <strong>{{ requests|length }}</strong>
+          <span>Open Requests</span>
+        </div>
+        <div class="emp-vstat-div"></div>
+        <div class="emp-vstat">
+          <strong>{{ matches|length }}</strong>
+          <span>Candidates Received</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ── STAT CARDS ── #}
+  <div class="emp-stats">
+    <article class="emp-stat emp-stat--requests">
+      <div class="emp-stat-top">
+        <div class="emp-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <a class="emp-stat-link" href="/dashboard/employer/requests/">View all →</a>
+      </div>
+      <strong class="emp-stat-val">{{ employer.recruitment_requests.count }}</strong>
+      <small class="emp-stat-label">Recruitment Requests</small>
+      <div class="emp-stat-glow"></div>
+    </article>
+
+    <article class="emp-stat emp-stat--candidates">
+      <div class="emp-stat-top">
+        <div class="emp-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <a class="emp-stat-link" href="/dashboard/employer/candidates/">View all →</a>
+      </div>
+      <strong class="emp-stat-val">{{ employer.candidate_matches.filter.count|default:employer.candidate_matches.count }}</strong>
+      <small class="emp-stat-label">Candidates Received</small>
+      <div class="emp-stat-glow"></div>
+    </article>
+
+    <article class="emp-stat emp-stat--shortlist">
+      <div class="emp-stat-top">
+        <div class="emp-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <a class="emp-stat-link" href="/dashboard/employer/shortlist/">View all →</a>
+      </div>
+      <strong class="emp-stat-val">{{ employer.shortlists.count }}</strong>
+      <small class="emp-stat-label">Shortlisted Candidates</small>
+      <div class="emp-stat-glow"></div>
+    </article>
+
+    <article class="emp-stat emp-stat--payments">
+      <div class="emp-stat-top">
+        <div class="emp-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <a class="emp-stat-link" href="/dashboard/employer/payments/">View all →</a>
+      </div>
+      <strong class="emp-stat-val">{{ employer.payments.count }}</strong>
+      <small class="emp-stat-label">Total Payments</small>
+      <div class="emp-stat-glow"></div>
+    </article>
   </div>
+
+  {# ── MAIN BODY ── #}
+  <div class="emp-body">
+    <div class="emp-body-left">
+
+      {# ── RECENT RECRUITMENT REQUESTS ── #}
+      <section class="emp-panel">
+        <div class="emp-panel-head">
+          <div>
+            <h2 class="emp-panel-title">Recent Recruitment Requests</h2>
+            <p class="emp-panel-sub">Your latest staffing requirements and their current status</p>
+          </div>
+          <a class="emp-link" href="/dashboard/employer/requests/">View all →</a>
+        </div>
+
+        {% if requests %}
+          <div class="emp-req-list">
+            {% for req in requests %}
+              <div class="emp-req-row">
+                <div class="emp-req-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+                <div class="emp-req-info">
+                  <strong>{{ req.position }}</strong>
+                  <span>{{ req.professionals_required }} professional{% if req.professionals_required != 1 %}s{% endif %} · ₦{{ req.salary_min|floatformat:0 }}–₦{{ req.salary_max|floatformat:0 }}/{{ req.salary_period }}</span>
+                </div>
+                <div class="emp-req-right">
+                  <span class="emp-status-badge emp-status-badge--{{ req.status }}">{{ req.get_status_display }}</span>
+                  <time class="emp-req-date">{{ req.created_at|date:"d M Y" }}</time>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="emp-empty-inline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>No requests yet. <a href="/dashboard/employer/requests/">Post your first requirement →</a></span>
+          </div>
+        {% endif %}
+      </section>
+
+      {# ── CANDIDATES RECEIVED ── #}
+      <section class="emp-panel">
+        <div class="emp-panel-head">
+          <div>
+            <h2 class="emp-panel-title">Candidates Received</h2>
+            <p class="emp-panel-sub">Vetted professionals pushed by JobSPACE administrators</p>
+          </div>
+          <a class="emp-link" href="/dashboard/employer/candidates/">View all →</a>
+        </div>
+
+        {% if matches %}
+          <div class="emp-candidate-list">
+            {% for match in matches %}
+              <div class="emp-candidate-row">
+                <div class="emp-candidate-avatar">
+                  {{ match.profile.user.first_name|default:"?"|slice:":2"|upper }}
+                </div>
+                <div class="emp-candidate-info">
+                  <strong>{{ match.profile.legal_name|default:match.profile.user.first_name|default:"Candidate" }}</strong>
+                  <span>{{ match.profile.specializations.first|default:"Professional" }}{% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:30 }}{% endif %}</span>
+                </div>
+                <div class="emp-candidate-right">
+                  <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
+                  <a class="emp-candidate-btn" href="/dashboard/employer/candidates/">Review</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="emp-empty-inline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span>No candidates yet. Admins will push vetted profiles once your requests are matched.</span>
+          </div>
+        {% endif %}
+      </section>
+
+      {# ── RECENT NOTIFICATIONS ── #}
+      {% if notifications %}
+        <section class="emp-panel">
+          <div class="emp-panel-head">
+            <div>
+              <h2 class="emp-panel-title">Recent Notifications</h2>
+              <p class="emp-panel-sub">Latest updates from JobSPACE</p>
+            </div>
+            <a class="emp-link" href="/dashboard/employer/notifications/">View all →</a>
+          </div>
+          <div class="emp-notif-list">
+            {% for n in notifications %}
+              <div class="emp-notif-row {% if not n.is_read %}emp-notif-row--unread{% endif %}">
+                <div class="emp-notif-dot emp-notif-dot--{{ n.kind }}"></div>
+                <div class="emp-notif-body">
+                  <strong>{{ n.title }}</strong>
+                  <span>{{ n.message|truncatechars:80 }}</span>
+                </div>
+                <time class="emp-notif-time">{{ n.created_at|date:"d M" }}</time>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+    </div>{# /emp-body-left #}
+
+    <aside class="emp-body-right">
+
+      {# ── COMPANY CARD ── #}
+      <div class="emp-company-card">
+        <div class="emp-company-card-bg"></div>
+        <div class="emp-company-avatar-wrap">
+          <div class="emp-company-avatar">
+            {{ employer.company_name|default:request.user.username|slice:":2"|upper }}
+          </div>
+        </div>
+        <div class="emp-company-name">{{ employer.company_name|default:request.user.username }}</div>
+        <div class="emp-company-sector">{{ employer.industry_sector|default:"Industry not set" }}</div>
+        <div class="emp-company-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+          Verified Employer
+        </div>
+        <div class="emp-company-details">
+          <div class="emp-company-detail-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>{{ request.user.email }}</span>
+          </div>
+          {% if employer.phone %}
+            <div class="emp-company-detail-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>{{ employer.phone }}</span>
+            </div>
+          {% endif %}
+          {% if employer.hr_contact_name %}
+            <div class="emp-company-detail-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>{{ employer.hr_contact_name }}</span>
+            </div>
+          {% endif %}
+        </div>
+        <a class="emp-company-edit-btn" href="/dashboard/employer/profile/">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          Edit Profile
+        </a>
+      </div>
+
+      {# ── QUICK ACTIONS ── #}
+      <div class="emp-quick-actions">
+        <h3 class="emp-panel-title" style="margin-bottom:14px">Quick Actions</h3>
+
+        <a class="emp-action-btn emp-action-btn--primary" href="/dashboard/employer/requests/">
+          <div class="emp-action-icon emp-action-icon--red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="emp-action-copy">
+            <strong>New Requirement</strong>
+            <span>Post a recruitment request</span>
+          </div>
+          <svg class="emp-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a class="emp-action-btn" href="/dashboard/employer/candidates/">
+          <div class="emp-action-icon emp-action-icon--blue">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div class="emp-action-copy">
+            <strong>View Candidates</strong>
+            <span>Review received profiles</span>
+          </div>
+          <svg class="emp-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a class="emp-action-btn" href="/dashboard/employer/shortlist/">
+          <div class="emp-action-icon emp-action-icon--amber">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="emp-action-copy">
+            <strong>My Shortlist</strong>
+            <span>Your saved candidates</span>
+          </div>
+          <svg class="emp-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+
+        <a class="emp-action-btn" href="/dashboard/employer/subscription/">
+          <div class="emp-action-icon emp-action-icon--green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="emp-action-copy">
+            <strong>Subscription</strong>
+            <span>{% if subscription %}Active — {{ subscription.get_plan_display }}{% else %}No active plan{% endif %}</span>
+          </div>
+          <svg class="emp-action-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+
+      {# ── TIP CARD ── #}
+      <div class="emp-tip-card">
+        <div class="emp-tip-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <strong>How matching works</strong>
+          <p>Post a recruitment request and our team will manually select vetted candidates from the talent pool that match your exact requirements.</p>
+        </div>
+      </div>
+
+    </aside>
+  </div>{# /emp-body #}
+
 </main>
 {% endblock %}

@@ -1,0 +1,36 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Notifications - JobSpace Admin{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">NOTIFICATIONS</span>
+      <h1 class="dash-hero-title">Keep the ecosystem<br><em>in sync.</em></h1>
+      <p class="dash-hero-sub">All verification, match, shortlist, payment, and system notifications sent across the entire platform.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Total Sent</span></div>
+  </section>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>All platform notifications</h2><span class="verified">{{ page_obj.paginator.count }} total</span></div>
+    <table class="portal-table">
+      <thead><tr><th>Recipient</th><th>Role</th><th>Type</th><th>Title</th><th>Message</th><th>Date</th><th>Read</th></tr></thead>
+      <tbody>
+        {% for n in page_obj %}
+          <tr>
+            <td>{{ n.profile.user.email }}</td>
+            <td>{{ n.profile.get_role_display }}</td>
+            <td><span class="notif-kind-tag notif-kind-tag--{{ n.kind }}">{{ n.get_kind_display }}</span></td>
+            <td><strong>{{ n.title }}</strong></td>
+            <td style="max-width:260px;white-space:normal">{{ n.message }}</td>
+            <td>{{ n.created_at|date:"d M Y H:i" }}</td>
+            <td>{% if n.is_read %}<span class="status-badge">Read</span>{% else %}<span class="adm-status-badge adm-status-badge--pending">Unread</span>{% endif %}</td>
+          </tr>
+        {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No notifications yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+{% endblock %}

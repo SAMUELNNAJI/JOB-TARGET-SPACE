@@ -1,0 +1,46 @@
+{% if page_obj.has_other_pages %}
+<nav class="pg-nav" aria-label="Pagination">
+  {% if page_obj.has_previous %}
+    <a class="pg-btn" href="?page={{ page_obj.previous_page_number }}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Prev
+    </a>
+  {% else %}
+    <span class="pg-btn pg-btn--disabled">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Prev
+    </span>
+  {% endif %}
+
+  <div class="pg-pages">
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="pg-page pg-page--active">{{ num }}</span>
+      {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a class="pg-page" href="?page={{ num }}">{{ num }}</a>
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a class="pg-page" href="?page={{ num }}">{{ num }}</a>
+      {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+        <span class="pg-ellipsis">…</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_next %}
+    <a class="pg-btn" href="?page={{ page_obj.next_page_number }}">
+      Next
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  {% else %}
+    <span class="pg-btn pg-btn--disabled">
+      Next
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </span>
+  {% endif %}
+
+  <span class="pg-info">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    &nbsp;·&nbsp; {{ page_obj.paginator.count }} total
+  </span>
+</nav>
+{% endif %}

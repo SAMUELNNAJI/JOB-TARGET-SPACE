@@ -1,0 +1,66 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Matching &amp; Push Profiles - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">MATCHING &amp; PUSH PROFILES</span>
+      <h1 class="dash-hero-title">Make the right<br><em>introduction.</em></h1>
+      <p class="dash-hero-sub">Review active employer requests and push only vetted candidates to the correct employer dashboard. Create matches via Django Admin.</p>
+      <div class="dash-hero-actions">
+        <a class="adm-btn adm-btn--primary" href="/admin/website/candidatematch/add/">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Match in Admin
+        </a>
+        <a class="adm-btn adm-btn--ghost" href="/dashboard/admin/talent-pool/">View Talent Pool</a>
+      </div>
+    </div>
+  </section>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <section class="dashboard-panel admin-table-card">
+      <div class="dashboard-panel-head"><h2>Requests ready for matching</h2><a class="adm-link" href="/dashboard/admin/requests/">All →</a></div>
+      {% if requests %}
+        <div class="adm-action-list">
+          {% for item in requests %}
+            <div class="adm-action-row">
+              <div class="adm-action-avatar">{{ item.employer.company_name|default:"CO"|slice:":2"|upper }}</div>
+              <div class="adm-action-info">
+                <strong>{{ item.position }} — {{ item.employer.company_name|default:item.employer.user.username }}</strong>
+                <span>{{ item.minimum_qualification }} · {{ item.years_experience }} yrs · {{ item.professionals_required }} needed</span>
+              </div>
+              <div class="adm-action-right"><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg><span>No requests waiting for matching.</span></div>
+      {% endif %}
+    </section>
+    <section class="dashboard-panel admin-table-card">
+      <div class="dashboard-panel-head"><h2>Eligible candidates</h2><span class="verified">Vetted &amp; Verified only</span></div>
+      {% if candidates %}
+        <div class="adm-action-list">
+          {% for c in candidates|slice:":12" %}
+            <div class="adm-action-row">
+              <div class="adm-action-avatar">{{ c.legal_name|default:c.user.first_name|slice:":2"|upper }}</div>
+              <div class="adm-action-info">
+                <strong>{{ c.legal_name|default:c.user.username }}</strong>
+                <span>{{ c.specializations.first|default:"Professional" }} · {{ c.primary_degree|default:"Qualification pending" }}</span>
+              </div>
+              <div class="adm-action-right">
+                {% if c.expected_salary %}<span style="font-size:10px;font-weight:700;color:#3d4a63;white-space:nowrap">₦{{ c.expected_salary|floatformat:0 }}</span>{% endif %}
+                <a class="adm-row-btn" href="/admin/website/profile/{{ c.pk }}/change/">View</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% if candidates|length > 12 %}<p style="font-size:11px;color:#9ca5b6;padding:12px 8px 0">Showing 12 of {{ candidates|length }}. <a href="/dashboard/admin/talent-pool/" style="color:var(--dash-red,#d90429);font-weight:700">View full pool →</a></p>{% endif %}
+      {% else %}
+        <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>No eligible candidates yet.</span></div>
+      {% endif %}
+    </section>
+  </div>
+</main>
+{% endblock %}

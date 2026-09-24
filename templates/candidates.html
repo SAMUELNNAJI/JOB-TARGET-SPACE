@@ -1,38 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Candidates — JobSpace{% endblock %}
+{% block title %}Candidates &mdash; JobSpace{% endblock %}
+
+{% block page_styles %}
+  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/style.css">
+  <link rel="stylesheet" href="https://job-target-space.vercel.app/css/pages.css">
+{% endblock %}
 
 {% block content %}
-  <main>
+  <main id="top">
     <section class="page-hero" style="--bg:url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1800&q=85')">
       <small class="eyebrow">FOR CANDIDATES</small>
       <h1>Find a role that feels <em>like progress.</em></h1>
       <p>Your skills deserve more than a job board. Find teams, work, and growth that match your ambition.</p>
-      <a class="button" href="signup.html">Join our talent pool　→</a>
+      <a class="button" href="/signup/">Join our talent pool　&rarr;</a>
     </section>
     <section class="content">
       <small class="eyebrow">YOUR CAREER, CURATED</small>
       <h2>More than a <em>next job.</em></h2>
       <div class="grid">
-        <div class="tile"><i>✦</i><h3>Roles that fit</h3><p>Discover opportunities selected for your skills, goals, and working style — not just a keyword match.</p></div>
+        <div class="tile"><i>✦</i><h3>Roles that fit</h3><p>Discover opportunities selected for your skills, goals, and working style &mdash; not just a keyword match.</p></div>
         <div class="tile"><i>◉</i><h3>A profile that works</h3><p>Show employers the story behind your experience, not just a list of roles. Stand out with a complete, verified profile.</p></div>
         <div class="tile"><i>↗</i><h3>Move with confidence</h3><p>Get the context and support needed to make a truly informed decision about your next move.</p></div>
-        <div class="tile"><i>◈</i><h3>Human-reviewed matches</h3><p>Our team reviews opportunities before they reach you — so you only see quality roles from real companies.</p></div>
+        <div class="tile"><i>◈</i><h3>Human-reviewed matches</h3><p>Our team reviews opportunities before they reach you &mdash; so you only see quality roles from real companies.</p></div>
         <div class="tile"><i>♡</i><h3>Support at every step</h3><p>From profile building to interview prep, we're here to help you navigate your career journey.</p></div>
-        <div class="tile"><i>↻</i><h3>Always free for talent</h3><p>Creating a profile, getting matched, and applying — all completely free for professionals.</p></div>
+        <div class="tile"><i>↻</i><h3>Always free for talent</h3><p>Creating a profile, getting matched, and applying &mdash; all completely free for professionals.</p></div>
       </div>
     </section>
     <section class="content">
       <small class="eyebrow">SUCCESS STORIES</small>
       <h2>Real people. <em>Real breakthroughs.</em></h2>
       <div class="success-stories">
-        <div class="story-card"><div class="quote-mark">"</div><p>"I was applying to dozens of jobs with no response. JobSpace matched me with a company that actually saw my potential. I got the role in 3 weeks."</p><h4>Sarah Okonkwo</h4><span>Junior Developer → Software Engineer</span></div>
-        <div class="story-card"><div class="quote-mark">"</div><p>"The vetting gave me confidence. I knew every role I applied for was real. Within a month, I had two great offers to choose from."</p><h4>Emmanuel Obi</h4><span>Marketing Specialist → Brand Manager</span></div>
-        <div class="story-card"><div class="quote-mark">"</div><p>"I wasn't looking — but JobSpace reached out with an opportunity that fit perfectly. Sometimes the best moves find you."</p><h4>Chioma Eze</h4><span>Customer Success → Product Ops</span></div>
+        <div class="story-card"><div class="quote-mark">&quot;</div><p>&quot;I was applying to dozens of jobs with no response. JobSpace matched me with a company that actually saw my potential. I got the role in 3 weeks.&quot;</p><h4>Sarah Okonkwo</h4><span>Junior Developer &rarr; Software Engineer</span></div>
+        <div class="story-card"><div class="quote-mark">&quot;</div><p>&quot;The vetting gave me confidence. I knew every role I applied for was real. Within a month, I had two great offers to choose from.&quot;</p><h4>Emmanuel Obi</h4><span>Marketing Specialist &rarr; Brand Manager</span></div>
+        <div class="story-card"><div class="quote-mark">&quot;</div><p>&quot;I wasn't looking &mdash; but JobSpace reached out with an opportunity that fit perfectly. Sometimes the best moves find you.&quot;</p><h4>Chioma Eze</h4><span>Customer Success &rarr; Product Ops</span></div>
       </div>
     </section>
-
-
     <section class="content">
       <small class="eyebrow">HOW TO STAND OUT</small>
       <h2>Tips for a <em>standout profile.</em></h2>
@@ -47,12 +50,12 @@
       <small class="eyebrow">SALARY INSIGHTS</small>
       <h2>Know your <em>worth.</em></h2>
       <div class="grid">
-        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">₦250k–₦400k</b><span style="font-size:12px;color:var(--muted)">Marketing &amp; Creative</span></div>
-        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">₦350k–₦620k</b><span style="font-size:12px;color:var(--muted)">Engineering &amp; Tech</span></div>
-        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">₦200k–₦380k</b><span style="font-size:12px;color:var(--muted)">Operations &amp; Admin</span></div>
-        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">₦300k–₦500k</b><span style="font-size:12px;color:var(--muted)">Sales &amp; Biz Dev</span></div>
+        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">&#8358;250k&ndash;&#8358;400k</b><span style="font-size:12px;color:var(--muted)">Marketing &amp; Creative</span></div>
+        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">&#8358;350k&ndash;&#8358;620k</b><span style="font-size:12px;color:var(--muted)">Engineering &amp; Tech</span></div>
+        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">&#8358;200k&ndash;&#8358;380k</b><span style="font-size:12px;color:var(--muted)">Operations &amp; Admin</span></div>
+        <div class="tile" style="text-align:center"><b style="font:700 28px Montserrat;color:#fff;display:block;line-height:1.1">&#8358;300k&ndash;&#8358;500k</b><span style="font-size:12px;color:var(--muted)">Sales &amp; Biz Dev</span></div>
       </div>
     </section>
-    <section class="quote-band"><h2>Your next role is <em>waiting.</em></h2><a class="button" href="signup.html">Create your profile　→</a></section>
+    <section class="quote-band"><h2>Your next role is <em>waiting.</em></h2><a class="button" href="/signup/">Create your profile　&rarr;</a></section>
   </main>
 {% endblock %}

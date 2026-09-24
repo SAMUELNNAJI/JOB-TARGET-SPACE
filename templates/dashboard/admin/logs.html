@@ -1,0 +1,36 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Activity Logs - JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#7b00ff;opacity:.3"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">ADMIN ACTIVITY LOG</span>
+      <h1 class="dash-hero-title">Every action,<br><em>traceable.</em></h1>
+      <p class="dash-hero-sub">Audit verification, matching, notifications, and other sensitive administrative actions across the platform.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Log Events</span></div>
+  </section>
+  <section class="dashboard-panel admin-table-card">
+    <div class="dashboard-panel-head"><h2>Audit log</h2><span class="verified">{{ page_obj.paginator.count }} events</span></div>
+    <div class="admin-filter"><input placeholder="Search actor or action…" id="ls"></div>
+    <table class="portal-table" id="lt">
+      <thead><tr><th>Actor</th><th>Action</th><th>Subject</th><th>Result</th><th>Date &amp; time</th></tr></thead>
+      <tbody>
+        {% for log in page_obj %}
+          <tr>
+            <td>{{ log.actor.username|default:"System" }}</td>
+            <td>{{ log.action }}</td>
+            <td style="color:#7a8599">{{ log.subject }}</td>
+            <td><span class="status-badge">{{ log.result }}</span></td>
+            <td style="white-space:nowrap">{{ log.created_at|date:"d M Y H:i" }}</td>
+          </tr>
+        {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No audit events yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+<script>document.getElementById('ls').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('#lt tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});});</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Shortlisted Candidates - JobSpace{% endblock %}
+{% block body_class %}employer-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
+{% block content %}
+<main class="dashboard-content emp-profile-page">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#d97706"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">PRIVATE SHORTLIST</span>
+      <h1 class="dash-hero-title">Your strongest<br><em>matches.</em></h1>
+      <p class="dash-hero-sub">Candidates you've saved for closer review with your hiring team — private to your account.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Shortlisted</span></div>
+  </section>
+  <div class="emp-shortlist-section">
+    <div class="emp-section-head"><h2 class="emp-panel-title">Shortlisted candidates</h2><span class="emp-section-count">{{ page_obj.paginator.count }} saved</span></div>
+    {% if page_obj.object_list %}
+      <div class="emp-shortlist-grid">
+        {% for item in page_obj %}
+          <article class="emp-sl-card">
+            <div class="emp-sl-card-top">
+              <div class="emp-sl-avatar">{{ item.candidate.legal_name|default:item.candidate.user.first_name|default:"?"|slice:":2"|upper }}</div>
+              <div class="emp-sl-info">
+                <h3 class="emp-sl-name">{{ item.candidate.legal_name|default:item.candidate.user.first_name|default:"Candidate" }}</h3>
+                <p class="emp-sl-spec">{{ item.candidate.specializations.first|default:"Professional" }}</p>
+              </div>
+              <span class="emp-sl-status"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>{{ item.status }}</span>
+            </div>
+            <div class="emp-sl-divider"></div>
+            <div class="emp-sl-details">
+              {% if item.candidate.primary_degree %}<div class="emp-sl-detail-row"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg><span>{{ item.candidate.primary_degree|truncatechars:40 }}</span></div>{% endif %}
+              <div class="emp-sl-detail-row"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Shortlisted {{ item.created_at|date:"d M Y" }}</span></div>
+            </div>
+            <div class="emp-sl-footer">
+              <span class="emp-avail-badge">{{ item.candidate.get_availability_display|default:"Available" }}</span>
+              {% if item.candidate.expected_salary %}<span class="emp-sl-salary">₦{{ item.candidate.expected_salary|floatformat:0 }}/mo</span>{% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% include "dashboard/pagination.html" %}
+    {% else %}
+      <div class="emp-empty-state">
+        <div class="emp-empty-icon-wrap"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <h3>Your shortlist is empty</h3>
+        <p>Browse candidates you've received and click "Shortlist" to save the best ones here.</p>
+        <a class="emp-empty-btn" href="/dashboard/employer/candidates/">View candidates →</a>
+      </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
