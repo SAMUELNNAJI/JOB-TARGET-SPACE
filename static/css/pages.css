@@ -189,10 +189,27 @@
   .tips-list{grid-template-columns:1fr}
 }
 @media(max-width:760px){
-  .stats-line{gap:10px;justify-content:stretch}
-  .stats-line>div{flex:1 1 0;min-width:0;padding:16px 14px;text-align:center}
-  .stats-line b{font-size:22px}
-  .stats-line span{font-size:10px;letter-spacing:1px}
+  .stats-line{
+    gap:12px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+    padding-bottom:4px;
+    justify-content:flex-start;
+  }
+  .stats-line::-webkit-scrollbar{display:none}
+  .stats-line>div{
+    flex:0 0 48vw;
+    max-width:180px;
+    scroll-snap-align:start;
+    padding:20px 18px;
+    text-align:left;
+    border-radius:18px;
+  }
+  .stats-line b{font-size:28px;margin-bottom:8px}
+  .stats-line span{font-size:10.5px;letter-spacing:1.2px;line-height:1.5}
   .page-hero h1{font-size:32px}
   .content-head h2{font-size:29px}
   .grid{grid-template-columns:1fr}

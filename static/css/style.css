@@ -157,7 +157,7 @@ ul {
 /* hide drawer-only items on desktop */
 .nav nav .drawer-cta,
 .nav nav .drawer-foot {
-  display: none !important;
+  display: none;
 }
 .nav nav a:hover {
   color: #0d0d0d;
@@ -1567,6 +1567,10 @@ footer#contact {
     order: 1;
     z-index: 996;
   }
+  /* keep logo visible and readable over the grey drawer */
+  .nav:has(nav.open) .logo img {
+    filter: none;
+  }
   .logo img {
     width: min(202px, 52vw);
     height: 54px;
@@ -1581,7 +1585,7 @@ footer#contact {
     display: none;
   }
   .nav .nav-actions .button {
-    display:inline-flex;
+    display: inline-flex;
     padding: 10px 15px;
     font-size: 12px;
   }
@@ -1589,7 +1593,7 @@ footer#contact {
     opacity: 0;
     visibility: hidden;
   }
-  /* hamburger — morphs into a close (X) button */
+  /* hamburger — fixed top-right, above drawer */
   .menu {
     display: grid;
     place-items: center;
@@ -1598,9 +1602,9 @@ footer#contact {
     order: 3;
     margin-left: 4px;
     z-index: 1002;
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(22px) saturate(145%);
@@ -1609,173 +1613,191 @@ footer#contact {
     transition:
       background 0.25s,
       border-color 0.25s,
+      border-radius 0.25s,
       box-shadow 0.25s;
   }
   .menu span {
     width: 18px;
     background: #111;
   }
+  /* hamburger — red rounded-square X when open, positioned at drawer top-right */
   .menu[aria-expanded="true"] {
+    position: fixed;
+    top: 18px;
+    right: 18px;
     background: var(--red);
     border-color: var(--red);
-    box-shadow: 0 8px 20px rgba(138, 3, 3, 0.35);
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(138, 3, 3, 0.38);
   }
   .menu[aria-expanded="true"] span {
-    background: #111;
+    background: #fff;
   }
   .menu[aria-expanded="true"] span:nth-child(1) {
     transform: translateY(7px) rotate(45deg);
   }
   .menu[aria-expanded="true"] span:nth-child(2) {
     opacity: 0;
-    transform: scaleX(0.35);
+    transform: scaleX(0.3);
   }
   .menu[aria-expanded="true"] span:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
   }
-  /* slide-in navigation drawer */
+  /* hide the pill bar background when drawer is open */
+  .nav:has(nav.open) {
+    background: transparent;
+    box-shadow: none;
+    border-color: transparent;
+  }
+  /* ── DRAWER: slides in from RIGHT, rounded top-left ── */
   .nav nav {
     position: fixed;
     top: 0;
     right: 0;
     left: auto;
     z-index: 990;
-    width: min(84vw, 330px);
+    width: 88vw;
+    max-width: 360px;
     height: 100vh;
     height: 100svh;
-    margin: 0;
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    justify-content: flex-start;
     gap: 0;
-    padding: calc(var(--nav-h) + 12px) 22px 26px;
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    /* top row: logo + X are visible inside the drawer */
+    padding: 24px 24px 36px;
+    background: #ededed;
     border-radius: 28px 0 0 28px;
-    border-left: 1px solid rgba(15, 15, 15, 0.12);
-    box-shadow: -26px 0 60px rgba(15, 15, 15, 0.18);
+    border: none;
+    box-shadow: -20px 0 60px rgba(0,0,0,.18);
     overflow-y: auto;
     overscroll-behavior: contain;
-    transform: translateX(101%);
+    /* closed: off-screen to the right */
+    transform: translateX(110%);
     visibility: hidden;
     transition:
-      transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
-      visibility 0.45s;
+      transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+      visibility 0.42s;
   }
+  /* open: slide in */
   .nav nav.open {
-    transform: none;
+    transform: translateX(0);
     visibility: visible;
   }
+
+  /* drawer top row — logo left, X button right */
+  .nav nav::before {
+    content: '';
+    display: block;
+    height: 52px;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+  }
+  /* logo floats above the drawer (z-index: 996 from .logo rule),
+     hamburger button (z-index: 1002) appears at top-right of the drawer */
+
+  /* nav links */
   .nav nav a:not(.drawer-cta):not(.drawer-mail) {
-    padding: 14px 2px;
-    font-size: 15.5px;
+    padding: 18px 0;
+    font-size: 20px;
     font-weight: 600;
     color: #111;
     letter-spacing: -0.01em;
-    border-bottom: 1px solid rgba(15, 15, 15, 0.1);
+    border-bottom: 1px solid rgba(15,15,15,.12);
     opacity: 0;
-    transform: translateX(22px);
+    transform: translateX(20px);
     transition:
-      transform 0.4s ease,
-      opacity 0.4s ease,
+      transform 0.38s ease,
+      opacity 0.38s ease,
       color 0.2s;
   }
-  .nav nav a.active {
-    color: var(--red);
-  }
-  .nav nav a.active::after {
-    display: none;
-  }
+  .nav nav a.active { color: var(--red); }
+  .nav nav a.active::after { display: none; }
+
   .nav nav.open a:not(.drawer-cta):not(.drawer-mail) {
     opacity: 1;
-    transform: none;
+    transform: translateX(0);
   }
-  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(1) {
-    transition-delay: 0.09s;
-  }
-  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(2) {
-    transition-delay: 0.14s;
-  }
-  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(3) {
-    transition-delay: 0.19s;
-  }
-  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(4) {
-    transition-delay: 0.24s;
-  }
-  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(5) {
-    transition-delay: 0.29s;
-  }
-  /* drawer auth buttons */
+  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(2) { transition-delay: 0.07s; }
+  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(3) { transition-delay: 0.12s; }
+  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(4) { transition-delay: 0.17s; }
+  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(5) { transition-delay: 0.22s; }
+  .nav nav.open a:not(.drawer-cta):not(.drawer-mail):nth-child(6) { transition-delay: 0.27s; }
+
+  /* auth buttons — Login (white pill) then Sign Up (red pill) */
   .nav nav .drawer-cta {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     width: 100%;
-    padding: 14px 18px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 17px 20px;
+    font-size: 16px;
+    font-weight: 700;
     border-bottom: 0;
     border-radius: 999px;
     opacity: 0;
-    transform: translateX(22px);
+    transform: translateX(20px);
     transition:
-      transform 0.4s ease,
-      opacity 0.4s ease,
+      transform 0.38s ease,
+      opacity 0.38s ease,
       background 0.25s,
-      border-color 0.25s,
       box-shadow 0.25s;
   }
   .nav nav .drawer-cta.outline {
-    margin-top: auto;
-    margin-bottom: 10px;
-    border: 1px solid rgba(10, 10, 10, 0.22);
-    background: rgba(255, 255, 255, 0.8);
+    margin-top: 32px;
+    margin-bottom: 12px;
+    border: 1.5px solid rgba(10,10,10,.13);
+    background: #fff;
     color: #111;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
   }
   .nav nav .drawer-cta.button {
+    margin-top: 0;
     color: #fff;
+    border: none;
     background: linear-gradient(135deg, var(--red), var(--red-deep));
-    box-shadow: 0 10px 26px rgba(138, 3, 3, 0.28);
+    box-shadow: 0 10px 28px rgba(138,3,3,.32);
   }
-  .nav nav.open .drawer-cta {
-    opacity: 1;
-    transform: none;
-  }
-  .nav nav.open .drawer-cta:nth-child(6) {
-    transition-delay: 0.34s;
-  }
-  .nav nav.open .drawer-cta:nth-child(7) {
-    transition-delay: 0.39s;
-  }
-  /* drawer footer */
+  /* logged-in: single dashboard button */
+  .nav nav .drawer-cta:only-of-type { margin-top: 32px; }
+
+  .nav nav.open .drawer-cta            { opacity: 1; transform: translateX(0); }
+  .nav nav.open .drawer-cta:nth-child(7) { transition-delay: 0.32s; }
+  .nav nav.open .drawer-cta:nth-child(8) { transition-delay: 0.37s; }
+
+  /* GET IN TOUCH footer */
   .nav nav .drawer-foot {
     display: block;
-    margin-top: 22px;
-    padding-top: 26px;
-    border-top: 1px solid rgba(15, 15, 15, 0.1);
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(15,15,15,.12);
   }
   .nav nav .drawer-foot small {
     display: block;
-    font:
-      700 10px "Montserrat",
-      sans-serif;
+    font: 700 10px "Montserrat", sans-serif;
     letter-spacing: 2.6px;
     text-transform: uppercase;
     color: var(--red);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .nav nav .drawer-foot a {
     display: block;
-    padding: 7px 0;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--muted);
+    padding: 5px 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: #888;
     border-bottom: 0;
     transition: color 0.2s;
   }
-  .nav nav .drawer-foot a:hover {
-    color: var(--red);
+  .nav nav .drawer-foot a:hover { color: var(--red); }
+
+  /* hide pill nav-actions while drawer is open */
+  .nav nav.open ~ .nav-actions {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
   /* hero — mobile layout that fits the viewport */
   .hero {
