@@ -189,8 +189,10 @@
   .tips-list{grid-template-columns:1fr}
 }
 @media(max-width:760px){
-  .stats-line{gap:14px}
-  .stats-line>div{padding:15px 20px}
+  .stats-line{gap:10px;justify-content:stretch}
+  .stats-line>div{flex:1 1 0;min-width:0;padding:16px 14px;text-align:center}
+  .stats-line b{font-size:22px}
+  .stats-line span{font-size:10px;letter-spacing:1px}
   .page-hero h1{font-size:32px}
   .content-head h2{font-size:29px}
   .grid{grid-template-columns:1fr}
