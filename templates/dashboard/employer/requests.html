@@ -47,6 +47,7 @@
       <tbody>
         {% for item in page_obj %}<tr><td><strong>{{ item.position }}</strong></td><td>{{ item.professionals_required }}</td><td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td><td><span class="status-badge">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
         {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No recruitment requests yet.</td></tr>{% endfor %}
+      </tbody>
       </table>
     </div>
     <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>

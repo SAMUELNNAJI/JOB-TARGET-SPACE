@@ -21,6 +21,7 @@
       <tbody>
         {% for payment in page_obj %}<tr><td>{{ payment.paid_at|date:"d M Y" }}</td><td>{{ payment.subscription.get_plan_display|default:"Subscription" }}</td><td style="white-space:nowrap">₦{{ payment.amount|floatformat:0 }}</td><td><span class="status-badge">{{ payment.get_status_display }}</span></td><td style="font-size:10px;color:#7a8599">{{ payment.reference }}</td></tr>
         {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No payments recorded yet.</td></tr>{% endfor %}
+      </tbody>
       </table>
     </div>
     <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>

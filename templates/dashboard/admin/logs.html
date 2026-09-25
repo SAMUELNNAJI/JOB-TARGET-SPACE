@@ -9,13 +9,10 @@
     <div class="admin-filter"><input placeholder="Search actor or action…" id="ls"></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Audit log table">
       <table class="portal-table" id="lt"><thead><tr><th>Actor</th><th>Action</th><th>Subject</th><th>Result</th><th>Date &amp; time</th></tr></thead><tbody>
-    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Audit log table">
-      </tbody></table>
-    </div>
-    <table class="portal-table" id="lt"><thead><tr><th>Actor</th><th>Action</th><th>Subject</th><th>Result</th><th>Date &amp; time</th></tr></thead><tbody>
       {% for log in page_obj %}<tr><td>{{ log.actor.username|default:"System" }}</td><td>{{ log.action }}</td><td style="color:#7a8599">{{ log.subject }}</td><td><span class="status-badge">{{ log.result }}</span></td><td style="white-space:nowrap">{{ log.created_at|date:"d M Y H:i" }}</td></tr>
       {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No audit events yet.</td></tr>{% endfor %}
-    </tbody></table>
+      </tbody></table>
+    </div>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

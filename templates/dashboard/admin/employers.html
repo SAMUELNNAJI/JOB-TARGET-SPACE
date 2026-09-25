@@ -9,13 +9,10 @@
     <div class="admin-filter"><input placeholder="Search company or email" id="es"></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All employers table">
       <table class="portal-table" id="et"><thead><tr><th>Company</th><th>Email</th><th>Industry</th><th>HR Contact</th><th>Subscriptions</th><th>Requests</th><th>Joined</th></tr></thead><tbody>
-    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All employers table">
-      </tbody></table>
-    </div>
-    <table class="portal-table" id="et"><thead><tr><th>Company</th><th>Email</th><th>Industry</th><th>HR Contact</th><th>Subscriptions</th><th>Requests</th><th>Joined</th></tr></thead><tbody>
       {% for e in page_obj %}<tr><td><strong>{{ e.company_name|default:e.user.username }}</strong></td><td>{{ e.user.email }}</td><td>{{ e.industry_sector|default:"Not set" }}</td><td>{{ e.hr_contact_name|default:"Not set" }}</td><td>{{ e.subscriptions.count }}</td><td>{{ e.recruitment_requests.count }}</td><td>{{ e.user.date_joined|date:"d M Y" }}</td></tr>
       {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No employers registered.</td></tr>{% endfor %}
-    </tbody></table>
+      </tbody></table>
+    </div>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

@@ -6,6 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dashboard - JobSpace{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <style>
+    /* Sidebar badges — white circle, red number (inline so it applies even with stale cached CSS) */
+    .dashboard-nav a .nav-badge {
+      margin-left: auto !important;
+      flex: 0 0 auto !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 22px !important;
+      width: 22px !important;
+      height: 22px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      color: #d90429 !important;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      line-height: 1 !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,.35) !important;
+    }
+  </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}dashboard-page{% endblock %}">

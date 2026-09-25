@@ -9,13 +9,10 @@
     <div class="admin-filter"><input placeholder="Search candidate or specialization…" id="ts"></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Verified talent pool table">
       <table class="portal-table" id="tt"><thead><tr><th>Candidate</th><th>Specialization</th><th>Qualification</th><th>Availability</th><th>Expected salary</th><th>Status</th></tr></thead><tbody>
-    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Verified talent pool table">
-      </tbody></table>
-    </div>
-    <table class="portal-table" id="tt"><thead><tr><th>Candidate</th><th>Specialization</th><th>Qualification</th><th>Availability</th><th>Expected salary</th><th>Status</th></tr></thead><tbody>
       {% for c in page_obj %}<tr><td><strong>{{ c.legal_name|default:c.user.username }}</strong><br><span style="font-size:9px;color:#9ca5b6">{{ c.user.email }}</span></td><td>{{ c.specializations.first|default:"Uncategorized" }}</td><td>{{ c.primary_degree|default:"Not set" }}</td><td>{{ c.get_availability_display|default:"Not set" }}</td><td style="white-space:nowrap">{% if c.expected_salary %}₦{{ c.expected_salary|floatformat:0 }}{% else %}<span style="color:#9ca5b6">Not set</span>{% endif %}</td><td><span class="status-badge">Verified</span></td></tr>
       {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No verified candidates yet.</td></tr>{% endfor %}
-    </tbody></table>
+      </tbody></table>
+    </div>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

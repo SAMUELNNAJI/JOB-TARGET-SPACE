@@ -9,12 +9,10 @@
     <div class="admin-filter"><input placeholder="Search employer or position" id="rs"><select id="rf"><option value="">All statuses</option><option>Submitted</option><option>Under Review</option><option>Matching Candidates</option><option>Candidates Available</option><option>Completed</option></select></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All recruitment requests table">
       <table class="portal-table" id="rt"><thead><tr><th>Employer</th><th>Position</th><th>Qualification</th><th>Experience</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead><tbody>
-    <table class="portal-table" id="rt"><thead><tr><th>Employer</th><th>Position</th><th>Qualification</th><th>Experience</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead><tbody>
-      </tbody></table>
-    </div>
       {% for item in page_obj %}<tr><td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td><td>{{ item.position }} <span style="color:#9ca5b6">× {{ item.professionals_required }}</span></td><td>{{ item.minimum_qualification }}</td><td>{{ item.years_experience }} yr{% if item.years_experience != 1 %}s{% endif %}</td><td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td><td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
       {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No requests yet.</td></tr>{% endfor %}
-    </tbody></table>
+      </tbody></table>
+    </div>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>

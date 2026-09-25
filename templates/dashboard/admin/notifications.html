@@ -8,13 +8,10 @@
     <div class="dashboard-panel-head"><h2>All platform notifications</h2><span class="verified">{{ page_obj.paginator.count }} total</span></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All platform notifications table">
       <table class="portal-table"><thead><tr><th>Recipient</th><th>Role</th><th>Type</th><th>Title</th><th>Message</th><th>Date</th><th>Read</th></tr></thead><tbody>
-    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Platform notifications table">
-      </tbody></table>
-    </div>
-    <table class="portal-table"><thead><tr><th>Recipient</th><th>Role</th><th>Type</th><th>Title</th><th>Message</th><th>Date</th><th>Read</th></tr></thead><tbody>
       {% for n in page_obj %}<tr><td>{{ n.profile.user.email }}</td><td>{{ n.profile.get_role_display }}</td><td><span class="notif-kind-tag notif-kind-tag--{{ n.kind }}">{{ n.get_kind_display }}</span></td><td><strong>{{ n.title }}</strong></td><td style="max-width:260px;white-space:normal">{{ n.message }}</td><td>{{ n.created_at|date:"d M Y H:i" }}</td><td>{% if n.is_read %}<span class="status-badge">Read</span>{% else %}<span class="adm-status-badge adm-status-badge--pending">Unread</span>{% endif %}</td></tr>
       {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No notifications yet.</td></tr>{% endfor %}
-    </tbody></table>
+      </tbody></table>
+    </div>
     {% include "dashboard/pagination.html" %}
   </section>
 </main>
