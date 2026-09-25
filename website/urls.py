@@ -30,6 +30,7 @@ urlpatterns = [
     path("dashboard/admin/candidates/<int:profile_id>/verify/", views.admin_verify_candidate, name="admin_verify_candidate"),
     path("dashboard/admin/candidates/<int:profile_id>/reject/", views.admin_reject_candidate, name="admin_reject_candidate"),
     path("dashboard/admin/candidates/<int:profile_id>/revoke/", views.admin_revoke_verification, name="admin_revoke_verification"),
+    path("dashboard/search/", views.dashboard_search, name="dashboard_search"),
     path("about.html", views.page, {"page_name": "about"}),
     path("employers.html", views.page, {"page_name": "employers"}),
     path("candidates.html", views.page, {"page_name": "candidates"}),

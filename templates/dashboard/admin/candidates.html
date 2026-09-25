@@ -12,18 +12,17 @@
       </div>
     {% endif %}
 
-    <div class="admin-filter"><input placeholder="Search name or email" id="cs"><select id="cf"><option value="">All statuses</option><option>Draft</option><option>Pending Review</option><option>Under Verification</option><option>Vetted &amp; Verified</option><option>Requires Changes</option><option>Rejected</option></select><span class="admin-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Hover a candidate row to preview every profile field</span></div>
-    <div class="cand-hover-card" id="candHoverCard" hidden></div>
+    <div class="admin-filter"><input placeholder="Search name or email" id="cs"><select id="cf"><option value="">All statuses</option><option>Draft</option><option>Pending Review</option><option>Under Verification</option><option>Vetted &amp; Verified</option><option>Requires Changes</option><option>Rejected</option></select><span class="admin-hint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Click a candidate row to open their full profile</span></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All candidates table">
       <table class="portal-table" id="ct">
         <thead><tr><th>Candidate</th><th>Email</th><th>Specialization</th><th>Completion</th><th>Status</th><th>CV</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody>
       {% for c in page_obj %}
-        <tr>
+        <tr class="cand-row" tabindex="0" role="button" aria-haspopup="dialog">
           <td>
             <strong>{{ c.legal_name|default:c.user.username }}</strong>
-            {# ── Hidden source used by the hover preview card (all fields) ── #}
-            <div class="cand-hover-source" hidden>
+            {# ── Hidden source copied into the click profile modal (all fields) ── #}
+            <div class="cand-profile-source" hidden>
               <div class="cch-head">
                 <div class="cch-avatar">{{ c.legal_name|default:c.user.username|slice:":2"|upper }}</div>
                 <div class="cch-id">
@@ -98,8 +97,14 @@
   </section>
 </main>
 
-{# ── Floating hover preview card (populated by JS) ── #}
-<div class="cand-hover-card" id="candHoverCard" hidden></div>
+{# ── Candidate profile modal (populated by JS on row click) ── #}
+<div class="adm-modal-overlay" id="candProfileModal" hidden>
+  <div class="adm-modal adm-modal--profile" role="dialog" aria-modal="true" aria-labelledby="candProfileTitle">
+    <button type="button" class="adm-modal-close" data-close-modal aria-label="Close profile">&times;</button>
+    <h2 class="adm-modal-title" id="candProfileTitle">Candidate profile</h2>
+    <div id="candProfileBody"></div>
+  </div>
+</div>
 
 {# ── Reject modal (reason required) ── #}
 <div class="adm-modal-overlay" id="rejectModal" hidden>
@@ -147,35 +152,41 @@
 /* ── Client-side search + status filter ── */
 const cs=document.getElementById('cs'),cf=document.getElementById('cf');function f(){const q=cs.value.toLowerCase(),s=cf.value.toLowerCase();document.querySelectorAll('#ct tbody tr').forEach(r=>{const t=r.textContent.toLowerCase(),b=r.querySelector('.adm-status-badge')?.textContent.toLowerCase()??'';r.style.display=t.includes(q)&&(s===''||b.includes(s))?'':'none';});}cs.addEventListener('input',f);cf.addEventListener('change',f);
 
-/* ── Hover preview card: shows every field for the hovered candidate ── */
-const hoverCard = document.getElementById('candHoverCard');
-function hideHoverCard(){ hoverCard.hidden = true; }
-function showHoverCard(source, row){
-  hoverCard.innerHTML = source.innerHTML;
-  hoverCard.hidden = false;
-  hoverCard.style.visibility = 'hidden';
-  hoverCard.style.left = '0px';
-  hoverCard.style.top = '0px';
-  const rect = row.getBoundingClientRect();
-  const w = hoverCard.offsetWidth, h = hoverCard.offsetHeight;
-  let left = rect.right + 14;
-  if (left + w > window.innerWidth - 12) left = rect.left - w - 14;
-  if (left < 12) left = 12;
-  if (left + w > window.innerWidth - 12) left = Math.max(12, window.innerWidth - w - 12);
-  let top = rect.top;
-  if (top + h > window.innerHeight - 12) top = Math.max(12, window.innerHeight - h - 12);
-  hoverCard.style.left = left + 'px';
-  hoverCard.style.top = top + 'px';
-  hoverCard.style.visibility = 'visible';
-}
-document.querySelectorAll('#ct tbody tr').forEach(function(row){
-  const source = row.querySelector('.cand-hover-source');
+/* ── Candidate profile modal: click (or Enter/Space) a row to see every field ── */
+const profileModal = document.getElementById('candProfileModal');
+const profileBody  = document.getElementById('candProfileBody');
+const profileTitle = document.getElementById('candProfileTitle');
+let lastRowFocused = null;
+
+function openProfile(source, row){
   if (!source) return;
-  row.addEventListener('mouseenter', function(){ showHoverCard(source, row); });
-  row.addEventListener('mouseleave', hideHoverCard);
+  profileBody.innerHTML = source.innerHTML;
+  const name = source.querySelector('.cch-id strong');
+  profileTitle.textContent = name ? name.textContent.trim() : 'Candidate profile';
+  lastRowFocused = row || null;
+  openModal(profileModal, profileModal.querySelector('.adm-modal-close'));
+}
+function closeProfile(){
+  closeModal(profileModal);
+  if (lastRowFocused) { lastRowFocused.focus(); lastRowFocused = null; }
+}
+
+document.querySelectorAll('#ct tbody tr').forEach(function(row){
+  if (!row.querySelector('.cand-profile-source')) return;
+
+  row.addEventListener('click', function(e){
+    /* Let the row's own controls (Verify / Reject / Revoke / CV link) act normally */
+    if (e.target.closest('button, a, form, input, select, textarea')) return;
+    openProfile(row.querySelector('.cand-profile-source'), row);
+  });
+
+  row.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    if (e.target !== row) return;   /* ignore keys bubbling up from the action buttons */
+    e.preventDefault();
+    openProfile(row.querySelector('.cand-profile-source'), row);
+  });
 });
-window.addEventListener('scroll', hideHoverCard, true);
-window.addEventListener('resize', hideHoverCard);
 
 /* ── Reject / Revoke modals ── */
 const rejectModal = document.getElementById('rejectModal');
@@ -215,13 +226,21 @@ document.querySelectorAll('[data-revoke-url]').forEach(function(btn){
   });
 });
 document.querySelectorAll('[data-close-modal]').forEach(function(btn){
-  btn.addEventListener('click', function(){ closeModal(btn.closest('.adm-modal-overlay')); });
+  btn.addEventListener('click', function(){
+    const modal = btn.closest('.adm-modal-overlay');
+    if (modal === profileModal) { closeProfile(); return; }
+    closeModal(modal);
+  });
 });
 [rejectModal, revokeModal].forEach(function(modal){
   modal.addEventListener('click', function(e){ if (e.target === modal) closeModal(modal); });
 });
+profileModal.addEventListener('click', function(e){ if (e.target === profileModal) closeProfile(); });
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape'){ closeModal(rejectModal); closeModal(revokeModal); }
+  if (e.key === 'Escape'){
+    if (!profileModal.hidden) { closeProfile(); return; }
+    closeModal(rejectModal); closeModal(revokeModal);
+  }
 });
 rejectForm.addEventListener('submit', function(e){
   if (!rejectReason.value.trim()){ e.preventDefault(); rejectError.hidden = false; rejectReason.focus(); }

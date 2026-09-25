@@ -4,7 +4,8 @@ from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import Http404
+from django.db.models import Q
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -803,3 +804,311 @@ def admin_revoke_verification(request, profile_id):
     )
     messages.success(request, f"Verification revoked for {_candidate_label(profile)}.")
     return redirect("website:admin_section", section="candidates")
+
+
+# ─────────────────────────────────────────────────────────────
+# Global dashboard search (powers the topbar search on all three dashboards)
+# ─────────────────────────────────────────────────────────────
+
+SEARCH_LIMIT = 8  # max records per result group
+
+
+def _search_result(kind, title, subtitle, url, badge=""):
+    # Coerce to plain strings so JsonResponse can never choke on a model instance.
+    return {
+        "kind":     str(kind),
+        "title":    str(title or ""),
+        "subtitle": str(subtitle or ""),
+        "url":      str(url or ""),
+        "badge":    str(badge or ""),
+    }
+
+
+def _candidate_search_results(profile, term):
+    """Candidate portal: search their own profile, matches and notifications."""
+    results = []
+
+    # ── Employer matches ──
+    matches = (
+        profile.matches.filter(is_active=True)
+        .select_related("employer")
+        .filter(
+            Q(employer__company_name__icontains=term)
+            | Q(employer__industry_sector__icontains=term)
+            | Q(employer__office_address__icontains=term)
+            | Q(note__icontains=term)
+        )[:SEARCH_LIMIT]
+    )
+    for match in matches:
+        employer = match.employer
+        results.append(_search_result(
+            "match",
+            employer.company_name or "Confidential Employer",
+            employer.industry_sector or "Opportunity matched to you",
+            "/dashboard/candidate/matches/",
+        ))
+
+    # ── Own profile details ──
+    profile_fields = [
+        ("Primary degree",      profile.primary_degree),
+        ("Certifications",      profile.certifications),
+        ("Software skills",     profile.software_competencies),
+        ("Equipment skills",    profile.equipment_competencies),
+        ("Professional pitch",  profile.professional_pitch),
+    ]
+    for label, value in profile_fields:
+        if value and term.lower() in str(value).lower():
+            results.append(_search_result(
+                "profile", label, str(value)[:90],
+                "/dashboard/candidate/profile/",
+            ))
+
+    for spec in profile.specializations.filter(name__icontains=term)[:SEARCH_LIMIT]:
+        results.append(_search_result(
+            "profile", f"Specialization — {spec.name}",
+            "Update your professional profile",
+            "/dashboard/candidate/profile/",
+        ))
+
+    # ── Notifications ──
+    for note in profile.notifications.filter(
+        Q(title__icontains=term) | Q(message__icontains=term)
+    )[:SEARCH_LIMIT]:
+        results.append(_search_result(
+            "notification", note.title, note.message[:90],
+            "/dashboard/candidate/notifications/",
+        ))
+
+    return results
+
+
+def _employer_search_results(employer, term):
+    """Employer portal: search received candidates, own requests, shortlist and notifications."""
+    results = []
+
+    # ── Candidates received ──
+    matches = (
+        employer.candidate_matches.filter(is_active=True)
+        .select_related("profile__user")
+        .prefetch_related("profile__specializations")
+        .filter(
+            Q(profile__legal_name__icontains=term)
+            | Q(profile__user__email__icontains=term)
+            | Q(profile__primary_degree__icontains=term)
+            | Q(profile__software_competencies__icontains=term)
+            | Q(profile__equipment_competencies__icontains=term)
+        )[:SEARCH_LIMIT]
+    )
+    for match in matches:
+        candidate = match.profile
+        spec = candidate.specializations.first
+        headline = (
+            str(spec) if spec
+            else (candidate.primary_degree or "Candidate profile")
+        )
+        results.append(_search_result(
+            "candidate",
+            _candidate_label(candidate),
+            headline,
+            "/dashboard/employer/candidates/",
+            candidate.get_verification_status_display(),
+        ))
+
+    # ── Shortlisted candidates ──
+    for entry in employer.shortlists.select_related("candidate").filter(
+        Q(candidate__legal_name__icontains=term)
+    )[:SEARCH_LIMIT]:
+        results.append(_search_result(
+            "shortlist", _candidate_label(entry.candidate),
+            "On your shortlist", "/dashboard/employer/shortlist/", entry.status,
+        ))
+
+    # ── Own recruitment requests ──
+    for req in employer.recruitment_requests.filter(
+        Q(position__icontains=term)
+        | Q(required_skills__icontains=term)
+        | Q(minimum_qualification__icontains=term)
+        | Q(certifications__icontains=term)
+    )[:SEARCH_LIMIT]:
+        results.append(_search_result(
+            "request", req.position,
+            f"{req.professionals_required} professional(s) · {req.get_status_display()}",
+            "/dashboard/employer/requests/",
+        ))
+
+    # ── Notifications ──
+    for note in employer.notifications.filter(
+        Q(title__icontains=term) | Q(message__icontains=term)
+    )[:SEARCH_LIMIT]:
+        results.append(_search_result(
+            "notification", note.title, note.message[:90],
+            "/dashboard/employer/notifications/",
+        ))
+
+    return results
+
+
+def _admin_search_results(term):
+    """Admin portal: search candidates, employers, requests, matches, payments and logs."""
+    results = []
+
+    # ── Candidates ──
+    candidates = (
+        Profile.objects.filter(role=Profile.Role.CANDIDATE)
+        .filter(
+            Q(legal_name__icontains=term)
+            | Q(user__email__icontains=term)
+            | Q(user__username__icontains=term)
+            | Q(phone__icontains=term)
+            | Q(primary_degree__icontains=term)
+            | Q(specializations__name__icontains=term)
+        )
+        .select_related("user")
+        .distinct()[:SEARCH_LIMIT]
+    )
+    for candidate in candidates:
+        results.append(_search_result(
+            "candidate", _candidate_label(candidate),
+            candidate.user.email,
+            "/dashboard/admin/candidates/",
+            candidate.get_verification_status_display(),
+        ))
+
+    # ── Employers ──
+    employers = (
+        Profile.objects.filter(role=Profile.Role.EMPLOYER)
+        .filter(
+            Q(company_name__icontains=term)
+            | Q(user__email__icontains=term)
+            | Q(industry_sector__icontains=term)
+            | Q(hr_contact_name__icontains=term)
+            | Q(office_address__icontains=term)
+        )
+        .select_related("user")
+        .distinct()[:SEARCH_LIMIT]
+    )
+    for employer in employers:
+        results.append(_search_result(
+            "employer", employer.company_name or employer.user.username,
+            employer.user.email,
+            "/dashboard/admin/employers/",
+        ))
+
+    # ── Recruitment requests ──
+    for req in (
+        RecruitmentRequest.objects
+        .filter(
+            Q(position__icontains=term)
+            | Q(employer__company_name__icontains=term)
+            | Q(required_skills__icontains=term)
+            | Q(minimum_qualification__icontains=term)
+        )
+        .select_related("employer")[:SEARCH_LIMIT]
+    ):
+        results.append(_search_result(
+            "request", req.position,
+            req.employer.company_name or req.employer.user.username,
+            "/dashboard/admin/requests/",
+            req.get_status_display(),
+        ))
+
+    # ── Matches ──
+    for match in (
+        CandidateMatch.objects
+        .filter(
+            Q(profile__legal_name__icontains=term)
+            | Q(employer__company_name__icontains=term)
+            | Q(note__icontains=term)
+        )
+        .select_related("profile", "employer")[:SEARCH_LIMIT]
+    ):
+        results.append(_search_result(
+            "match",
+            f"{_candidate_label(match.profile)} → "
+            f"{match.employer.company_name or match.employer.user.username}",
+            "Review or push this match",
+            "/dashboard/admin/matching/",
+        ))
+
+    # ── Payments ──
+    for payment in (
+        Payment.objects
+        .filter(
+            Q(reference__icontains=term)
+            | Q(employer__company_name__icontains=term)
+        )
+        .select_related("employer")[:SEARCH_LIMIT]
+    ):
+        results.append(_search_result(
+            "payment", payment.reference,
+            payment.employer.company_name or payment.employer.user.username,
+            "/dashboard/admin/payments/",
+            payment.get_status_display(),
+        ))
+
+    # ── Audit log ──
+    for log in (
+        AuditLog.objects
+        .filter(Q(action__icontains=term) | Q(subject__icontains=term))
+        .select_related("actor")[:SEARCH_LIMIT]
+    ):
+        results.append(_search_result(
+            "log", log.action, log.subject or "—",
+            "/dashboard/admin/logs/",
+        ))
+
+    return results
+
+
+SEARCH_GROUP_LABELS = [
+    ("candidate",    "Candidates"),
+    ("employer",     "Employers"),
+    ("match",        "Matches"),
+    ("request",      "Recruitment Requests"),
+    ("shortlist",    "Shortlist"),
+    ("profile",      "Your Profile"),
+    ("payment",      "Payments"),
+    ("log",          "Activity Log"),
+    ("notification", "Notifications"),
+]
+
+
+@login_required
+def dashboard_search(request):
+    """GET ?q=… — JSON search results scoped to the signed-in user's dashboard role."""
+    term = (request.GET.get("q") or "").strip()
+
+    if len(term) < 2:
+        return JsonResponse({"query": term, "results": [], "groups": []})
+
+    user     = request.user
+    is_admin = user.is_staff or user.is_superuser
+
+    if is_admin:
+        results    = _admin_search_results(term)
+        placeholder = "Search candidates, employers, requests or logs…"
+    else:
+        profile = getattr(user, "profile", None)
+        if profile is None:
+            return JsonResponse({"query": term, "results": [], "groups": []})
+        if profile.role == Profile.Role.EMPLOYER:
+            results    = _employer_search_results(profile, term)
+            placeholder = "Search candidates, requests or shortlist…"
+        else:
+            results    = _candidate_search_results(profile, term)
+            placeholder = "Search employers, skills or notifications…"
+
+    present_kinds = {r["kind"] for r in results}
+    groups = [
+        {"kind": kind, "label": label}
+        for kind, label in SEARCH_GROUP_LABELS
+        if kind in present_kinds
+    ]
+
+    return JsonResponse({
+        "query":       term,
+        "results":     results,
+        "groups":      groups,
+        "placeholder": placeholder,
+        "count":       len(results),
+    })

@@ -1381,7 +1381,25 @@ footer#contact {
   line-height: 1.7;
   color: var(--muted);
   max-width: 310px;
+  margin-bottom: 18px;
+}
+.foot-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin-bottom: 22px;
+}
+.foot-contact a,
+.foot-contact span {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  margin: 0;
+}
+.foot-contact a:hover {
+  color: var(--red);
+  transform: none;
 }
 .socials {
   display: flex;

@@ -434,6 +434,14 @@
 
 /* contact form */
 .contact-form{display:flex;flex-direction:column;gap:18px;max-width:680px;margin-top:8px}
+/* contact info cards */
+.contact-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.contact-card{padding:26px 24px;border-radius:18px;background:var(--glass-bg);border:1px solid var(--glass-border);transition:transform .3s,border-color .3s}
+.contact-card:hover{transform:translateY(-4px);border-color:rgba(214,0,29,.4)}
+.contact-card b{display:block;font:700 11px 'Montserrat',sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--red,#d6001d);margin-bottom:12px}
+.contact-card a{display:block;font-size:15px;font-weight:600;color:#fff;text-decoration:none;word-break:break-all}
+.contact-card a:hover{color:var(--red,#d6001d)}
+.contact-card span{display:block;font-size:14px;line-height:1.6;color:rgba(255,255,255,.7)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .form-row > div,.contact-form > div{display:flex;flex-direction:column;gap:7px}
 .contact-form label{font:700 11px 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5)}
@@ -472,7 +480,7 @@
 .legal-section li strong{color:rgba(255,255,255,.9);font-weight:700}
 .legal-section a{color:var(--red,#d6001d);text-decoration:underline;text-underline-offset:3px;transition:color .2s}
 .legal-section a:hover{color:#ff6b81}
-.legal-contact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.legal-contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
 .legal-contact-card{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;border-radius:14px;background:var(--glass-bg,#1d1d1d);border:1px solid var(--glass-border,rgba(255,255,255,.1));transition:border-color .2s,transform .2s}
 .legal-contact-card:hover{border-color:rgba(214,0,29,.4);transform:translateY(-2px)}
 .legal-contact-card svg{color:var(--red,#d6001d);flex-shrink:0;margin-top:2px}
@@ -483,7 +491,7 @@
 /* responsive */
 @media(max-width:1100px){.values-grid{grid-template-columns:repeat(2,1fr)}.process.steps-5{grid-template-columns:repeat(3,1fr)}.legal-page{grid-template-columns:200px minmax(0,1fr);gap:32px}}
 @media(max-width:900px){.about-grid{grid-template-columns:1fr}.paths-grid{grid-template-columns:1fr}.process{grid-template-columns:repeat(2,1fr)}.process.steps-5{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.content{padding:56px 6%}.values-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.trust-row{gap:8px}.trust-pill{font-size:12px;padding:9px 14px}.legal-page{grid-template-columns:1fr;padding:40px 6% 64px;gap:0}.legal-toc{position:static;margin-bottom:36px}.legal-contact-grid{grid-template-columns:1fr}.legal-section h2{font-size:18px}}
+@media(max-width:760px){.content{padding:56px 6%}.values-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.contact-cards{grid-template-columns:1fr}.trust-row{gap:8px}.trust-pill{font-size:12px;padding:9px 14px}.legal-page{grid-template-columns:1fr;padding:40px 6% 64px;gap:0}.legal-toc{position:static;margin-bottom:36px}.legal-contact-grid{grid-template-columns:1fr}.legal-section h2{font-size:18px}}
 @media(max-width:480px){.content{padding:44px 5%}.process{grid-template-columns:1fr}.process.steps-5{grid-template-columns:1fr}.about-tile,.path-card{padding:24px 20px}.value-item{padding:22px 18px}}
 
 /* ============================================================

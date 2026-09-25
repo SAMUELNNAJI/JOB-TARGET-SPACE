@@ -45,14 +45,19 @@ def check(name, cond, extra=""):
 admin_c = Client(SERVER_NAME="localhost")
 admin_c.force_login(admin)
 
-# ── 1. admin candidates page renders actions + modals + hover card ──
+# ── 1. admin candidates page renders actions + modals + profile modal ──
 r = admin_c.get("/dashboard/admin/candidates/")
 html = r.content.decode()
 check("admin candidates page renders", r.status_code == 200, r.status_code)
 for needle in ["data-reject-url", "data-revoke-url", "rejectModal", "revokeModal",
-               "candHoverCard", "cand-hover-source", "adm-act--verify",
+               "candProfileModal", "candProfileBody", "cand-profile-source",
+               "class=\"cand-row\"", "aria-haspopup=\"dialog\"", "adm-act--verify",
                "rejectReason", "revokeReason", "/verify/", "Rejected"]:
     check(f"page contains '{needle}'", needle in html)
+
+# hover preview must be gone -- the modal is click/Enter triggered only
+for gone in ["candHoverCard", "cand-hover-source", "mouseenter"]:
+    check(f"page no longer contains '{gone}'", gone not in html)
 
 # ── 2. verify ────────────────────────────────────────────────
 admin_c.post(f"/dashboard/admin/candidates/{cp.pk}/verify/")
