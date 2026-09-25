@@ -13,7 +13,7 @@ menu?.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
 navOverlay?.addEventListener('click', () => setMenu(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setMenu(false)));
-window.addEventListener('resize', () => { if (window.innerWidth > 760) setMenu(false); });
+window.addEventListener('resize', () => { if (window.innerWidth > 1024) setMenu(false); });
 const backToTop = document.querySelector('.up');
 backToTop?.addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 window.addEventListener('scroll', () => { document.querySelector('.nav')?.classList.toggle('scrolled', window.scrollY > 10); document.body.classList.toggle('scroll-top-visible', window.scrollY > 240); });
