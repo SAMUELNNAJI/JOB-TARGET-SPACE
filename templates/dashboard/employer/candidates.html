@@ -28,10 +28,22 @@
               <span>{{ match.profile.specializations.first|default:"Professional" }}{% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:32 }}{% endif %}</span>
             </div>
             <div class="emp-candidate-right">
+              {% if match.profile.verification_status == 'rejected' %}
+                <span class="emp-reject-badge">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Rejected
+                </span>
+              {% endif %}
               <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
               {% if match.profile.expected_salary %}<span style="font-size:10px;font-weight:700;color:#3d4a63">₦{{ match.profile.expected_salary|floatformat:0 }}/mo</span>{% endif %}
               <a class="emp-candidate-btn" href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Shortlist</a>
             </div>
+            {% if match.profile.verification_status == 'rejected' %}
+              <div class="emp-reject-note">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span><strong>Rejected during JobSPACE verification.</strong> Reason: {{ match.profile.verification_notes|default:"No reason recorded." }} — ask the candidate to fix this and resubmit their profile.</span>
+              </div>
+            {% endif %}
           </div>
         {% endfor %}
       </div>

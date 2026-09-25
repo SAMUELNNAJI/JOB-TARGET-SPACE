@@ -7,6 +7,11 @@
   <section class="dashboard-panel admin-table-card">
     <div class="dashboard-panel-head"><h2>All payments</h2><span class="verified">{{ page_obj.paginator.count }} records</span></div>
     <div class="admin-filter"><input placeholder="Search employer or reference" id="ps"><select id="pf"><option value="">All statuses</option><option>Pending</option><option>Successful</option><option>Failed</option></select></div>
+    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All payments table">
+      <table class="portal-table" id="pt"><thead><tr><th>Employer</th><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th><th>Reference</th></tr></thead><tbody>
+    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Payments table">
+      </tbody></table>
+    </div>
     <table class="portal-table" id="pt"><thead><tr><th>Employer</th><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th><th>Reference</th></tr></thead><tbody>
       {% for p in page_obj %}<tr><td><strong>{{ p.employer.company_name|default:p.employer.user.username }}</strong></td><td>{{ p.subscription.get_plan_display|default:"Subscription" }}</td><td style="white-space:nowrap">₦{{ p.amount|floatformat:0 }}</td><td>{{ p.paid_at|date:"d M Y" }}</td><td><span class="status-badge">{{ p.get_status_display }}</span></td><td style="font-size:10px;color:#7a8599">{{ p.reference }}</td></tr>
       {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No payments recorded.</td></tr>{% endfor %}

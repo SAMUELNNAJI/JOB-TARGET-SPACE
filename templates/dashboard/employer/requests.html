@@ -41,13 +41,14 @@
   </div>
   <div class="emp-shortlist-section">
     <div class="emp-section-head"><h2 class="emp-panel-title">Your Requests</h2><span class="emp-section-count">{{ page_obj.paginator.count }} total</span></div>
-    <table class="portal-table" style="margin:0 24px;width:calc(100% - 48px)">
+    <div class="dashboard-table-scroll" style="margin:0 24px" tabindex="0" role="region" aria-label="Recruitment requests table">
+      <table class="portal-table">
       <thead><tr><th>Position</th><th>Required</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead>
       <tbody>
         {% for item in page_obj %}<tr><td><strong>{{ item.position }}</strong></td><td>{{ item.professionals_required }}</td><td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td><td><span class="status-badge">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
         {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No recruitment requests yet.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+      </table>
+    </div>
     <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
   </div>
 </main>

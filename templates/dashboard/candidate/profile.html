@@ -117,15 +117,17 @@
             {{ form.email }}
             {% if form.email.errors %}<span class="pf-error">{{ form.email.errors|join:", " }}</span>{% endif %}
           </div>
-          <div class="pf-field">
+          <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.phone.id_for_label }}">Phone number</label>
             {{ form.phone }}
+            {% if form.phone.errors %}<span class="pf-error">{{ form.phone.errors|join:", " }}</span>{% endif %}
           </div>
           <div class="pf-field">
-            <label class="pf-label" for="{{ form.whatsapp_url.id_for_label }}">WhatsApp link</label>
-            {{ form.whatsapp_url }}
+            <label class="pf-label" for="{{ form.whatsapp_number.id_for_label }}">WhatsApp number</label>
+            {{ form.whatsapp_number }}
+            {% if form.whatsapp_number.errors %}<span class="pf-error">{{ form.whatsapp_number.errors|join:", " }}</span>{% endif %}
           </div>
-          <div class="pf-field pf-field--full">
+          <div class="pf-field pf-field--full pf-field--required">
             <label class="pf-label" for="{{ form.address.id_for_label }}">Residential address</label>
             {{ form.address }}
             {% if form.address.errors %}<span class="pf-error">{{ form.address.errors|join:", " }}</span>{% endif %}
@@ -194,21 +196,25 @@
           </div>
         </div>
         <div class="pf-grid">
-          <div class="pf-field pf-field--full">
+          <div class="pf-field pf-field--full pf-field--required">
             <label class="pf-label" for="{{ form.primary_degree.id_for_label }}">Primary degree / highest qualification</label>
             {{ form.primary_degree }}
+            {% if form.primary_degree.errors %}<span class="pf-error">{{ form.primary_degree.errors|join:", " }}</span>{% endif %}
           </div>
-          <div class="pf-field">
+          <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.certifications.id_for_label }}">Professional certifications</label>
             {{ form.certifications }}
+            {% if form.certifications.errors %}<span class="pf-error">{{ form.certifications.errors|join:", " }}</span>{% endif %}
           </div>
-          <div class="pf-field">
+          <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.software_competencies.id_for_label }}">Key software competencies</label>
             {{ form.software_competencies }}
+            {% if form.software_competencies.errors %}<span class="pf-error">{{ form.software_competencies.errors|join:", " }}</span>{% endif %}
           </div>
           <div class="pf-field pf-field--full">
             <label class="pf-label" for="{{ form.equipment_competencies.id_for_label }}">Equipment competencies</label>
             {{ form.equipment_competencies }}
+            {% if form.equipment_competencies.errors %}<span class="pf-error">{{ form.equipment_competencies.errors|join:", " }}</span>{% endif %}
           </div>
         </div>
       </section>
@@ -225,21 +231,24 @@
           </div>
         </div>
         <div class="pf-grid">
-          <div class="pf-field pf-field--full">
+          <div class="pf-field pf-field--full pf-field--required">
             <label class="pf-label" for="{{ form.professional_pitch.id_for_label }}">
               Professional pitch
               <span class="pf-char-counter" id="pitchCounter">0 / 500</span>
             </label>
             {{ form.professional_pitch }}
+            {% if form.professional_pitch.errors %}<span class="pf-error">{{ form.professional_pitch.errors|join:", " }}</span>{% endif %}
             <p class="pf-hint">Write a clear, compelling summary of who you are professionally and what you're looking for.</p>
           </div>
-          <div class="pf-field">
+          <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.expected_salary.id_for_label }}">Expected net monthly salary (₦)</label>
             {{ form.expected_salary }}
+            {% if form.expected_salary.errors %}<span class="pf-error">{{ form.expected_salary.errors|join:", " }}</span>{% endif %}
           </div>
-          <div class="pf-field">
+          <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.availability.id_for_label }}">Availability</label>
             {{ form.availability }}
+            {% if form.availability.errors %}<span class="pf-error">{{ form.availability.errors|join:", " }}</span>{% endif %}
           </div>
         </div>
 
@@ -261,6 +270,9 @@
             </div>
             {{ document_form.file }}
           </label>
+          {% if cv_required_error %}
+            <span class="pf-error">{{ cv_required_error }}</span>
+          {% endif %}
           {% if document_form.file.errors %}
             <span class="pf-error">{{ document_form.file.errors|join:", " }}</span>
           {% endif %}
@@ -308,6 +320,37 @@
 
     </form>
   </div>{# /pf-card #}
+
+  {# ── ERROR BANNER (server-side: missing fields) ── #}
+  {% if error_step %}
+  <div class="pf-error-banner" id="pfErrorBanner" role="alert" data-error-step="{{ error_step }}">
+    <div class="pf-error-banner-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="pf-error-banner-copy">
+      <strong>Incomplete profile — Step {{ error_step }} needs attention</strong>
+      <span>Please fill in the highlighted required fields in Step {{ error_step }} to continue.</span>
+    </div>
+    <button type="button" class="pf-error-banner-btn" id="pfErrorGo">Go to Step {{ error_step }}</button>
+  </div>
+  {% endif %}
+
+  {# ── SUCCESS MODAL ── #}
+  {% if profile_completed %}
+  <div class="pf-modal-overlay" id="pfSuccessModal" role="dialog" aria-modal="true" aria-labelledby="pfSuccessTitle">
+    <div class="pf-modal">
+      <div class="pf-modal-check">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 class="pf-modal-title" id="pfSuccessTitle">Professional profile has been completed</h2>
+      <p class="pf-modal-text">Well done! Your professional profile has been completed and saved. You can now submit it for verification from your Verification Status page.</p>
+      <div class="pf-modal-actions">
+        <a href="{% url 'website:candidate_section' section='verification' %}" class="pf-modal-btn pf-modal-btn--primary">Go to Verification</a>
+        <button type="button" class="pf-modal-btn pf-modal-btn--ghost" id="pfModalClose">Stay on profile</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
 </main>
 {% endblock %}

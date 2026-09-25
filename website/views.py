@@ -207,7 +207,8 @@ def candidate_documents_legacy(request):
 
 
 def _candidate_profile_edit(request, profile, title, description):
-    form          = CandidateProfileForm(request.POST or None, instance=profile)
+    is_post       = request.method == "POST"
+    form          = CandidateProfileForm(request.POST if is_post else None, instance=profile)
     document_form = (
         CandidateDocumentForm(request.POST, request.FILES)
         if request.FILES
@@ -215,19 +216,60 @@ def _candidate_profile_edit(request, profile, title, description):
     )
     document_is_valid = not request.FILES or document_form.is_valid()
 
-    if request.method == "POST" and form.is_valid() and document_is_valid:
-        form.save()
-        if request.FILES:
-            document = document_form.save(commit=False)
-            document.profile = profile
-            document.save()
+    # Map each form field → wizard step so errors can jump back to the right step
+    FIELD_STEP_MAP = {
+        "legal_name": 1, "email": 1, "phone": 1, "whatsapp_number": 1, "address": 1,
+        "specializations": 2, "custom_specialization": 2,
+        "primary_degree": 3, "certifications": 3, "software_competencies": 3,
+        "equipment_competencies": 3,
+        "professional_pitch": 4, "expected_salary": 4, "availability": 4,
+        "file": 4,
+    }
+
+    error_step = None
+    cv_required_error = None
+
+    if is_post:
+        form_is_valid = form.is_valid()
+        # CV is required on first completion: must upload one OR already have one
+        has_existing_cv = profile.cv_documents.exists()
+        if not request.FILES and not has_existing_cv:
+            cv_required_error = "Upload your CV (PDF or DOCX, max 5 MB) to complete your profile."
+            document_is_valid = False
+
+        if form_is_valid and document_is_valid:
+            form.save()
+            if request.FILES:
+                document = document_form.save(commit=False)
+                document.profile = profile
+                document.save()
+                profile.notify(
+                    title="CV uploaded successfully",
+                    message="Your latest CV has been saved and is ready for administrator review.",
+                    kind=Notification.Kind.PROFILE,
+                )
             profile.notify(
-                title="CV uploaded successfully",
-                message="Your latest CV has been saved and is ready for administrator review.",
+                title="Professional profile completed",
+                message="Your professional profile has been completed and saved. You can now submit it for verification.",
                 kind=Notification.Kind.PROFILE,
             )
-        messages.success(request, "Your professional profile was updated.")
-        return redirect("website:candidate_section", section="profile")
+            messages.success(request, "Professional profile has been completed.")
+            return redirect(f"{request.path}?completed=1")
+
+        # ── Validation failed: find first error step ──
+        error_fields = list(form.errors.keys())
+        if cv_required_error or document_form.errors:
+            error_fields.append("file")
+        for field in error_fields:
+            step = FIELD_STEP_MAP.get(field)
+            if step is not None and (error_step is None or step < error_step):
+                error_step = step
+        if error_step is None:
+            error_step = 1
+        messages.error(
+            request,
+            f"Some required fields are missing — please complete Step {error_step} to continue.",
+        )
 
     return render(request, "dashboard/candidate/profile.html", {
         "profile":             profile,
@@ -237,6 +279,9 @@ def _candidate_profile_edit(request, profile, title, description):
         "section_title":       title,
         "section_description": description,
         "unread_count":        _unread_count(profile),
+        "error_step":          error_step,
+        "cv_required_error":   cv_required_error,
+        "profile_completed":   request.GET.get("completed") == "1" and not is_post,
     })
 
 
@@ -287,7 +332,8 @@ def submit_candidate_profile(request):
     else:
         profile.verification_status = Profile.VerificationStatus.PENDING
         profile.submitted_at        = timezone.now()
-        profile.save(update_fields=["verification_status", "submitted_at", "updated_at"])
+        profile.verification_notes  = ""
+        profile.save(update_fields=["verification_status", "submitted_at", "verification_notes", "updated_at"])
         profile.notify(
             title="Profile submitted for review",
             message="Your professional profile has been submitted for vetting. We'll notify you once our team begins the review process.",
@@ -586,6 +632,7 @@ def admin_section(request, section):
 
     # ── Notifications (admin view of ALL notifications) ───────
     if section == "notifications":
+        Notification.objects.filter(is_read=False).update(is_read=True)
         qs = Notification.objects.select_related("profile").all()
         return render(request, "dashboard/admin/notifications.html", {
             "page_obj":     paginate(request, qs, per_page=25),
@@ -641,3 +688,118 @@ def push_candidate(request, match_id):
         kind=Notification.Kind.MATCH,
     )
     return redirect("website:admin_section", section="matching")
+
+
+# ─────────────────────────────────────────────────────────────
+# Admin — candidate verification actions (verify / reject / revoke)
+# ─────────────────────────────────────────────────────────────
+
+def _admin_candidate_or_404(profile_id):
+    return get_object_or_404(Profile, pk=profile_id, role=Profile.Role.CANDIDATE)
+
+
+def _candidate_label(profile):
+    return profile.legal_name or profile.user.get_full_name() or profile.user.username
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_verify_candidate(request, profile_id):
+    """POST — mark a candidate as Vetted & Verified (adds them to the talent pool)."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="candidates")
+
+    profile = _admin_candidate_or_404(profile_id)
+    profile.verification_status = Profile.VerificationStatus.VERIFIED
+    profile.verified_at         = timezone.now()
+    profile.verification_notes  = ""
+    profile.save(update_fields=["verification_status", "verified_at", "verification_notes", "updated_at"])
+
+    profile.notify(
+        title="Profile verified",
+        message="Congratulations! Your professional profile has been vetted and verified by JobSPACE. You are now in the talent pool and can be matched with employers.",
+        kind=Notification.Kind.VERIFICATION,
+    )
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Candidate verified",
+        subject=f"{_candidate_label(profile)} ({profile.user.email})",
+    )
+    messages.success(request, f"{_candidate_label(profile)} has been verified.")
+    return redirect("website:admin_section", section="candidates")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_reject_candidate(request, profile_id):
+    """POST — reject a candidate. A reason is required and is shared with the candidate
+    and with any employer holding a match for this candidate."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="candidates")
+
+    profile = _admin_candidate_or_404(profile_id)
+    reason  = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Please type a reason before rejecting this candidate.")
+        return redirect("website:admin_section", section="candidates")
+
+    profile.verification_status = Profile.VerificationStatus.REJECTED
+    profile.verification_notes  = reason
+    profile.verified_at         = None
+    profile.save(update_fields=["verification_status", "verification_notes", "verified_at", "updated_at"])
+
+    profile.notify(
+        title="Profile rejected",
+        message=f"Your profile was rejected during verification. Reason: {reason} "
+                "Please correct the highlighted issue and resubmit your profile for review.",
+        kind=Notification.Kind.VERIFICATION,
+    )
+    # Let every employer who received this candidate know why they were rejected
+    for match in profile.matches.select_related("employer").filter(is_active=True):
+        match.employer.notify(
+            title="A candidate in your list was rejected",
+            message=f"{_candidate_label(profile)} was rejected during JobSPACE verification. "
+                    f"Reason: {reason}",
+            kind=Notification.Kind.VERIFICATION,
+        )
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Candidate rejected",
+        subject=f"{_candidate_label(profile)} ({profile.user.email}) — {reason}",
+    )
+    messages.success(request, f"{_candidate_label(profile)} has been rejected.")
+    return redirect("website:admin_section", section="candidates")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_revoke_verification(request, profile_id):
+    """POST — revoke a previously granted verification. A reason is required; the
+    candidate drops back to 'Requires Changes' with the reason attached."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="candidates")
+
+    profile = _admin_candidate_or_404(profile_id)
+    reason  = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Please type a reason before revoking this verification.")
+        return redirect("website:admin_section", section="candidates")
+
+    profile.verification_status = Profile.VerificationStatus.CHANGES
+    profile.verification_notes  = f"Verification revoked — {reason}"
+    profile.verified_at         = None
+    profile.save(update_fields=["verification_status", "verification_notes", "verified_at", "updated_at"])
+
+    profile.notify(
+        title="Verification revoked",
+        message=f"Your verification has been revoked by JobSPACE. Reason: {reason} "
+                "Please update your profile and resubmit it for review.",
+        kind=Notification.Kind.VERIFICATION,
+    )
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Candidate verification revoked",
+        subject=f"{_candidate_label(profile)} ({profile.user.email}) — {reason}",
+    )
+    messages.success(request, f"Verification revoked for {_candidate_label(profile)}.")
+    return redirect("website:admin_section", section="candidates")

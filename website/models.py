@@ -13,6 +13,7 @@ class Profile(models.Model):
         VERIFYING = "verifying", "Under Verification"
         VERIFIED = "verified", "Vetted & Verified"
         CHANGES = "changes", "Requires Changes"
+        REJECTED = "rejected", "Rejected"
 
     class Availability(models.TextChoices):
         IMMEDIATE = "immediate", "Immediate"
@@ -27,7 +28,8 @@ class Profile(models.Model):
     office_address = models.TextField(blank=True)
     legal_name = models.CharField(max_length=150, blank=True)
     address = models.TextField(blank=True)
-    whatsapp_url = models.URLField(blank=True)
+    whatsapp_url = models.URLField(blank=True)  # legacy: stored wa.me link
+    whatsapp_number = models.CharField(max_length=30, blank=True)
     primary_degree = models.CharField(max_length=200, blank=True)
     certifications = models.TextField(blank=True)
     software_competencies = models.TextField(blank=True)

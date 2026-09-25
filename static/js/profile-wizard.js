@@ -59,14 +59,30 @@
   /* ─────────────────────────────────────────────
      Show a step
   ───────────────────────────────────────────── */
+  let exitTimer  = null;
+  let enterTimer = null;
+
   function showStep(step) {
-    /* Animate out current pane */
-    const outPane = panes.find(p => parseInt(p.dataset.step, 10) === currentStep);
-    if (outPane) {
-      outPane.classList.add('pf-pane--exit');
-      setTimeout(() => {
-        outPane.classList.remove('active', 'pf-pane--exit');
-      }, 280);
+    /* Cancel any in-flight transition (rapid double-clicks on Continue/Back)
+       and finalise panes left mid-exit so two panes never show at once. */
+    if (exitTimer)  { clearTimeout(exitTimer);  exitTimer  = null; }
+    if (enterTimer) { clearTimeout(enterTimer); enterTimer = null; }
+    panes.forEach(p => {
+      if (p.classList.contains('pf-pane--exit')) p.classList.remove('active', 'pf-pane--exit');
+    });
+
+    /* Animate out current pane — skip when re-showing the same step
+       (e.g. initial call), otherwise the pane would remove its own
+       'active' class and the form would close */
+    if (step !== currentStep) {
+      const outPane = panes.find(p => parseInt(p.dataset.step, 10) === currentStep);
+      if (outPane && outPane.classList.contains('active')) {
+        outPane.classList.add('pf-pane--exit');
+        exitTimer = setTimeout(() => {
+          outPane.classList.remove('active', 'pf-pane--exit');
+          exitTimer = null;
+        }, 280);
+      }
     }
 
     currentStep = step;
@@ -74,8 +90,10 @@
     /* Animate in new pane */
     const inPane = panes.find(p => parseInt(p.dataset.step, 10) === step);
     if (inPane) {
-      setTimeout(() => {
+      inPane.classList.remove('pf-pane--exit');
+      enterTimer = setTimeout(() => {
         inPane.classList.add('active');
+        enterTimer = null;
       }, 30);
     }
 
@@ -97,27 +115,111 @@
   /* ─────────────────────────────────────────────
      Inline validation before advancing
   ───────────────────────────────────────────── */
-  function validateCurrentPane() {
-    const pane = panes.find(p => parseInt(p.dataset.step, 10) === currentStep);
-    if (!pane) return true;
+  function markInvalid(input) {
+    if (!input) return;
+    input.classList.add('pf-input--invalid');
+    const clear = () => input.classList.remove('pf-input--invalid');
+    input.addEventListener('input', clear, { once: true });
+    input.addEventListener('change', clear, { once: true });
+  }
 
-    let valid = true;
-    /* Check required inputs in this pane only */
-    pane.querySelectorAll('input[required], textarea[required], select[required]').forEach(input => {
-      if (!input.value.trim()) {
-        input.classList.add('pf-input--invalid');
-        valid = false;
-      } else {
-        input.classList.remove('pf-input--invalid');
-      }
-    });
-
-    if (!valid) {
-      /* Shake the Next button */
-      btnNext.classList.add('pf-btn--shake');
-      setTimeout(() => btnNext.classList.remove('pf-btn--shake'), 500);
+  function setPaneError(pane, message) {
+    if (!pane) return;
+    let banner = pane.querySelector('.pf-js-error');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'pf-error-banner pf-js-error';
+      banner.setAttribute('role', 'alert');
+      banner.innerHTML = '<div class="pf-error-banner-icon">!</div><div class="pf-error-banner-copy"><strong>Incomplete step</strong><span></span></div>';
+      const head = pane.querySelector('.pf-pane-head');
+      if (head) head.after(banner);
+      else pane.prepend(banner);
     }
-    return valid;
+    banner.querySelector('.pf-error-banner-copy span').textContent = message;
+    banner.style.display = 'flex';
+  }
+
+  function clearPaneError(pane) {
+    const b = pane ? pane.querySelector('.pf-js-error') : null;
+    if (b) b.remove();
+  }
+
+  function validateStep(step) {
+    const pane = panes.find(p => parseInt(p.dataset.step, 10) === step);
+    if (!pane) return true;
+    clearPaneError(pane);
+    const missing = [];
+    const requireField = (name, label) => {
+      const el = form.querySelector('[name="' + name + '"]');
+      if (!el || !(el.value || '').trim()) { markInvalid(el); missing.push(label); }
+    };
+    if (step === 1) {
+      requireField('legal_name', 'Full legal name');
+      requireField('email', 'Email address');
+      requireField('phone', 'Phone number');
+      requireField('address', 'Residential address');
+      const emailEl = form.querySelector('[name="email"]');
+      if (emailEl && emailEl.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim())) {
+        markInvalid(emailEl); missing.push('Valid email address');
+      }
+    }
+    if (step === 2) {
+      const checked = form.querySelectorAll('input[name="specializations"]:checked').length;
+      const cIn = document.getElementById('pfCustomSpecInput');
+      const fIn = document.getElementById('pfCustomSpecFallback');
+      const customVal = ((cIn && cIn.value) || '').trim() || ((fIn && fIn.value) || '').trim();
+      if (!checked && !customVal) {
+        missing.push('At least one specialization');
+        const grid = document.getElementById('pfSpecGrid');
+        if (grid) { grid.classList.add('pf-input--invalid'); setTimeout(() => grid.classList.remove('pf-input--invalid'), 1600); }
+      }
+    }
+    if (step === 3) {
+      requireField('primary_degree', 'Primary degree');
+      requireField('certifications', 'Professional certifications');
+      requireField('software_competencies', 'Software competencies');
+    }
+    return finishStepValidation(step, pane, missing);
+  } /* end validateStep */
+
+  function finishStepValidation(step, pane, missing) {
+    if (step === 4) {
+      const pitchEl = form.querySelector('[name="professional_pitch"]');
+      const pitch = (pitchEl ? pitchEl.value : '').trim();
+      if (!pitch) { markInvalid(pitchEl); missing.push('Professional pitch'); }
+      else if (pitch.length < 30) { markInvalid(pitchEl); missing.push('Professional pitch (min 30 characters)'); }
+      const salEl = form.querySelector('[name="expected_salary"]');
+      if (!salEl || !(salEl.value || '').trim()) { markInvalid(salEl); missing.push('Expected salary'); }
+      else if (!(parseFloat(salEl.value) > 0)) { markInvalid(salEl); missing.push('Valid expected salary'); }
+      const avEl = form.querySelector('[name="availability"]');
+      if (!avEl || !(avEl.value || '').trim()) { markInvalid(avEl); missing.push('Availability'); }
+      const fileInput = document.querySelector('input[type="file"][name="file"]');
+      const hasExistingDocs = !!document.querySelector('.pf-doc-row');
+      const hasNewFile = !!(fileInput && fileInput.files && fileInput.files.length);
+      if (!hasExistingDocs && !hasNewFile) {
+        missing.push('CV upload (PDF or DOCX, max 5 MB)');
+        const dz = document.getElementById('pfDropzone');
+        if (dz) { dz.classList.add('pf-input--invalid'); setTimeout(() => dz.classList.remove('pf-input--invalid'), 1600); }
+      }
+    }
+    if (missing.length) {
+      setPaneError(pane, 'Please fill in the required field(s) to continue: ' + missing.join(', ') + '.');
+      const firstInvalid = pane.querySelector('.pf-input--invalid');
+      if (firstInvalid && firstInvalid.focus) { try { firstInvalid.focus(); } catch (e) {} }
+      const btn = step === TOTAL ? btnSave : btnNext;
+      if (btn) {
+        btn.classList.remove('pf-btn--shake');
+        void btn.offsetWidth;
+        btn.classList.add('pf-btn--shake');
+        setTimeout(() => btn.classList.remove('pf-btn--shake'), 500);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function validateCurrentPane() {
+    return validateStep(currentStep);
   }
 
   /* Clear invalid state on user input */
@@ -128,12 +230,43 @@
   /* ─────────────────────────────────────────────
      Navigation handlers
   ───────────────────────────────────────────── */
+  /* Server-rendered notices — the red "Step X needs attention" banner and
+     the flash alerts — describe the LAST failed submission. They are stale
+     the moment the user starts navigating again, so dismiss them on EVERY
+     Continue/Back click (even when validation fails). Otherwise an old
+     "Step 2" notice competes with fresh inline feedback on step 1. */
+  function dismissStaleNotices() {
+    document.getElementById('pfErrorBanner')?.remove();
+    document.querySelectorAll('.pf-alert').forEach(el => el.remove());
+  }
+
+  /* Ignore rapid repeat clicks while a step transition (~280ms) is running.
+     Without this lock a second click validates/advances the NEXT step before
+     its pane is visible — surfacing that step's error or skipping ahead. */
+  let isNavigating = false;
+  function lockNavigation() {
+    isNavigating = true;
+    setTimeout(() => { isNavigating = false; }, 320);
+  }
+
   btnNext?.addEventListener('click', () => {
-    if (currentStep < TOTAL) showStep(currentStep + 1);
+    dismissStaleNotices();
+    if (isNavigating) return;
+    if (currentStep < TOTAL && validateCurrentPane()) {
+      lockNavigation();
+      showStep(currentStep + 1);
+    }
   });
 
   btnBack?.addEventListener('click', () => {
-    if (currentStep > 1) showStep(currentStep - 1);
+    dismissStaleNotices();
+    if (isNavigating) return;
+    if (currentStep > 1) {
+      const pane = panes.find(p => parseInt(p.dataset.step, 10) === currentStep);
+      clearPaneError(pane);
+      lockNavigation();
+      showStep(currentStep - 1);
+    }
   });
 
   /* Prevent accidental Enter-to-submit */
@@ -300,10 +433,44 @@
     cb.addEventListener('change', syncCard);
   });
 
-  /* ─────────────────────────────────────────────
-     Init
+   /* ─────────────────────────────────────────────
+     Server round-trip: jump to error step / modal controls
   ───────────────────────────────────────────── */
-  showStep(1);
-  updateProgress(1);
+  const serverErrorBanner = document.getElementById('pfErrorBanner');
+  let serverErrStep = 0;
+  if (serverErrorBanner) {
+    serverErrStep = parseInt(serverErrorBanner.dataset.errorStep || '1', 10);
+    document.getElementById('pfErrorGo')?.addEventListener('click', () => {
+      showStep(serverErrStep);
+      document.getElementById('pfCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  const successModal = document.getElementById('pfSuccessModal');
+  function closeSuccessModal() {
+    if (!successModal) return;
+    successModal.classList.add('pf-modal--hide');
+    setTimeout(() => successModal.remove(), 220);
+    /* Clean ?completed=1 from URL without reloading */
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('completed');
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+  }
+  document.getElementById('pfModalClose')?.addEventListener('click', closeSuccessModal);
+  successModal?.addEventListener('click', (e) => {
+    if (e.target === successModal) closeSuccessModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('pfSuccessModal')) closeSuccessModal();
+  });
+
+  /* ─────────────────────────────────────────────
+     Init (single call — server error step wins, else step 1)
+  ───────────────────────────────────────────── */
+  const initialStep = serverErrStep || 1;
+  showStep(initialStep >= 1 && initialStep <= TOTAL ? initialStep : 1);
+  updateProgress(initialStep >= 1 && initialStep <= TOTAL ? initialStep : 1);
 
 }());

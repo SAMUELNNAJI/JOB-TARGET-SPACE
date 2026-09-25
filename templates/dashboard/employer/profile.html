@@ -23,24 +23,167 @@
       <div class="emp-form-card-head-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
       <div><h2 class="emp-form-card-title">Company Information</h2><p class="emp-form-card-sub">This information is visible to JobSPACE administrators only — not to candidates.</p></div>
     </div>
-    <form method="post" class="emp-form">
+    <form method="post" class="emp-form" id="empProfileWizard" novalidate>
       {% csrf_token %}
-      <div class="emp-form-section">
+
+      {# ── STEP INDICATOR ── #}
+      <div class="emp-wiz-steps" id="empWizSteps">
+        <div class="emp-wiz-step active" data-step-label="1"><span class="emp-wiz-bubble">1</span><span class="emp-wiz-name">Corporate Details</span></div>
+        <span class="emp-wiz-line"></span>
+        <div class="emp-wiz-step" data-step-label="2"><span class="emp-wiz-bubble">2</span><span class="emp-wiz-name">Contact Details</span></div>
+      </div>
+
+      {# ════ STEP 1 — Corporate Details ════ #}
+      <div class="emp-form-section emp-wiz-pane active" data-step="1">
         <h3 class="emp-form-section-title">Corporate Details</h3>
         <div class="emp-form-grid">
           <div class="emp-field emp-field--full"><label class="emp-label">Corporate registered name</label>{{ form.company_name }}{% if form.company_name.errors %}<span class="emp-error">{{ form.company_name.errors|join:", " }}</span>{% endif %}</div>
           <div class="emp-field"><label class="emp-label">Industry sector</label>{{ form.industry_sector }}</div>
           <div class="emp-field"><label class="emp-label">HR / contact person's name</label>{{ form.hr_contact_name }}</div>
-          <div class="emp-field"><label class="emp-label">Official email address</label>{{ form.email }}{% if form.email.errors %}<span class="emp-error">{{ form.email.errors|join:", " }}</span>{% endif %}</div>
-          <div class="emp-field"><label class="emp-label">Phone number</label>{{ form.phone }}</div>
           <div class="emp-field emp-field--full"><label class="emp-label">Office address</label>{{ form.office_address }}</div>
         </div>
       </div>
-      <div class="emp-form-actions">
-        <button type="submit" class="emp-submit-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Save company profile</button>
-        <a class="emp-cancel-btn" href="/dashboard/employer/">Cancel</a>
+
+      {# ════ STEP 2 — Contact Details ════ #}
+      <div class="emp-form-section emp-wiz-pane" data-step="2">
+        <h3 class="emp-form-section-title">Contact Details</h3>
+        <div class="emp-form-grid">
+          <div class="emp-field"><label class="emp-label">Official email address</label>{{ form.email }}{% if form.email.errors %}<span class="emp-error">{{ form.email.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Phone number</label>{{ form.phone }}</div>
+        </div>
+      </div>
+
+      {# ── WIZARD ACTIONS ── #}
+      <div class="emp-form-actions emp-wiz-actions">
+        <button type="button" class="emp-cancel-btn" id="empWizBack" hidden>Back</button>
+        <span class="emp-wiz-counter">Step <strong id="empWizCurrent">1</strong> of 2</span>
+        <button type="button" class="emp-submit-btn" id="empWizNext">Continue
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button type="submit" class="emp-submit-btn" id="empWizSave" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Save company profile</button>
       </div>
     </form>
   </div>
 </main>
+{% endblock %}
+{% block extra_scripts %}
+<style>
+  .emp-wiz-steps{display:flex;align-items:center;gap:12px;padding:22px 30px 0}
+  .emp-wiz-step{display:flex;align-items:center;gap:8px;color:#9aa5b8;font:700 11px 'Montserrat',sans-serif}
+  .emp-wiz-bubble{display:grid;place-items:center;width:28px;height:28px;border:1px solid #d9dfeb;border-radius:50%;background:#fff;color:#8d98aa;font-size:11px;transition:all .25s}
+  .emp-wiz-line{flex:1;height:1px;background:#dfe4ee}
+  .emp-wiz-step.active,.emp-wiz-step.complete{color:var(--emp-red,#d90429)}
+  .emp-wiz-step.active .emp-wiz-bubble,.emp-wiz-step.complete .emp-wiz-bubble{border-color:var(--emp-red,#d90429);background:var(--emp-red,#d90429);color:#fff}
+  .emp-wiz-pane{display:none}
+  .emp-wiz-pane.active{display:block;animation:empWizIn .3s ease}
+  @keyframes empWizIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .emp-wiz-counter{margin-left:auto;font:700 11px 'DM Sans',sans-serif;color:#7a8599}
+  .emp-input--invalid{border-color:var(--emp-red,#d90429)!important;box-shadow:0 0 0 3px rgba(217,4,41,.12)!important}
+  .emp-wiz-shake{animation:empWizShake .4s ease}
+  @keyframes empWizShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @media(max-width:760px){
+    .emp-wiz-steps{padding:18px 20px 0}
+    .emp-wiz-name,.emp-wiz-counter{display:none}
+  }
+</style>
+<script>
+(function () {
+  'use strict';
+  var form    = document.getElementById('empProfileWizard');
+  if (!form) return;
+  var panes   = Array.prototype.slice.call(form.querySelectorAll('.emp-wiz-pane'));
+  var bubbles = Array.prototype.slice.call(document.querySelectorAll('#empWizSteps .emp-wiz-step'));
+  var btnBack = document.getElementById('empWizBack');
+  var btnNext = document.getElementById('empWizNext');
+  var btnSave = document.getElementById('empWizSave');
+  var counter = document.getElementById('empWizCurrent');
+  var TOTAL = panes.length, current = 1;
+
+  /* Fields that must be completed on each step before advancing */
+  var REQUIRED = {
+    1: ['company_name', 'industry_sector', 'hr_contact_name', 'office_address'],
+    2: ['email', 'phone']
+  };
+
+  function paneFields(step) {
+    var pane = panes.find(function (p) { return parseInt(p.dataset.step, 10) === step; });
+    return pane ? Array.prototype.slice.call(pane.querySelectorAll('input, select, textarea')) : [];
+  }
+
+  function validateStep(step) {
+    var valid = true;
+    paneFields(step).forEach(function (input) {
+      var required = (REQUIRED[step] || []).some(function (n) { return input.name.indexOf(n) !== -1; });
+      if (!required) return;
+      var empty = !input.value.trim();
+      var badEmail = input.type === 'email' && !empty && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim());
+      if (empty || badEmail) {
+        input.classList.add('emp-input--invalid');
+        valid = false;
+      } else {
+        input.classList.remove('emp-input--invalid');
+      }
+    });
+    return valid;
+  }
+
+  function showStep(step) {
+    current = step;
+    panes.forEach(function (p) {
+      p.classList.toggle('active', parseInt(p.dataset.step, 10) === step);
+    });
+    bubbles.forEach(function (el) {
+      var n = parseInt(el.dataset.stepLabel, 10);
+      el.classList.toggle('active', n === step);
+      el.classList.toggle('complete', n < step);
+    });
+    btnBack.hidden = step === 1;
+    btnNext.hidden = step === TOTAL;
+    btnSave.hidden = step !== TOTAL;
+    if (counter) counter.textContent = step;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* Continue: only advances when the current step is fully completed —
+     otherwise the step stays open with invalid fields highlighted */
+  btnNext.addEventListener('click', function () {
+    if (!validateStep(current)) {
+      btnNext.classList.add('emp-wiz-shake');
+      setTimeout(function () { btnNext.classList.remove('emp-wiz-shake'); }, 450);
+      return;
+    }
+    if (current < TOTAL) showStep(current + 1);
+  });
+
+  btnBack.addEventListener('click', function () {
+    if (current > 1) showStep(current - 1);
+  });
+
+  /* Clear invalid state as the user types */
+  form.addEventListener('input', function (e) {
+    if (e.target.value && e.target.value.trim()) e.target.classList.remove('emp-input--invalid');
+  });
+
+  /* Prevent accidental Enter-to-submit */
+  form.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+  });
+
+  /* Final submit: re-validate every step; jump to the first incomplete one */
+  form.addEventListener('submit', function (e) {
+    for (var s = 1; s <= TOTAL; s++) {
+      if (!validateStep(s)) { showStep(s); e.preventDefault(); return; }
+    }
+  });
+
+  /* On load: open the step containing server-side errors, else step 1 */
+  (function () {
+    for (var s = 1; s <= TOTAL; s++) {
+      var pane = panes.find(function (p) { return parseInt(p.dataset.step, 10) === s; });
+      if (pane && pane.querySelector('.emp-error')) { showStep(s); return; }
+    }
+    showStep(1);
+  })();
+}());
+</script>
 {% endblock %}

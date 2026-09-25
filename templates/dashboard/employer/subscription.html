@@ -45,7 +45,9 @@
   {% if payments %}
     <div class="emp-payment-history">
       <div class="emp-section-head" style="padding:20px 24px 16px"><h2 class="emp-panel-title">Payment History</h2><a class="emp-link" href="/dashboard/employer/payments/">View all →</a></div>
-      <table class="portal-table" style="margin:0 24px 20px;width:calc(100% - 48px)"><thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead><tbody>{% for p in payments|slice:":5" %}<tr><td>{{ p.paid_at|date:"d M Y" }}</td><td>{{ p.subscription.get_plan_display|default:"Subscription" }}</td><td>₦{{ p.amount|floatformat:0 }}</td><td><span class="status-badge">{{ p.get_status_display }}</span></td><td style="font-size:10px;color:#9ca5b6">{{ p.reference }}</td></tr>{% endfor %}</tbody></table>
+      <div class="dashboard-table-scroll" style="margin:0 24px 20px" tabindex="0" role="region" aria-label="Recent payment history table">
+        <table class="portal-table"><thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead><tbody>{% for p in payments|slice:":5" %}<tr><td>{{ p.paid_at|date:"d M Y" }}</td><td>{{ p.subscription.get_plan_display|default:"Subscription" }}</td><td>₦{{ p.amount|floatformat:0 }}</td><td><span class="status-badge">{{ p.get_status_display }}</span></td><td style="font-size:10px;color:#9ca5b6">{{ p.reference }}</td></tr>{% endfor %}</tbody></table>
+      </div>
     </div>
   {% endif %}
 </main>

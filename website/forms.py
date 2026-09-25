@@ -6,7 +6,7 @@ from .models import CandidateDocument, Profile, Qualification, RecruitmentReques
 
 
 class SignInForm(AuthenticationForm):
-    username = forms.EmailField(label="Email address")
+    username = forms.CharField(label="Email address or username")
 
 
 class SignUpForm(UserCreationForm):
@@ -55,6 +55,16 @@ class SignUpForm(UserCreationForm):
 
 class CandidateProfileForm(forms.ModelForm):
     email = forms.EmailField()
+    whatsapp_number = forms.CharField(
+        label="WhatsApp number",
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={
+            "placeholder": "e.g. 0803 123 4567",
+            "inputmode": "tel",
+            "autocomplete": "tel",
+        }),
+    )
     specializations = forms.ModelMultipleChoiceField(
         queryset=Specialization.objects.all(),
         widget=forms.CheckboxSelectMultiple,
@@ -75,7 +85,7 @@ class CandidateProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = (
-            "legal_name", "address", "email", "phone", "whatsapp_url", "specializations",
+            "legal_name", "address", "email", "phone", "whatsapp_number", "specializations",
             "primary_degree", "certifications", "software_competencies", "equipment_competencies",
             "professional_pitch", "expected_salary", "availability",
         )
@@ -93,6 +103,58 @@ class CandidateProfileForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.user_id:
             self.fields["email"].initial = self.instance.user.email
+        # ── All wizard fields are required (except whatsapp + custom spec + equipment) ──
+        required_fields = (
+            "legal_name", "email", "phone", "address",
+            "primary_degree", "certifications", "software_competencies",
+            "professional_pitch", "expected_salary", "availability",
+        )
+        for name in required_fields:
+            self.fields[name].required = True
+        self.fields["specializations"].required = False
+        # Enforced in clean(): checkbox selection OR custom_specialization text
+
+    def clean_whatsapp_number(self):
+        import re
+        raw = (self.cleaned_data.get("whatsapp_number") or "").strip()
+        if not raw:
+            return ""
+        digits = re.sub(r"\D", "", raw)
+        # Strip leading Nigeria trunk zero / 234 prefix variants, keep local part check
+        if digits.startswith("234") and len(digits) > 10:
+            local = digits[3:]
+        elif digits.startswith("0"):
+            local = digits[1:]
+        else:
+            local = digits
+        if len(digits) < 7 or len(digits) > 15 or len(local) < 7:
+            raise forms.ValidationError("Enter a valid WhatsApp number (7–15 digits).")
+        return raw
+
+    def clean_expected_salary(self):
+        value = self.cleaned_data.get("expected_salary")
+        if value in (None, ""):
+            raise forms.ValidationError("Enter your expected net monthly salary.")
+        if value <= 0:
+            raise forms.ValidationError("Expected salary must be greater than zero.")
+        return value
+
+    def clean_professional_pitch(self):
+        pitch = (self.cleaned_data.get("professional_pitch") or "").strip()
+        if not pitch:
+            raise forms.ValidationError("Write a short professional pitch.")
+        if len(pitch) < 30:
+            raise forms.ValidationError("Your pitch is too short — write at least 30 characters.")
+        return pitch
+
+    def clean(self):
+        cleaned = super().clean()
+        # Allow "custom_specialization only" to satisfy specializations
+        specs = cleaned.get("specializations")
+        custom = (cleaned.get("custom_specialization") or "").strip()
+        if (not specs or len(specs) == 0) and not custom:
+            self.add_error("specializations", "Select at least one specialization or add your own.")
+        return cleaned
 
     def save(self, commit=True):
         profile = super().save(commit=commit)

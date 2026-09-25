@@ -51,11 +51,15 @@
       </section>
       <section class="adm-panel">
         <div class="adm-panel-head"><div><h2 class="adm-panel-title">Recent Recruitment Requests</h2><p class="adm-panel-sub">Latest employer staffing requirements</p></div><a class="adm-link" href="/dashboard/admin/requests/">Manage all →</a></div>
+        <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Recent recruitment requests table">
+          <table class="portal-table">
         <table class="portal-table">
           <thead><tr><th>Employer</th><th>Position</th><th>Required</th><th>Status</th><th>Date</th></tr></thead>
           <tbody>
             {% for item in requests|slice:":6" %}<tr><td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td><td>{{ item.position }}</td><td>{{ item.professionals_required }}</td><td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
             {% empty %}<tr><td colspan="5" style="text-align:center;padding:24px;color:#7a8599">No recruitment requests yet.</td></tr>{% endfor %}
+          </table>
+        </div>
           </tbody>
         </table>
       </section>

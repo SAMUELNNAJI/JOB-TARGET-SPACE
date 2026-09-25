@@ -299,6 +299,23 @@
 .auth-foot a{color:var(--red,#d6001d);font-weight:700;transition:color .2s}
 .auth-foot a:hover{color:#9b0015}
 
+/* ── password visibility toggle ── */
+.auth-card .password-wrap{position:relative}
+.auth-card .password-wrap input[type=password],
+.auth-card .password-wrap input[type=text]{width:100%;padding-right:46px;box-sizing:border-box}
+.auth-card .password-toggle{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  display:grid;place-items:center;width:32px;height:32px;margin:0;padding:0;border:0;border-radius:9px;
+  background:transparent;color:#8a93a6;cursor:pointer;box-shadow:none;
+  transition:background .2s,color .2s;
+}
+.auth-card .password-toggle:hover{background:#f0f3fa;color:#0e1420;transform:translateY(-50%)}
+.auth-card .password-toggle:focus-visible{outline:2px solid var(--red,#d6001d);outline-offset:2px}
+.auth-card .password-toggle svg{display:block}
+.auth-card .password-toggle .icon-eye-off{display:none}
+.auth-card .password-wrap.is-visible .icon-eye{display:none}
+.auth-card .password-wrap.is-visible .icon-eye-off{display:block}
+
 /* choice grid */
 .auth-choice-wrap{width:100%;max-width:480px}
 .auth-choice-heading{text-align:center;margin-bottom:28px}

@@ -6,6 +6,11 @@
   <section class="dash-hero"><div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#9333ea;opacity:.35"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div><div class="dash-hero-content"><span class="dash-hero-kicker">SUBSCRIPTION MANAGEMENT</span><h1 class="dash-hero-title">Keep revenue<br><em>and service aligned.</em></h1><p class="dash-hero-sub">Monitor plan levels, active status, renewal dates, and employer service limits across the platform.</p></div><div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Subscriptions</span></div></section>
   <section class="dashboard-panel admin-table-card">
     <div class="dashboard-panel-head"><h2>All subscriptions</h2><span class="verified">{{ page_obj.paginator.count }} records</span></div>
+    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Subscriptions table">
+      <table class="portal-table"><thead><tr><th>Employer</th><th>Plan</th><th>Amount</th><th>Started</th><th>Expires</th><th>Status</th></tr></thead><tbody>
+    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Subscriptions table">
+      </tbody></table>
+    </div>
     <table class="portal-table"><thead><tr><th>Employer</th><th>Plan</th><th>Amount</th><th>Started</th><th>Expires</th><th>Status</th></tr></thead><tbody>
       {% for s in page_obj %}<tr><td><strong>{{ s.employer.company_name|default:s.employer.user.username }}</strong></td><td>{{ s.get_plan_display }}</td><td style="white-space:nowrap">₦{{ s.amount|floatformat:0 }}/mo</td><td>{{ s.starts_at|date:"d M Y" }}</td><td>{{ s.expires_at|date:"d M Y" }}</td><td><span class="status-badge {% if not s.is_active %}status-badge--grey{% endif %}">{% if s.is_active %}Active{% else %}Expired{% endif %}</span></td></tr>
       {% empty %}<tr><td colspan="6" style="text-align:center;padding:24px;color:#7a8599">No subscriptions yet.</td></tr>{% endfor %}
