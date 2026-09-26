@@ -90,6 +90,11 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_URL = "/signin/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ── Flutterwave payment gateway ──────────────────────────────────────────────
+FLUTTERWAVE_PUBLIC_KEY   = os.environ.get("FLUTTERWAVE_PUBLIC_KEY", "")
+FLUTTERWAVE_SECRET_KEY   = os.environ.get("FLUTTERWAVE_SECRET_KEY", "")
+FLUTTERWAVE_WEBHOOK_HASH = os.environ.get("FLUTTERWAVE_WEBHOOK_HASH", "")
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG

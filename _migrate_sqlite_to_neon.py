@@ -86,21 +86,26 @@ for uid, (u, e) in s_users.items():
 
 w()
 w("=" * 70)
-w("PROFILES  (id | user_id | role | legal_name | status | completion)")
+w("PROFILES  (id | user_id | role | legal_name | status)")
 w("=" * 70)
+def cols(tbl):
+    return {r[1] for r in sq.execute(f"PRAGMA table_info({tbl})")}
+pcols = cols("website_profile")
+w(f"  website_profile columns: {sorted(pcols)}")
+sel = [c for c in ("id", "user_id", "role", "legal_name",
+                   "verification_status") if c in pcols]
 w("-- SQLITE --")
-for r in sq.execute("SELECT id,user_id,role,legal_name,verification_status,"
-                    "completion_percentage FROM website_profile ORDER BY id"):
-    w(f"  p{r['id']:3d} | u{r['user_id']:3d} | {r['role']:10s} | "
-      f"{(r['legal_name'] or '-'):22s} | {r['verification_status']:10s} | "
-      f"{r['completion_percentage']}%")
+for r in sq.execute(f"SELECT {','.join(sel)} FROM website_profile ORDER BY id"):
+    w("  p{:<3d} | u{:<3d} | {:10s} | {}".format(
+        r["id"], r["user_id"], r["role"], r["legal_name"]))
 w("-- NEON --")
 try:
+    nsel = [c for c in ("id", "user_id", "role", "legal_name",
+                        "verification_status")]
     for r in connection.cursor().execute(
-            "SELECT id,user_id,role,legal_name,verification_status,"
-            "completion_percentage FROM website_profile ORDER BY id"):
-        w(f"  p{r[0]:<3d} | u{r[1]:<3d} | {r[2]:10s} | {(r[3] or '-'):22s} | "
-          f"{r[4]:10s} | {r[5]}%")
+            f"SELECT {','.join(nsel)} FROM website_profile ORDER BY id"):
+        w("  p{:<3d} | u{:<3d} | {:10s} | {}".format(
+            r[0], r[1], r[2], r[3]))
 except Exception as e:
     w(f"  ERROR: {e}")
 

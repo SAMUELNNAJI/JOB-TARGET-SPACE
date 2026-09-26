@@ -27,6 +27,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+/* Ensure the HTML hidden attribute always wins over CSS display rules */
+[hidden] { display: none !important; }
 a {
   color: inherit;
   text-decoration: none;
@@ -2011,8 +2013,8 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .cand-hero-sub {
   max-width: 360px;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 15px;
+  line-height: 1.7;
   margin-bottom: 24px;
 }
 .cand-hero-actions {
@@ -3466,9 +3468,9 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   background-clip: text;
 }
 .pf-hero-sub {
-  font-size: 12px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.65);
-  line-height: 1.65;
+  line-height: 1.7;
   max-width: 400px;
 }
 
@@ -4412,9 +4414,9 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   background-clip: text;
 }
 .vf-hero-sub {
-  font-size: 12px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.65);
-  line-height: 1.65;
+  line-height: 1.7;
   max-width: 380px;
 }
 
@@ -5080,7 +5082,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 }
 .opp-hero-sub {
   max-width: 400px;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.7;
 }
@@ -5680,7 +5682,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   background-clip: text;
 }
 .dash-hero-sub {
-  font-size: 12px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.7;
   max-width: 440px;
@@ -5845,7 +5847,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   background-clip: text;
 }
 .adm-hero-sub {
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.7;
   max-width: 420px;
@@ -6521,7 +6523,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-kicker-dot{width:6px;height:6px;border-radius:50%;background:#12b76a;box-shadow:0 0 8px #12b76a;animation:pulseDot 2s ease-in-out infinite}
 .emp-hero-title{font:800 44px/1.02 'Montserrat',sans-serif;color:#fff;margin-bottom:12px;letter-spacing:-.02em}
 .emp-hero-title em{font-style:normal;background:linear-gradient(90deg,#ff4d6d,#d90429);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.emp-hero-sub{max-width:420px;font-size:13px;color:rgba(255,255,255,.62);line-height:1.7;margin-bottom:24px}
+.emp-hero-sub{max-width:420px;font-size:15px;color:rgba(255,255,255,.62);line-height:1.7;margin-bottom:24px}
 .emp-hero-actions{display:flex;gap:10px;flex-wrap:wrap}
 .emp-btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:999px;font-size:12px;font-weight:700;transition:all .2s;white-space:nowrap;cursor:pointer;border:none}
 .emp-btn--primary{background:var(--emp-red,#d90429);color:#fff;box-shadow:0 6px 20px var(--emp-red-glow,rgba(217,4,41,.18))}
@@ -6864,6 +6866,41 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-modal-btn--ghost:hover { border-color: #9aa5b8; color: #0e1420; }
 .emp-modal-btn--primary { background: var(--emp-red, #d90429); border-color: var(--emp-red, #d90429); color: #fff; }
 .emp-modal-btn--primary:hover { background: var(--emp-red-dk, #a8001c); border-color: var(--emp-red-dk, #a8001c); box-shadow: 0 8px 22px var(--emp-red-glow, rgba(217, 4, 41, 0.28)); }
+
+/* auto-forward countdown (profile complete → recruitment requests) */
+.emp-auto-next {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: #f4f6fc;
+  color: #46527a;
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+.emp-auto-next em { font-style: normal; font-weight: 700; color: #26344e; }
+.emp-auto-next strong {
+  display: inline-block;
+  min-width: 18px;
+  color: var(--emp-red, #d90429);
+  font-weight: 800;
+}
+.emp-auto-next-bar {
+  height: 4px;
+  border-radius: 99px;
+  background: #dfe4ee;
+  overflow: hidden;
+}
+.emp-auto-next-bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--emp-red, #d90429), #ff6b81);
+  transition: width 1s linear;
+}
 
 /* shortlist grid */
 .emp-shortlist-section{background:#fff;border:1px solid var(--emp-line,#e6eaf4);border-radius:20px;box-shadow:var(--emp-shadow);overflow:hidden}
@@ -7618,4 +7655,922 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 @media (max-width: 760px) {
   .dash-hero-sub, .cand-hero-sub, .emp-hero-sub, .adm-hero-sub { font-size: 14px !important; }
   .emp-form-hero-content .emp-hero-sub { font-size: 13px !important; }
+}
+
+
+/* ============================================================
+   Subscription Gate Modal
+   ============================================================ */
+
+/* Reuse .emp-modal-overlay from existing dashboard CSS but override
+   visibility so the gate is always open (not toggled by JS). */
+.emp-modal-overlay--visible {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.emp-modal--subscribe-gate {
+  max-width: 680px;
+  width: 94%;
+  padding: 36px 32px 28px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(0,0,0,.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  position: relative;
+}
+
+/* warn-style icon (amber) */
+.emp-modal-icon--warn {
+  background: linear-gradient(135deg, #f79009 0%, #dc6803 100%);
+  color: #fff;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(247,144,9,.35);
+}
+
+/* plan card grid */
+.sub-gate-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  margin: 20px 0 6px;
+}
+
+@media (max-width: 540px) {
+  .sub-gate-plans { grid-template-columns: 1fr; }
+}
+
+.sub-gate-card {
+  border: 1.5px solid #e5e9f2;
+  border-radius: 14px;
+  padding: 18px 16px 16px;
+  text-align: left;
+  background: #fafbfc;
+  position: relative;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.sub-gate-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 18px rgba(37,99,235,.10);
+}
+
+.sub-gate-card--premium {
+  border-color: #7c3aed;
+  background: linear-gradient(160deg, #faf5ff 0%, #f5f0ff 100%);
+}
+
+.sub-gate-card--premium:hover {
+  border-color: #6d28d9;
+  box-shadow: 0 4px 18px rgba(109,40,217,.12);
+}
+
+.sub-gate-recommended {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sub-gate-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.sub-gate-plan-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sub-gate-price {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.sub-gate-price small {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.sub-gate-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sub-gate-features li {
+  font-size: 12px;
+  color: #374151;
+  padding-left: 16px;
+  position: relative;
+}
+
+.sub-gate-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+}
+
+/* footer link */
+.sub-gate-footer {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+.sub-gate-footer a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.sub-gate-footer a:hover {
+  text-decoration: underline;
+}
+
+/* spinner */
+.sub-gate-spinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  margin-top: 8px;
+}
+
+.sub-gate-spinner-ring {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* error message */
+.sub-gate-error {
+  font-size: 12px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 6px;
+  width: 100%;
+  text-align: left;
+}
+
+
+/* ============================================================
+   Notification Bell Dropdown
+   ============================================================ */
+
+.notif-bell-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Make the bell button a proper button (not anchor) */
+button.notif-bell-btn {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  position: relative;
+}
+
+button.notif-bell-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.notif-bell-badge.is-hidden {
+  display: none !important;
+}
+
+/* Animate badge on new notification */
+@keyframes bell-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.notif-bell-badge.pop {
+  animation: bell-pop 0.35s ease forwards;
+}
+
+/* Dropdown panel */
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -8px;
+  width: 340px;
+  max-height: 460px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e9f2;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.14), 0 2px 8px rgba(0,0,0,.06);
+  z-index: 9000;
+  overflow: hidden;
+  /* Animate in */
+  transform-origin: top right;
+  animation: notif-drop-in .18s ease forwards;
+}
+
+@keyframes notif-drop-in {
+  from { opacity: 0; transform: scale(.96) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+.notif-dropdown[hidden] {
+  display: none;
+}
+
+/* Header row */
+.notif-dropdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f0f2f7;
+  flex-shrink: 0;
+}
+
+.notif-dropdown-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: .02em;
+}
+
+.notif-mark-all-btn {
+  font-size: 11px;
+  color: #2563eb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background .15s;
+}
+.notif-mark-all-btn:hover {
+  background: #eff6ff;
+}
+.notif-mark-all-btn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+/* Scrollable body */
+.notif-dropdown-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Loading state */
+.notif-dropdown-loading {
+  display: flex;
+  justify-content: center;
+  padding: 28px 0;
+}
+
+.notif-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+/* Individual notification item inside dropdown */
+.notif-drop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #f4f5f8;
+  transition: background .12s;
+  cursor: default;
+}
+.notif-drop-item:last-child {
+  border-bottom: none;
+}
+.notif-drop-item:hover {
+  background: #f8fafd;
+}
+.notif-drop-item.is-unread {
+  background: #f0f7ff;
+}
+.notif-drop-item.is-unread:hover {
+  background: #e8f2ff;
+}
+
+/* Kind icon bubble */
+.notif-drop-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.notif-drop-icon--verification { background: #d1fae5; color: #059669; }
+.notif-drop-icon--match        { background: #dbeafe; color: #2563eb; }
+.notif-drop-icon--shortlist    { background: #fef3c7; color: #d97706; }
+.notif-drop-icon--payment      { background: #d1fae5; color: #059669; }
+.notif-drop-icon--profile      { background: #ede9fe; color: #7c3aed; }
+.notif-drop-icon--system,
+.notif-drop-icon--bell         { background: #f1f5f9; color: #64748b; }
+
+.notif-drop-body {
+  flex: 1;
+  min-width: 0;
+}
+.notif-drop-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notif-drop-msg {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin-top: 2px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.notif-drop-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.notif-drop-time {
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+.notif-drop-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.notif-drop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  color: #9ca3af;
+  gap: 8px;
+}
+.notif-drop-empty svg {
+  opacity: .4;
+}
+.notif-drop-empty span {
+  font-size: 12px;
+}
+
+/* Footer */
+.notif-dropdown-foot {
+  border-top: 1px solid #f0f2f7;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.notif-view-all {
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+.notif-view-all:hover {
+  text-decoration: underline;
+}
+
+/* Responsive: on small screens make it full-width */
+@media (max-width: 400px) {
+  .notif-dropdown {
+    width: calc(100vw - 24px);
+    right: -4px;
+  }
+}
+
+/* ============================================================
+   Admin Matching — Candidate Search Bar
+   ============================================================ */
+
+.mt-cand-search-bar {
+  padding: 12px 20px 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mt-cand-search-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  background: #f8fafc;
+  border: 1.5px solid #e5e9f2;
+  border-radius: 9px;
+  padding: 8px 12px;
+  transition: border-color .15s, box-shadow .15s;
+  color: #9ca3af;
+}
+
+.mt-cand-search-label:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+  color: #2563eb;
+  background: #fff;
+}
+
+.mt-cand-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  min-width: 0;
+}
+
+.mt-cand-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.mt-search-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.mt-search-status {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* live results container reuses .mt-cand-list styles already in CSS */
+.mt-search-results {
+  padding: 0 8px 8px;
+}
+
+.mt-search-results[hidden] {
+  display: none;
+}
+
+
+/* ============================================================
+   Employer — Candidate Profile Modal
+   ============================================================ */
+
+/* Hover hint on candidate row */
+.emp-candidate-row--clickable {
+  transition: background .14s;
+  border-radius: 10px;
+}
+.emp-candidate-row--clickable:hover {
+  background: #f0f6ff;
+}
+.emp-candidate-row--clickable:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.emp-view-profile-hint {
+  font-size: 10.5px;
+  color: #2563eb;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.emp-candidate-row--clickable:hover .emp-view-profile-hint {
+  opacity: 1;
+}
+
+/* Overlay */
+.cand-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,20,35,.55);
+  backdrop-filter: blur(3px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: notif-drop-in .18s ease;
+}
+.cand-modal-overlay[hidden] { display: none; }
+
+/* Modal panel */
+.cand-modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.18);
+  width: 100%;
+  max-width: 620px;
+  max-height: 88vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+  padding: 32px 30px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Close button */
+.cand-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #374151;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+.cand-modal-close:hover { background: #e2e8f0; }
+
+/* Loading spinner */
+.cand-modal-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+/* Header */
+.cand-modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f2f7;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.cand-modal-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cand-modal-head-info {
+  flex: 1;
+  min-width: 0;
+}
+.cand-modal-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.cand-status-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: #d1fae5;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+.cand-status-other {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* Meta pills row */
+.cand-modal-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+}
+.cand-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cand-pill--avail  { background: #dbeafe; color: #1d4ed8; }
+.cand-pill--salary { background: #d1fae5; color: #065f46; }
+.cand-pill--cv     { background: #f3e8ff; color: #6d28d9; }
+
+/* Sections */
+.cand-modal-section {
+  margin-bottom: 20px;
+}
+.cand-modal-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* Pitch */
+.cand-modal-pitch {
+  font-size: 13.5px;
+  color: #374151;
+  line-height: 1.65;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Specialization tags */
+.cand-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.cand-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #bfdbfe;
+}
+
+/* Grid (quals / skills / prefs) */
+.cand-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 500px) {
+  .cand-modal-grid { grid-template-columns: 1fr; }
+}
+.cand-modal-item {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cand-modal-item--wide {
+  grid-column: 1 / -1;
+}
+.cand-modal-item span {
+  font-size: 10.5px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.cand-modal-item strong {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Footer match note */
+.cand-modal-footer-note {
+  font-size: 11.5px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 8px 0 12px;
+}
+
+/* Privacy notice */
+.cand-modal-private-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.cand-modal-private-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #d97706;
+}
+
+
+/* ============================================================
+   Global p-tag / body-copy size bump — all 3 dashboards
+   ============================================================ */
+
+/* Any p inside the dashboard main content area gets a readable size */
+.dashboard-content p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Hero sub-headings — also fix the employer form-hero variant */
+.emp-form-hero-content p,
+.emp-form-hero-content .emp-hero-sub {
+  font-size: 15px !important;
+  line-height: 1.7;
+}
+
+/* Panel / card body copy */
+.emp-form-card-sub,
+.emp-panel-sub,
+.adm-panel-sub,
+.cand-panel-sub {
+  font-size: 14px !important;
+}
+
+/* Matching page sub-head */
+.mt-head-sub {
+  font-size: 13px !important;
+}
+
+/* Notification full-page text */
+.notif-message {
+  font-size: 14px !important;
+}
+.notif-sub {
+  font-size: 14px !important;
+}
+
+/* Table body cells */
+.portal-table td {
+  font-size: 13px !important;
+}
+
+/* Empty state text */
+.adm-empty-inline span,
+.emp-empty-state p,
+.cand-empty-state p {
+  font-size: 14px !important;
+}
+
+/* ============================================================
+   Employer — Candidate Accept Button
+   ============================================================ */
+
+.cand-modal-accept-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.cand-accept-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16,185,129,.30);
+  transition: all .2s;
+}
+.cand-accept-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(16,185,129,.42);
+  transform: translateY(-1px);
+}
+.cand-accept-btn:disabled {
+  opacity: .55;
+  cursor: default;
+  transform: none;
+}
+
+.cand-accepted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #6ee7b7;
+}
+
+.cand-accept-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #10b981;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+
+/* ── Candidate modal loading spinner (isolated from .notif-spinner) ── */
+.cand-modal-spinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto;
 }

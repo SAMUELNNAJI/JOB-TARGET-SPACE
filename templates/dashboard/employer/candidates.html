@@ -2,6 +2,7 @@
 {% block title %}Candidates Received - JobSpace{% endblock %}
 {% block body_class %}employer-dashboard{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
+
 {% block content %}
 <main class="dashboard-content emp-profile-page">
   <section class="emp-form-hero">
@@ -13,20 +14,38 @@
     </div>
     <div class="emp-form-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Candidates</span></div>
   </section>
+
   <div class="emp-shortlist-section">
     <div class="emp-section-head">
       <div><h2 class="emp-panel-title">Candidates received</h2></div>
-      <div style="display:flex;align-items:center;gap:10px"><span class="emp-avail-badge">● Vetted by JobSPACE</span><span class="emp-section-count">{{ page_obj.paginator.count }} total</span></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="emp-avail-badge">● Vetted by JobSPACE</span>
+        <span class="emp-section-count">{{ page_obj.paginator.count }} total</span>
+      </div>
     </div>
+
     {% if page_obj.object_list %}
       <div style="padding:0 20px 8px">
         {% for match in page_obj %}
-          <div class="emp-candidate-row" style="padding:14px 10px">
+          <div class="emp-candidate-row emp-candidate-row--clickable"
+               style="padding:14px 10px;cursor:pointer"
+               data-match-id="{{ match.id }}"
+               data-detail-url="{% url 'website:employer_candidate_detail' match.id %}"
+               data-accept-url="{% url 'website:accept_candidate' match.id %}"
+               tabindex="0"
+               role="button"
+               aria-label="View profile of {{ match.profile.legal_name|default:match.profile.user.first_name|default:'Candidate' }}">
+
             <div class="emp-candidate-avatar">{{ match.profile.user.first_name|default:"?"|slice:":2"|upper }}</div>
+
             <div class="emp-candidate-info">
               <strong>{{ match.profile.legal_name|default:match.profile.user.first_name|default:"Candidate" }}</strong>
-              <span>{{ match.profile.specializations.first|default:"Professional" }}{% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:32 }}{% endif %}</span>
+              <span>
+                {{ match.profile.specializations.first|default:"Professional" }}
+                {% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:32 }}{% endif %}
+              </span>
             </div>
+
             <div class="emp-candidate-right">
               {% if match.profile.verification_status == 'rejected' %}
                 <span class="emp-reject-badge">
@@ -35,22 +54,35 @@
                 </span>
               {% endif %}
               <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
-              {% if match.profile.expected_salary %}<span style="font-size:10px;font-weight:700;color:#3d4a63">₦{{ match.profile.expected_salary|floatformat:0 }}/mo</span>{% endif %}
-              <a class="emp-candidate-btn" href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Shortlist</a>
+              {% if match.profile.expected_salary %}
+                <span style="font-size:10px;font-weight:700;color:#3d4a63">₦{{ match.profile.expected_salary|floatformat:0 }}/mo</span>
+              {% endif %}
+              {# Stop click on shortlist so it doesn't open the modal #}
+              <a class="emp-candidate-btn"
+                 href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"
+                 onclick="event.stopPropagation()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Shortlist
+              </a>
+              <span class="emp-view-profile-hint">View profile →</span>
             </div>
+
             {% if match.profile.verification_status == 'rejected' %}
               <div class="emp-reject-note">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>Rejected during JobSPACE verification.</strong> Reason: {{ match.profile.verification_notes|default:"No reason recorded." }} — ask the candidate to fix this and resubmit their profile.</span>
+                <span><strong>Rejected during JobSPACE verification.</strong> Reason: {{ match.profile.verification_notes|default:"No reason recorded." }}</span>
               </div>
             {% endif %}
           </div>
         {% endfor %}
       </div>
       <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
+
     {% else %}
       <div class="emp-empty-state">
-        <div class="emp-empty-icon-wrap"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+        <div class="emp-empty-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
         <h3>No candidates received yet</h3>
         <p>JobSPACE administrators will push vetted candidates here when they match your active recruitment requests.</p>
         <a class="emp-empty-btn" href="/dashboard/employer/requests/">Post a requirement →</a>
@@ -58,4 +90,297 @@
     {% endif %}
   </div>
 </main>
+
+{# ── Candidate profile modal ── #}
+<div class="cand-modal-overlay" id="candProfileModal" hidden
+     role="dialog" aria-modal="true" aria-labelledby="candModalTitle">
+  <div class="cand-modal">
+    <button type="button" class="cand-modal-close" id="candModalClose" aria-label="Close">&times;</button>
+
+    {# Loading state #}
+    <div class="cand-modal-loading" id="candModalLoading" hidden>
+      <span class="cand-modal-spinner"></span>
+    </div>
+
+    {# Actual content (hidden while loading) #}
+    <div class="cand-modal-body" id="candModalBody" hidden>
+
+      {# Header — avatar + name + status #}
+      <div class="cand-modal-head">
+        <div class="cand-modal-avatar" id="cmaAvatar">JS</div>
+        <div class="cand-modal-head-info">
+          <h2 class="cand-modal-name" id="candModalTitle" data-cd="name">Candidate</h2>
+          <span class="cand-modal-status" id="cmaStatus"></span>
+        </div>
+        <div class="cand-modal-meta-pills" id="cmaMetaPills"></div>
+      </div>
+
+      {# Professional pitch #}
+      <div class="cand-modal-section" id="cmaPitchSection">
+        <h4 class="cand-modal-section-title">Professional Summary</h4>
+        <p class="cand-modal-pitch" id="cmaPitch"></p>
+      </div>
+
+      {# Specializations #}
+      <div class="cand-modal-section" id="cmaSpecSection">
+        <h4 class="cand-modal-section-title">Specializations</h4>
+        <div class="cand-modal-tags" id="cmaSpecs"></div>
+      </div>
+
+      {# Qualifications grid #}
+      <div class="cand-modal-section" id="cmaQualSection">
+        <h4 class="cand-modal-section-title">Education &amp; Qualifications</h4>
+        <div class="cand-modal-grid" id="cmaQuals"></div>
+      </div>
+
+      {# Skills #}
+      <div class="cand-modal-section" id="cmaSkillSection">
+        <h4 class="cand-modal-section-title">Skills &amp; Competencies</h4>
+        <div class="cand-modal-grid" id="cmaSkills"></div>
+      </div>
+
+      {# Work preference #}
+      <div class="cand-modal-section" id="cmaPrefSection">
+        <h4 class="cand-modal-section-title">Work Preference</h4>
+        <div class="cand-modal-grid" id="cmaPrefs"></div>
+      </div>
+
+      {# Matched on #}
+      <div class="cand-modal-footer-note" id="cmaMatchNote"></div>
+
+      {# Accept / already accepted action #}
+      <div class="cand-modal-accept-row" id="cmaAcceptRow">
+        <button type="button" class="cand-accept-btn" id="cmaAcceptBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Accept Candidate
+        </button>
+        <div class="cand-accepted-badge" id="cmaAcceptedBadge" hidden>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Accepted
+        </div>
+        <span class="cand-accept-spinner" id="cmaAcceptSpinner" hidden></span>
+      </div>
+
+      {# No-contact notice #}
+      <div class="cand-modal-private-notice">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Contact information is managed by JobSPACE to protect candidate privacy.
+        Reach out via your account manager to initiate contact.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var overlay  = document.getElementById('candProfileModal');
+  var closeBtn = document.getElementById('candModalClose');
+  var loading  = document.getElementById('candModalLoading');
+  var body     = document.getElementById('candModalBody');
+  var lastFocus = null;
+  var currentAcceptUrl = null;
+
+  var acceptBtn     = document.getElementById('cmaAcceptBtn');
+  var acceptedBadge = document.getElementById('cmaAcceptedBadge');
+  var acceptSpinner = document.getElementById('cmaAcceptSpinner');
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function set(id, html) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  function show(id, visible) {
+    var el = document.getElementById(id);
+    if (el) el.hidden = !visible;
+  }
+
+  function openModal(detailUrl, acceptUrl) {
+    lastFocus = document.activeElement;
+    currentAcceptUrl = acceptUrl || null;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    loading.hidden = false;
+    body.hidden    = true;
+    // reset accept state
+    if (acceptBtn)     { acceptBtn.hidden = false; acceptBtn.disabled = false; }
+    if (acceptedBadge)   acceptedBadge.hidden = true;
+    if (acceptSpinner)   acceptSpinner.hidden = true;
+
+    fetch(detailUrl, {
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+    .then(function (d) { renderProfile(d); })
+    .catch(function () {
+      loading.hidden = true;
+      body.hidden    = false;
+      set('candModalTitle', 'Could not load profile');
+      set('cmaAvatar', '?');
+    });
+  }
+
+  function renderProfile(d) {
+    // Avatar + name + status
+    set('cmaAvatar',       esc(d.avatar || '?'));
+    set('candModalTitle',  esc(d.name));
+
+    var statusHtml = d.is_verified
+      ? '<span class="cand-status-verified"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>Vetted &amp; Verified</span>'
+      : '<span class="cand-status-other">' + esc(d.verification_status) + '</span>';
+    set('cmaStatus', statusHtml);
+
+    // Meta pills (availability, salary, cv)
+    var pills = '';
+    if (d.availability) pills += '<span class="cand-pill cand-pill--avail">' + esc(d.availability) + '</span>';
+    if (d.expected_salary) pills += '<span class="cand-pill cand-pill--salary">' + esc(d.expected_salary) + '</span>';
+    if (d.has_cv) pills += '<span class="cand-pill cand-pill--cv"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>CV on file</span>';
+    set('cmaMetaPills', pills);
+
+    // Professional pitch
+    if (d.professional_pitch) {
+      set('cmaPitch', esc(d.professional_pitch));
+      show('cmaPitchSection', true);
+    } else {
+      show('cmaPitchSection', false);
+    }
+
+    // Specializations
+    if (d.specializations && d.specializations.length) {
+      set('cmaSpecs', d.specializations.map(function (s) {
+        return '<span class="cand-tag">' + esc(s) + '</span>';
+      }).join(''));
+      show('cmaSpecSection', true);
+    } else {
+      show('cmaSpecSection', false);
+    }
+
+    // Qualifications
+    if (d.qualifications && d.qualifications.length) {
+      var qHtml = d.qualifications.map(function (q) {
+        return '<div class="cand-modal-item">'
+          + '<span>' + esc(q.title) + '</span>'
+          + '<strong>' + (q.institution ? esc(q.institution) : '—')
+          + (q.year   ? ' · ' + esc(q.year) : '') + '</strong>'
+          + '</div>';
+      }).join('');
+      set('cmaQuals', qHtml);
+      show('cmaQualSection', true);
+    } else if (d.primary_degree) {
+      set('cmaQuals', '<div class="cand-modal-item"><span>Primary degree</span><strong>' + esc(d.primary_degree) + '</strong></div>');
+      show('cmaQualSection', true);
+    } else {
+      show('cmaQualSection', false);
+    }
+
+    // Skills grid
+    var skillHtml = '';
+    if (d.software_competencies)   skillHtml += '<div class="cand-modal-item"><span>Software</span><strong>' + esc(d.software_competencies) + '</strong></div>';
+    if (d.equipment_competencies)  skillHtml += '<div class="cand-modal-item"><span>Equipment</span><strong>' + esc(d.equipment_competencies) + '</strong></div>';
+    if (d.certifications)          skillHtml += '<div class="cand-modal-item cand-modal-item--wide"><span>Certifications</span><strong>' + esc(d.certifications) + '</strong></div>';
+    if (skillHtml) {
+      set('cmaSkills', skillHtml);
+      show('cmaSkillSection', true);
+    } else {
+      show('cmaSkillSection', false);
+    }
+
+    // Work preference
+    var prefHtml = '';
+    if (d.availability)     prefHtml += '<div class="cand-modal-item"><span>Availability</span><strong>' + esc(d.availability) + '</strong></div>';
+    if (d.expected_salary)  prefHtml += '<div class="cand-modal-item"><span>Expected salary</span><strong>' + esc(d.expected_salary) + '</strong></div>';
+    if (prefHtml) {
+      set('cmaPrefs', prefHtml);
+      show('cmaPrefSection', true);
+    } else {
+      show('cmaPrefSection', false);
+    }
+
+    // Matched on note
+    if (d.matched_on) {
+      set('cmaMatchNote', 'Introduced to your dashboard on ' + esc(d.matched_on) + ' by JobSPACE.');
+    }
+
+    // Accept state
+    if (d.is_accepted) {
+      if (acceptBtn)     acceptBtn.hidden = true;
+      if (acceptedBadge) {
+        acceptedBadge.hidden = false;
+        var note = d.accepted_at ? ' on ' + esc(d.accepted_at) : '';
+        acceptedBadge.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Accepted' + note;
+      }
+    } else {
+      if (acceptBtn)     acceptBtn.hidden = false;
+      if (acceptedBadge) acceptedBadge.hidden = true;
+    }
+
+    loading.hidden = true;
+    body.hidden    = false;
+    closeBtn.focus();
+  }
+
+  function closeModal() {
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocus) lastFocus.focus();
+  }
+
+  // Open on row click or Enter/Space
+  document.querySelectorAll('[data-detail-url]').forEach(function (row) {
+    row.addEventListener('click', function () { openModal(row.dataset.detailUrl, row.dataset.acceptUrl); });
+    row.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(row.dataset.detailUrl, row.dataset.acceptUrl); }
+    });
+  });
+
+  // Accept button
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', function () {
+      if (!currentAcceptUrl) return;
+      acceptBtn.disabled = true;
+      if (acceptSpinner) acceptSpinner.hidden = false;
+
+      fetch(currentAcceptUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+      .then(function (data) {
+        if (acceptSpinner) acceptSpinner.hidden = true;
+        if (data.ok) {
+          acceptBtn.hidden = true;
+          if (acceptedBadge) {
+            var note = data.accepted_at ? ' on ' + data.accepted_at : '';
+            acceptedBadge.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Accepted' + note;
+            acceptedBadge.hidden = false;
+          }
+          // Update the row in the list to show accepted state
+          var rows = document.querySelectorAll('[data-accept-url="' + currentAcceptUrl + '"]');
+          rows.forEach(function (r) { r.setAttribute('data-accepted', '1'); });
+        }
+      })
+      .catch(function () {
+        if (acceptSpinner) acceptSpinner.hidden = true;
+        acceptBtn.disabled = false;
+      });
+    });
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !overlay.hidden) closeModal(); });
+})();
+</script>
 {% endblock %}

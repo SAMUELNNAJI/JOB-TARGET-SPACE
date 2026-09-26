@@ -1,0 +1,50 @@
+diff --git a/jobspace/urls.py b/jobspace/urls.py
+index 69afb21..4758237 100644
+--- a/jobspace/urls.py
++++ b/jobspace/urls.py
+@@ -1,13 +1,24 @@
+ from django.contrib import admin
+ from django.conf import settings
+ from django.conf.urls.static import static
+-from django.urls import include, path
++from django.urls import include, path, re_path
++from django.views.static import serve
+ 
+ urlpatterns = [
+     path("admin/", admin.site.urls),
+     path("", include("website.urls")),
+ ]
+ 
++# User-uploaded files (CVs) must stay reachable in production. The
++# debug-only static() helper below is not available when DEBUG is False,
++# which is what Render runs, so media is served explicitly here.
++urlpatterns += [
++    re_path(
++        r"^media/(?P<path>.*)$",
++        serve,
++        {"document_root": str(settings.MEDIA_ROOT)},
++    ),
++]
++
+ if settings.DEBUG:
+     urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")
+-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+diff --git a/render.yaml b/render.yaml
+index f55715d..ce4ea3d 100644
+--- a/render.yaml
++++ b/render.yaml
+@@ -20,4 +20,11 @@ services:
+       # sync: false keeps it OUT of git ΓÇö set it once in the Render dashboard
+       # under Environment, using the value from Neon ΓåÆ Connection Details.
+       - key: DATABASE_URL
+-        sync: false
+\ No newline at end of file
++        sync: false
++    # Render's filesystem is ephemeral ΓÇö without a disk every uploaded CV
++    # would vanish on each deploy. Mounted at MEDIA_ROOT so the saved
++    # database paths keep resolving. 1 GB is enough for this workload.
++    disk:
++      name: jobspace-media
++      mountPath: /opt/render/project/src/media
++      sizeGB: 1
+\ No newline at end of file

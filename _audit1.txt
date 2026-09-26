@@ -1,0 +1,86 @@
+======================================================================
+MODELS IN CODE
+======================================================================
+  website_profile                        Profile
+  website_specialization                 Specialization
+  website_candidatedocument              CandidateDocument
+  website_qualification                  Qualification
+  website_notification                   Notification
+  website_candidatematch                 CandidateMatch
+  website_subscription                   Subscription
+  website_payment                        Payment
+  website_recruitmentrequest             RecruitmentRequest
+  website_shortlist                      Shortlist
+  website_replacementrequest             ReplacementRequest
+  website_auditlog                       AuditLog
+
+NEON applied website migrations: 0001_initial, 0002_candidate_portal, 0003_profile_whatsapp_url, 0004_profile_hr_contact_name_profile_industry_sector_and_more, 0005_notification_kind, 0006_profile_whatsapp_number, 0007_alter_profile_verification_status, 0008_alter_recruitmentrequest_position, 0009_candidatematch_request_and_more
+
+======================================================================
+ROW COUNTS            sqlite -> neon
+======================================================================
+  website_profile                             2 -> 2
+  website_specialization                      7 -> 6
+  website_candidatedocument                   1 -> 0
+  website_qualification                       0 -> 0
+  website_notification                        5 -> 0
+  website_candidatematch                      0 -> 0
+  website_subscription                        0 -> 0
+  website_payment                             0 -> 0
+  website_recruitmentrequest                  1 -> 0
+  website_shortlist                           0 -> 0
+  website_replacementrequest                  0 -> 0
+  website_auditlog                            7 -> 0
+  auth_user                                   3 -> 3
+  auth_group                                  0 -> 0
+  auth_permission                            72 -> 72
+  auth_user_groups                            0 -> 0
+  auth_user_user_permissions                  0 -> 0
+  django_content_type                        18 -> 18
+  django_admin_log                            0 -> 0
+  django_session                             74 -> 3
+  django_migrations                          27 -> 27
+
+======================================================================
+USERS  (id | username | email | staff | su | active)
+======================================================================
+-- SQLITE --
+  4 | 9jaflavzmedia@gmail.com | 9jaflavzmedia@gmail.com        | staff=0 su=0 act=1
+  26 | coderjoe16@gmail.com | coderjoe16@gmail.com           | staff=0 su=0 act=1
+  33 | Admin@gmail.com      | Admin@gmail.com                | staff=1 su=1 act=1
+-- NEON --
+  1 | admin                | Admin@gmail.com                | staff=True su=True act=True
+  2 | coderjoe16@gmail.com | coderjoe16@gmail.com           | staff=False su=False act=True
+  3 | 9jaflavzmedia@gmail.com | 9jaflavzmedia@gmail.com        | staff=False su=False act=True
+
+COLLISION CHECK (match by username, then email):
+  sqlite u4 9jaflavzmedia@gmail.com -> neon_by_name=[3]  neon_by_email=[3]
+  sqlite u26 coderjoe16@gmail.com -> neon_by_name=[2]  neon_by_email=[2]
+  sqlite u33 Admin@gmail.com      -> neon_by_name=new  neon_by_email=[1]
+
+======================================================================
+PROFILES  (id | user_id | role | legal_name | status)
+======================================================================
+  website_profile columns: ['address', 'availability', 'certifications', 'company_name', 'equipment_competencies', 'expected_salary', 'hr_contact_name', 'id', 'industry_sector', 'legal_name', 'office_address', 'phone', 'primary_degree', 'professional_pitch', 'role', 'software_competencies', 'submitted_at', 'updated_at', 'user_id', 'verification_notes', 'verification_status', 'verified_at', 'whatsapp_number', 'whatsapp_url']
+-- SQLITE --
+  p3   | u4   | candidate  | nnaji samuel
+  p14  | u26  | employer   | 
+-- NEON --
+  p1   | u2   | employer   | 
+  p2   | u3   | candidate  | Sami Zil
+
+======================================================================
+SPECIALIZATIONS  (sqlite_id=name -> neon_id)
+======================================================================
+  s1 'Finance & Auditing' -> [1]
+  s2 'Engineering & Systems Infrastructure' -> [2]
+  s3 'Corporate Marketing & Growth' -> [3]
+  s4 'Architecture & Space Planning' -> [4]
+  s5 'Healthcare & Medical Operations' -> [5]
+  s6 'Technical Operations & Equipment Management' -> [6]
+  s7 'Computer' -> MISSING
+  neon-only specs: []
+
+M2M through tables in sqlite:
+  website_profile_specializations              1
+      {'id': 3, 'profile_id': 3, 'specialization_id': 7}

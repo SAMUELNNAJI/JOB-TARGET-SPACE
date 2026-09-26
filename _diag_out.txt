@@ -1,0 +1,60 @@
+==========================================================================
+SEQUENCE vs MAX(pk)   [BROKEN if max_pk >= last_value]
+==========================================================================
+table                             max_pk  seq_now  nextval  status
+auth_user                             85        3        4  BROKEN
+website_specialization                 7        6        7  BROKEN
+website_profile                       50        2        3  BROKEN
+website_qualification                  0        1        1  ok
+website_candidatedocument              3        1        2  BROKEN
+website_subscription                   0        1        1  ok
+website_payment                        0        1        1  ok
+website_recruitmentrequest             1        1        2  ok
+website_candidatematch                 0        1        1  ok
+website_shortlist                      0        1        1  ok
+website_replacementrequest             0        1        1  ok
+website_notification                  23        1        1  BROKEN
+website_auditlog                      31        1        1  BROKEN
+
+==========================================================================
+TEST ARTIFACTS in neon
+==========================================================================
+  user 81: pce@example.com <pce@example.com> su=False
+  user 85: dbg@example.com <dbg@example.com> su=False
+
+==========================================================================
+CANDIDATE DOCUMENTS
+==========================================================================
+  d1 p2 candidate_documents/2026/09/GIT_COMMANDS.docx 2026-09-25 11:11:40.956276+00:00
+  d3 p2 candidate_documents/2026/09/GIT_COMMANDS.docx 2026-09-25 11:11:40.956276+00:00
+  duplicate profile groups: 1
+    profile=2 count=2
+
+==========================================================================
+PROFILES / USERS
+==========================================================================
+  p1 u2 employer  ''                       'Coder jeo'              coderjoe16@gmail.com
+  p2 u3 candidate 'nnaji samuel'           ''                       9jaflavzmedia@gmail.com
+  p46 u81 employer  ''                       'Zenith Test Ltd'        pce@example.com
+  p50 u85 employer  ''                       'Zenith Test Ltd'        dbg@example.com
+
+==========================================================================
+ROW COUNTS  (sqlite -> neon)
+==========================================================================
+  auth_user                           4 ->    5  <-- MISMATCH
+  website_specialization              7 ->    7
+  website_profile                     3 ->    4  <-- MISMATCH
+  website_qualification               0 ->    0
+  website_candidatedocument           1 ->    2  <-- MISMATCH
+  website_subscription                0 ->    0
+  website_payment                     0 ->    0
+  website_recruitmentrequest          1 ->    1
+  website_candidatematch              0 ->    0
+  website_shortlist                   0 ->    0
+  website_replacementrequest          0 ->    0
+  website_notification                5 ->    5
+  website_auditlog                   10 ->    7  <-- MISMATCH
+
+  matching: 9, mismatched: 4
+
+BROKEN SEQUENCES (6): ['auth_user', 'website_specialization', 'website_profile', 'website_candidatedocument', 'website_notification', 'website_auditlog']

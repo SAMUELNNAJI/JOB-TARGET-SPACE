@@ -1,0 +1,14 @@
+DEBUG              = False
+MEDIA_ROOT         = C:\Users\ADMIN\Desktop\JOB TARGET SPACE\media
+MEDIA_URL          = /media/
+database vendor    = postgresql
+
+stored path        = candidate_documents/2026/09/GIT_COMMANDS.docx
+on disk            = True
+requesting         = /media/candidate_documents/2026/09/GIT_COMMANDS.docx
+
+HTTP status        = 200
+bytes served       = 14695
+content-type       = application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+PASS: CV is reachable with DEBUG=False

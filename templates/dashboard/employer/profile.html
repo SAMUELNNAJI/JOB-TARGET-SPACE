@@ -64,6 +64,39 @@
       </div>
     </form>
   </div>
+
+  {# ── Profile completed → celebration modal, then on to the request page ── #}
+  {% if just_completed %}
+  <div class="emp-modal-overlay" id="profileCompleteModal" role="dialog" aria-modal="true" aria-labelledby="profileCompleteTitle">
+    <div class="emp-modal">
+      <div class="emp-modal-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 class="emp-modal-title" id="profileCompleteTitle">Company profile complete</h2>
+      <p class="emp-modal-text">
+        Great &mdash; your company details are saved. Next, tell us the professional
+        you're hiring and a JobSPACE administrator will source vetted candidates for you.
+      </p>
+
+      <div class="emp-modal-summary">
+        <div class="emp-modal-summary-row"><span>Company</span><strong>{{ employer.company_name }}</strong></div>
+        <div class="emp-modal-summary-row"><span>Industry</span><strong>{{ employer.industry_sector }}</strong></div>
+        <div class="emp-modal-summary-row"><span>Contact person</span><strong>{{ employer.hr_contact_name }}</strong></div>
+        <div class="emp-modal-summary-row"><span>Official email</span><strong>{{ employer.user.email }}</strong></div>
+      </div>
+
+      <div class="emp-auto-next" data-auto-next>
+        <span>Taking you to <em>Post a Requirement</em> in <strong data-countdown>5</strong>s…</span>
+        <div class="emp-auto-next-bar"><i data-progress></i></div>
+      </div>
+
+      <div class="emp-modal-actions">
+        <button type="button" class="emp-modal-btn emp-modal-btn--ghost" data-profile-stay>Stay here</button>
+        <a class="emp-modal-btn emp-modal-btn--primary" href="/dashboard/employer/requests/">Post a requirement now</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </main>
 {% endblock %}
 {% block extra_scripts %}
@@ -186,4 +219,74 @@
   })();
 }());
 </script>
+
+{# ── Profile-complete modal: shows, counts down, then forwards to the request page ── #}
+{% if just_completed %}
+<script>
+(function () {
+  'use strict';
+  var modal = document.getElementById('profileCompleteModal');
+  if (!modal) return;
+
+  var TARGET  = '/dashboard/employer/requests/';
+  var SECONDS = 5;
+  var label   = modal.querySelector('[data-countdown]');
+  var bar     = modal.querySelector('[data-progress]');
+  var stayBtn = modal.querySelector('[data-profile-stay]');
+  var left    = SECONDS;
+  var timer   = null;
+
+  document.body.style.overflow = 'hidden';
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  function go() {
+    stop();
+    window.location.href = TARGET;
+  }
+
+  function paint() {
+    if (label) label.textContent = left;
+    if (bar) bar.style.width = ((SECONDS - left) / SECONDS * 100) + '%';
+  }
+
+  function tick() {
+    left -= 1;
+    paint();
+    if (left <= 0) go();
+  }
+
+  function start() {
+    if (timer) return;
+    paint();
+    timer = setInterval(tick, 1000);
+  }
+
+  timer = setInterval(tick, 1000);
+  paint();
+
+  /* Any of these cancel the automatic move. */
+  if (stayBtn) stayBtn.addEventListener('click', function () {
+    stop();
+    document.body.style.overflow = '';
+    modal.hidden = true;
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { stop(); document.body.style.overflow = ''; modal.hidden = true; }
+  });
+
+  // Pause the countdown while the tab is hidden so we never redirect in the background.
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stop();
+    else if (!modal.hidden) start();
+  });
+}());
+</script>
+{% endif %}
 {% endblock %}

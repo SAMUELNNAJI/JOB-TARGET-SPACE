@@ -52,6 +52,19 @@ class Profile(models.Model):
         fields = [self.legal_name, self.address, self.phone, self.primary_degree, self.certifications, self.software_competencies, self.professional_pitch, self.expected_salary, self.availability, self.cv_documents.exists()]
         return round(sum(bool(value) for value in fields) / len(fields) * 100)
 
+    # Fields an employer must supply before the profile counts as complete.
+    EMPLOYER_REQUIRED_FIELDS = ("company_name", "industry_sector", "hr_contact_name",
+                                "office_address", "phone")
+
+    @property
+    def employer_profile_complete(self):
+        """True once every company detail + contact detail has been provided."""
+        if self.role != self.Role.EMPLOYER:
+            return False
+        if not all(getattr(self, name, "") for name in self.EMPLOYER_REQUIRED_FIELDS):
+            return False
+        return bool(getattr(self.user, "email", ""))
+
     def notify(self, title, message, kind="system"):
         """Convenience method — creates a Notification for this profile."""
         self.notifications.create(title=title, message=message, kind=kind)
@@ -122,6 +135,9 @@ class CandidateMatch(models.Model):
     note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    # Employer can formally accept a matched candidate
+    is_accepted = models.BooleanField(default=False)
+    accepted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ("-created_at",)

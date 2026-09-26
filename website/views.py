@@ -377,16 +377,37 @@ def employer_section(request, section):
 
     # ── Profile ──────────────────────────────────────────────
     if section == "profile":
+        # Capture completeness BEFORE the bound form is validated: ModelForm's
+        # _post_clean() writes the submitted values onto this same instance, so
+        # reading it after is_valid() would always report the NEW state.
+        was_complete = employer.employer_profile_complete
+
         form = EmployerProfileForm(request.POST or None, instance=employer)
         if request.method == "POST" and form.is_valid():
             form.save()
+            employer.refresh_from_db()
+            now_complete = employer.employer_profile_complete
+
+            if now_complete and not was_complete:
+                messages.success(
+                    request,
+                    "Company profile completed. Let's post your first recruitment request.",
+                )
+                url = reverse("website:employer_section", kwargs={"section": "profile"})
+                return redirect(f"{url}?completed=1")
+
             messages.success(request, "Company profile updated.")
             return redirect("website:employer_section", section="profile")
+
         return render(request, "dashboard/employer/profile.html", {
             "employer":      employer,
             "form":          form,
             "unread_count":  unread,
             "section_title": "Company Profile",
+            # ?completed=1 → show the celebration modal, then move the user on
+            # to the recruitment request page.
+            "just_completed": request.GET.get("completed") == "1"
+                              and employer.employer_profile_complete,
         })
 
     # ── Recruitment requests ──────────────────────────────────
@@ -450,26 +471,6 @@ def employer_section(request, section):
     # ── Subscription ──────────────────────────────────────────
     if section == "subscription":
         active = employer.subscriptions.filter(is_active=True).first()
-        if request.method == "POST":
-            plan         = request.POST.get("plan", Subscription.Plan.BASIC)
-            amount       = 50000 if plan == Subscription.Plan.BASIC else 100000
-            now          = timezone.now()
-            subscription = Subscription.objects.create(
-                employer=employer, plan=plan, amount=amount,
-                starts_at=now, expires_at=now + timezone.timedelta(days=30),
-                is_active=True,
-            )
-            Payment.objects.create(
-                employer=employer, subscription=subscription,
-                reference=f"DEMO-{subscription.pk}-{int(now.timestamp())}",
-                amount=amount, status=Payment.Status.SUCCESS, paid_at=now,
-            )
-            employer.notify(
-                title="Subscription activated",
-                message=f"Your {subscription.get_plan_display()} plan is now active and expires on {subscription.expires_at.strftime('%d %b %Y')}.",
-                kind=Notification.Kind.PAYMENT,
-            )
-            return redirect("website:employer_section", section="subscription")
         return render(request, "dashboard/employer/subscription.html", {
             "employer":      employer,
             "unread_count":  unread,
@@ -512,6 +513,115 @@ def employer_section(request, section):
 
 
 @login_required
+def accept_candidate(request, match_id):
+    """POST — employer formally accepts a matched candidate.
+    Sets is_accepted=True on the match, notifies admin and the candidate."""
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    employer = _employer_profile(request)
+    match    = get_object_or_404(
+        CandidateMatch.objects.select_related("profile__user", "request"),
+        pk=match_id, employer=employer, is_active=True,
+    )
+
+    if match.is_accepted:
+        return JsonResponse({"ok": True, "already": True})
+
+    match.is_accepted = True
+    match.accepted_at = timezone.now()
+    match.save(update_fields=["is_accepted", "accepted_at"])
+
+    candidate_name = (
+        match.profile.legal_name
+        or match.profile.user.get_full_name()
+        or match.profile.user.username
+    )
+    position = match.request.position if match.request else "the position"
+
+    # Notify the candidate
+    match.profile.notify(
+        title="An employer has accepted your profile",
+        message=(
+            f"{employer.company_name or 'An employer'} has accepted your profile "
+            f"for {position}. JobSPACE will be in touch to coordinate next steps."
+        ),
+        kind=Notification.Kind.MATCH,
+    )
+
+    # Notify admin
+    from .models import Notification as Notif
+    Notif.objects.create(
+        profile=employer,          # attach to employer so admin sees it in platform feed
+        title="Employer accepted a candidate",
+        message=(
+            f"{employer.company_name or employer.user.username} accepted "
+            f"{candidate_name} for {position}. Please coordinate the next steps."
+        ),
+        kind=Notif.Kind.MATCH,
+    )
+
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Employer accepted candidate",
+        subject=f"{employer.company_name} accepted {candidate_name} for {position}",
+    )
+
+    return JsonResponse({"ok": True, "accepted_at": match.accepted_at.strftime("%d %b %Y")})
+
+
+@login_required
+def employer_candidate_detail(request, match_id):
+    """GET — returns a candidate's professional profile as JSON for the
+    employer detail modal. Contact information (phone, whatsapp, email,
+    address) is intentionally excluded so employers must go through
+    JobSPACE to reach the candidate."""
+    employer = _employer_profile(request)
+    match    = get_object_or_404(
+        CandidateMatch.objects.select_related("profile__user")
+                              .prefetch_related("profile__specializations",
+                                                "profile__qualifications",
+                                                "profile__cv_documents"),
+        pk=match_id, employer=employer, is_active=True,
+    )
+    p = match.profile
+
+    name    = p.legal_name or p.user.get_full_name() or p.user.username
+    specs   = [s.name for s in p.specializations.all()]
+    quals   = [
+        {"title": q.title, "institution": q.institution or "", "year": q.year or ""}
+        for q in p.qualifications.order_by("-year")
+    ]
+    has_cv  = p.cv_documents.exists()
+
+    return JsonResponse({
+        "name":                 name,
+        "avatar":               name[:2].upper(),
+        "verification_status":  p.get_verification_status_display(),
+        "is_verified":          p.verification_status == Profile.VerificationStatus.VERIFIED,
+        # Professional fields
+        "specializations":      specs,
+        "primary_degree":       p.primary_degree or "",
+        "certifications":       p.certifications or "",
+        "software_competencies": p.software_competencies or "",
+        "equipment_competencies": p.equipment_competencies or "",
+        "professional_pitch":   p.professional_pitch or "",
+        # Salary & availability — visible to employer
+        "expected_salary":      f"₦{p.expected_salary:,}/mo" if p.expected_salary else "",
+        "availability":         p.get_availability_display() if p.availability else "",
+        # Education history
+        "qualifications":       quals,
+        # CV presence (not the file itself)
+        "has_cv":               has_cv,
+        # Match metadata
+        "matched_on":           match.created_at.strftime("%d %b %Y"),
+        "is_accepted":          match.is_accepted,
+        "accepted_at":          match.accepted_at.strftime("%d %b %Y") if match.accepted_at else None,
+    })
+
+
+@login_required
 def shortlist_candidate(request, match_id):
     employer = _employer_profile(request)
     match    = get_object_or_404(CandidateMatch, pk=match_id, employer=employer, is_active=True)
@@ -529,6 +639,221 @@ def shortlist_candidate(request, match_id):
 
     messages.success(request, "Candidate added to your private shortlist.")
     return redirect("website:employer_section", section="candidates")
+
+
+# ─────────────────────────────────────────────────────────────
+# Flutterwave payment views
+# ─────────────────────────────────────────────────────────────
+
+PLAN_AMOUNTS = {
+    Subscription.Plan.BASIC:   50_000,
+    Subscription.Plan.PREMIUM: 100_000,
+}
+
+
+@login_required
+def initiate_subscription(request):
+    """POST — creates a pending Subscription + Payment row and returns the
+    Flutterwave inline-JS config as JSON so the frontend can open the checkout."""
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    employer = _employer_profile(request)
+    plan = request.POST.get("plan", Subscription.Plan.BASIC)
+    if plan not in PLAN_AMOUNTS:
+        return JsonResponse({"ok": False, "error": "Invalid plan."}, status=400)
+
+    from django.conf import settings as django_settings
+    public_key = django_settings.FLUTTERWAVE_PUBLIC_KEY
+    if not public_key:
+        return JsonResponse({"ok": False, "error": "Payment gateway not configured."}, status=503)
+
+    amount = PLAN_AMOUNTS[plan]
+    now    = timezone.now()
+    import uuid
+    tx_ref = f"JOBSPACE-{employer.pk}-{uuid.uuid4().hex[:12].upper()}"
+
+    # Deactivate any in-progress pending payment for this employer (idempotent retry)
+    Payment.objects.filter(
+        employer=employer, status=Payment.Status.PENDING
+    ).update(status=Payment.Status.FAILED)
+
+    # Create a placeholder subscription (inactive until payment confirmed)
+    subscription = Subscription.objects.create(
+        employer=employer,
+        plan=plan,
+        amount=amount,
+        starts_at=now,
+        expires_at=now + timezone.timedelta(days=30),
+        is_active=False,
+    )
+    Payment.objects.create(
+        employer=employer,
+        subscription=subscription,
+        reference=tx_ref,
+        amount=amount,
+        status=Payment.Status.PENDING,
+    )
+
+    # Build the absolute callback URL
+    callback_url = request.build_absolute_uri(
+        reverse("website:subscription_callback")
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "public_key": public_key,
+        "tx_ref":     tx_ref,
+        "amount":     amount,
+        "currency":   "NGN",
+        "email":      request.user.email,
+        "name":       employer.company_name or request.user.get_full_name() or request.user.username,
+        "phone":      employer.phone or "",
+        "redirect_url": callback_url,
+        "plan_label": subscription.get_plan_display(),
+    })
+
+
+@login_required
+def subscription_callback(request):
+    """GET — Flutterwave redirects here after the user pays (or cancels).
+    We verify the transaction server-side and activate the subscription."""
+    from django.conf import settings as django_settings
+    import urllib.request
+    import json as _json
+
+    status     = request.GET.get("status", "")
+    tx_ref     = request.GET.get("tx_ref", "")
+    tx_id      = request.GET.get("transaction_id", "")
+
+    employer   = _employer_profile(request)
+
+    if status != "successful" or not tx_ref or not tx_id:
+        messages.error(request, "Payment was not completed. Please try again.")
+        return redirect("website:employer_section", section="subscription")
+
+    # Look up the pending payment for this employer + reference
+    try:
+        payment = Payment.objects.select_related("subscription").get(
+            reference=tx_ref, employer=employer, status=Payment.Status.PENDING
+        )
+    except Payment.DoesNotExist:
+        messages.error(request, "Payment reference not found or already processed.")
+        return redirect("website:employer_section", section="subscription")
+
+    # Verify the transaction with Flutterwave REST API
+    secret_key = django_settings.FLUTTERWAVE_SECRET_KEY
+    try:
+        req = urllib.request.Request(
+            f"https://api.flutterwave.com/v3/transactions/{tx_id}/verify",
+            headers={"Authorization": f"Bearer {secret_key}"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read().decode())
+    except Exception:
+        messages.error(request, "Could not verify payment with Flutterwave. Please contact support.")
+        return redirect("website:employer_section", section="subscription")
+
+    if (
+        data.get("status") != "success"
+        or data.get("data", {}).get("status") != "successful"
+        or data["data"].get("tx_ref") != tx_ref
+        or data["data"].get("amount") < payment.amount
+        or data["data"].get("currency") != "NGN"
+    ):
+        payment.status = Payment.Status.FAILED
+        payment.save(update_fields=["status"])
+        messages.error(request, "Payment verification failed. Please contact support.")
+        return redirect("website:employer_section", section="subscription")
+
+    # All checks passed — activate subscription
+    now = timezone.now()
+    payment.status = Payment.Status.SUCCESS
+    payment.paid_at = now
+    payment.save(update_fields=["status", "paid_at"])
+
+    sub = payment.subscription
+    sub.is_active  = True
+    sub.starts_at  = now
+    sub.expires_at = now + timezone.timedelta(days=30)
+    sub.save(update_fields=["is_active", "starts_at", "expires_at"])
+
+    # Deactivate any older subscriptions for this employer
+    employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
+
+    employer.notify(
+        title="Subscription activated",
+        message=(
+            f"Your {sub.get_plan_display()} plan is now active and expires on "
+            f"{sub.expires_at.strftime('%d %b %Y')}. "
+            f"Payment reference: {payment.reference}."
+        ),
+        kind=Notification.Kind.PAYMENT,
+    )
+    messages.success(
+        request,
+        f"Payment successful! Your {sub.get_plan_display()} plan is now active."
+    )
+    return redirect("website:employer_section", section="subscription")
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+
+@csrf_exempt
+def subscription_webhook(request):
+    """POST — Flutterwave server-side webhook for async payment confirmation.
+    Verifies the secret hash header before processing."""
+    from django.conf import settings as django_settings
+    import json as _json
+
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    # Authenticate the webhook using the verif-hash header
+    secret_hash = django_settings.FLUTTERWAVE_WEBHOOK_HASH
+    received_hash = request.headers.get("verif-hash", "")
+    if secret_hash and received_hash != secret_hash:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Invalid webhook signature.")
+
+    try:
+        payload = _json.loads(request.body)
+    except ValueError:
+        from django.http import HttpResponseBadRequest
+        return HttpResponseBadRequest("Invalid JSON.")
+
+    event = payload.get("event", "")
+    data  = payload.get("data", {})
+
+    if event == "charge.completed" and data.get("status") == "successful":
+        tx_ref = data.get("tx_ref", "")
+        try:
+            payment = Payment.objects.select_related("subscription", "employer").get(
+                reference=tx_ref, status=Payment.Status.PENDING
+            )
+        except Payment.DoesNotExist:
+            # Already processed (by callback) or unknown ref — idempotent, just 200.
+            from django.http import HttpResponse
+            return HttpResponse(status=200)
+
+        now = timezone.now()
+        payment.status  = Payment.Status.SUCCESS
+        payment.paid_at = now
+        payment.save(update_fields=["status", "paid_at"])
+
+        sub = payment.subscription
+        if sub:
+            sub.is_active  = True
+            sub.starts_at  = now
+            sub.expires_at = now + timezone.timedelta(days=30)
+            sub.save(update_fields=["is_active", "starts_at", "expires_at"])
+            payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
+
+    from django.http import HttpResponse
+    return HttpResponse(status=200)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1402,6 +1727,210 @@ SEARCH_GROUP_LABELS = [
     ("log",          "Activity Log"),
     ("notification", "Notifications"),
 ]
+
+
+# ─────────────────────────────────────────────────────────────
+# Notifications JSON API  (powers the bell dropdown on all dashboards)
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def notifications_json(request):
+    """GET — returns the latest 10 notifications for the bell dropdown.
+
+    Admin sees the 10 most recent platform-wide unread notifications.
+    Employer / candidate see their own profile notifications.
+    Each item: id, title, message, kind, is_read, time_ago.
+    """
+    user = request.user
+
+    KIND_ICONS = {
+        "verification": "shield",
+        "match":        "link",
+        "shortlist":    "star",
+        "payment":      "card",
+        "profile":      "user",
+        "system":       "bell",
+    }
+
+    def _fmt(notif):
+        from django.utils.timesince import timesince
+        return {
+            "id":      notif.pk,
+            "title":   notif.title,
+            "message": notif.message[:120] + ("…" if len(notif.message) > 120 else ""),
+            "kind":    notif.kind,
+            "icon":    KIND_ICONS.get(notif.kind, "bell"),
+            "is_read": notif.is_read,
+            "time":    timesince(notif.created_at) + " ago",
+        }
+
+    try:
+        if user.is_staff or user.is_superuser:
+            qs = (
+                Notification.objects
+                .select_related("profile__user")
+                .order_by("-created_at")[:10]
+            )
+        else:
+            profile = getattr(user, "profile", None)
+            if not profile:
+                return JsonResponse({"notifications": [], "unread": 0})
+            qs = profile.notifications.order_by("-created_at")[:10]
+
+        items  = [_fmt(n) for n in qs]
+        unread = sum(1 for n in items if not n["is_read"])
+        return JsonResponse({"notifications": items, "unread": unread})
+    except Exception:
+        return JsonResponse({"notifications": [], "unread": 0})
+
+
+@login_required
+def notifications_mark_read(request):
+    """POST — marks all (or specific) notifications as read.
+
+    Body (optional): JSON {"ids": [1, 2, 3]}  → mark only those IDs.
+    Without a body: mark ALL unread as read for this user.
+    Returns: {"ok": true, "unread": 0}
+    """
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    user = request.user
+    try:
+        import json as _json
+        try:
+            data = _json.loads(request.body or b"{}")
+        except ValueError:
+            data = {}
+        ids = data.get("ids")  # list of int or None
+
+        if user.is_staff or user.is_superuser:
+            qs = Notification.objects.filter(is_read=False)
+            if ids:
+                qs = qs.filter(pk__in=ids)
+            qs.update(is_read=True)
+            unread = Notification.objects.filter(is_read=False).count()
+        else:
+            profile = getattr(user, "profile", None)
+            if not profile:
+                return JsonResponse({"ok": True, "unread": 0})
+            qs = profile.notifications.filter(is_read=False)
+            if ids:
+                qs = qs.filter(pk__in=ids)
+            qs.update(is_read=True)
+            unread = profile.notifications.filter(is_read=False).count()
+
+        return JsonResponse({"ok": True, "unread": unread})
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────
+# Matching — live candidate search API
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def matching_candidate_search(request):
+    """GET ?q=<term>&request=<pk> — searches verified candidates and returns
+    them ranked by match score against the given request (if supplied), or by
+    text relevance alone.
+
+    Returns JSON:
+    {
+      "results": [
+        { "id", "name", "avatar", "specializations", "degree",
+          "salary", "availability", "score", "reasons",
+          "already_matched" },
+        ...
+      ]
+    }
+    """
+    term       = (request.GET.get("q") or "").strip()
+    request_pk = request.GET.get("request", "")
+
+    if not term:
+        return JsonResponse({"results": []})
+
+    # ── Base queryset: verified candidates only ──
+    qs = (
+        Profile.objects
+        .filter(
+            role=Profile.Role.CANDIDATE,
+            verification_status=Profile.VerificationStatus.VERIFIED,
+        )
+        .select_related("user")
+        .prefetch_related("specializations", "cv_documents")
+    )
+
+    # ── Text filter across all relevant fields ──
+    qs = qs.filter(
+        Q(legal_name__icontains=term)
+        | Q(user__first_name__icontains=term)
+        | Q(user__last_name__icontains=term)
+        | Q(primary_degree__icontains=term)
+        | Q(certifications__icontains=term)
+        | Q(software_competencies__icontains=term)
+        | Q(equipment_competencies__icontains=term)
+        | Q(professional_pitch__icontains=term)
+        | Q(specializations__name__icontains=term)
+    ).distinct()
+
+    # ── Load the request for scoring (optional) ──
+    req_obj      = None
+    already_matched = set()
+    if request_pk and request_pk.isdigit():
+        try:
+            req_obj = RecruitmentRequest.objects.prefetch_related("matches").get(pk=int(request_pk))
+            already_matched = set(
+                req_obj.matches.filter(is_active=True).values_list("profile_id", flat=True)
+            )
+        except RecruitmentRequest.DoesNotExist:
+            pass
+
+    # ── Score and sort ──
+    rows = []
+    for cand in qs[:60]:  # cap DB rows; scoring runs in Python
+        if req_obj:
+            score, reasons = _match_score(cand, req_obj)
+        else:
+            # No request selected — give a flat relevance score based on
+            # how many search tokens appear in their profile.
+            tokens = _tokens(term)
+            profile_text = " ".join(filter(None, [
+                cand.legal_name, cand.primary_degree,
+                cand.software_competencies, cand.equipment_competencies,
+                cand.professional_pitch,
+                " ".join(s.name for s in cand.specializations.all()),
+            ]))
+            profile_tokens = set(_tokens(profile_text))
+            matched_tokens = sum(1 for t in tokens if t in profile_tokens)
+            score   = min(100, matched_tokens * 20 + round(cand.completion_percentage * 0.15))
+            reasons = []
+
+        specs  = [s.name for s in cand.specializations.all()]
+        name   = cand.legal_name or cand.user.get_full_name() or cand.user.username
+        avail  = cand.get_availability_display() if cand.availability else ""
+        salary = f"₦{cand.expected_salary:,}" if cand.expected_salary else ""
+
+        rows.append({
+            "id":              cand.pk,
+            "name":            name,
+            "avatar":          name[:2].upper(),
+            "specializations": specs,
+            "degree":          cand.primary_degree or "",
+            "salary":          salary,
+            "availability":    avail,
+            "score":           score,
+            "score_class":     "is-high" if score >= 70 else ("is-mid" if score >= 40 else ""),
+            "reasons":         reasons,
+            "already_matched": cand.pk in already_matched,
+            "has_cv":          cand.cv_documents.exists(),
+        })
+
+    rows.sort(key=lambda r: (r["already_matched"], -r["score"]))
+    return JsonResponse({"results": rows[:40]})
 
 
 @login_required

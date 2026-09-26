@@ -21,3 +21,10 @@ services:
       # under Environment, using the value from Neon → Connection Details.
       - key: DATABASE_URL
         sync: false
+    # Render's filesystem is ephemeral — without a disk every uploaded CV
+    # would vanish on each deploy. Mounted at MEDIA_ROOT so the saved
+    # database paths keep resolving. 1 GB is enough for this workload.
+    disk:
+      name: jobspace-media
+      mountPath: /opt/render/project/src/media
+      sizeGB: 1

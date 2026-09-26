@@ -1,0 +1,45 @@
+PASS - admin candidates page renders | 200
+PASS - page contains 'data-reject-url' 
+PASS - page contains 'data-revoke-url' 
+PASS - page contains 'rejectModal' 
+PASS - page contains 'revokeModal' 
+PASS - page contains 'candProfileModal' 
+PASS - page contains 'candProfileBody' 
+PASS - page contains 'cand-profile-source' 
+PASS - page contains 'class="cand-row"' 
+PASS - page contains 'aria-haspopup="dialog"' 
+PASS - page contains 'adm-act--verify' 
+PASS - page contains 'rejectReason' 
+PASS - page contains 'revokeReason' 
+PASS - page contains '/verify/' 
+PASS - page contains 'Rejected' 
+PASS - page no longer contains 'candHoverCard' 
+PASS - page no longer contains 'cand-hover-source' 
+PASS - page no longer contains 'mouseenter' 
+PASS - verify sets status=verified | verified
+PASS - verify sets verified_at 
+PASS - candidate notified on verify 
+PASS - Revoke button shown once verified 
+PASS - GET revoke redirects & changes nothing 
+PASS - revoke without reason is blocked | verified
+PASS - revoke sets status=changes | changes
+PASS - revoke stores reason | Verification revoked ù Reference could not be confirmed
+PASS - revoke clears verified_at 
+PASS - candidate notified on revoke 
+PASS - Verify button back after revoke 
+PASS - reject without reason is blocked | changes
+PASS - reject sets status=rejected | rejected
+PASS - reject stores reason | Certificate is unreadable
+PASS - candidate notified on reject 
+PASS - employer notified on reject 
+PASS - audit log written 
+PASS - employer candidates page renders | 200
+PASS - employer sees rejection reason 
+PASS - employer sees Rejected badge 
+PASS - candidate verification page renders | 200
+PASS - candidate sees rejection reason 
+PASS - candidate sees fix/resubmit actions 
+PASS - resubmit -> pending + notes cleared | pending / ''
+------------------------------------------------------------
+42/42 checks passed
+ALL CHECKS PASSED

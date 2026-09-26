@@ -115,9 +115,26 @@
           {% endif %}
         {% endwith %}
         {# ── candidates to introduce, best fit first ── #}
-        <h3 class="mt-block-title">Recommended candidates</h3>
+        <div class="mt-cand-search-bar">
+          <label class="mt-cand-search-label" for="mtCandSearch">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="mtCandSearch" class="mt-cand-search-input"
+                   placeholder="Search by skill, profession, degree, name…"
+                   autocomplete="off" spellcheck="false"
+                   data-mt-search
+                   data-search-url="{% url 'website:matching_candidate_search' %}"
+                   data-request-pk="{{ selected_request.pk }}">
+            <span class="mt-search-spinner" data-mt-spinner hidden></span>
+          </label>
+          <span class="mt-search-status" data-mt-search-status></span>
+        </div>
+
+        {# Live search results panel — shown while user is searching #}
+        <div class="mt-search-results" id="mtSearchResults" data-mt-results hidden></div>
+
+        <h3 class="mt-block-title" data-mt-default-head>Recommended candidates</h3>
         {% if ranked %}
-          <div class="mt-cand-list">
+          <div class="mt-cand-list" data-mt-default-list>
             {% for row in ranked|slice:":40" %}
               <div class="mt-cand-row {% if row.matched %}is-done{% endif %}">
                 <div class="mt-score {% if row.score >= 70 %}is-high{% elif row.score >= 40 %}is-mid{% endif %}" title="Match score out of 100">{{ row.score }}</div>
@@ -322,6 +339,133 @@ document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     if (!window.confirm(form.dataset.confirm)) e.preventDefault();
   });
 });
+
+/* ── Live candidate search on the matching page ── */
+(function () {
+  var input      = document.querySelector('[data-mt-search]');
+  if (!input) return;
+
+  var spinner    = document.querySelector('[data-mt-spinner]');
+  var statusEl   = document.querySelector('[data-mt-search-status]');
+  var resultsEl  = document.getElementById('mtSearchResults');
+  var defaultHead = document.querySelector('[data-mt-default-head]');
+  var defaultList = document.querySelector('[data-mt-default-list]');
+  var endpoint   = input.dataset.searchUrl;
+  var reqPk      = input.dataset.requestPk || '';
+  var timer      = null;
+  var controller = null;
+  var DEBOUNCE   = 260;
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function scoreClass(s) {
+    return s >= 70 ? 'is-high' : (s >= 40 ? 'is-mid' : '');
+  }
+
+  function busy(yes) {
+    if (spinner) spinner.hidden = !yes;
+  }
+
+  function showDefault() {
+    if (resultsEl) resultsEl.hidden = true;
+    if (defaultHead) defaultHead.hidden = false;
+    if (defaultList) defaultList.hidden = false;
+    if (statusEl) statusEl.textContent = '';
+  }
+
+  function buildRow(r) {
+    var specs   = (r.specializations || []).join(', ') || 'Professional';
+    var reasons = (r.reasons || []).map(function (x) {
+      return '<li>' + esc(x) + '</li>';
+    }).join('');
+    var meta = [esc(r.degree), esc(r.salary), esc(r.availability)]
+      .filter(Boolean).join(' · ');
+
+    var action = r.already_matched
+      ? '<span class="mt-done-badge">Already matched</span>'
+      : (reqPk
+          ? '<form method="post" action="/dashboard/admin/matching/create/" class="mt-inline-form">'
+            + '<input type="hidden" name="csrfmiddlewaretoken" value="' + esc(window.CSRF_TOKEN) + '">'
+            + '<input type="hidden" name="request" value="' + esc(reqPk) + '">'
+            + '<input type="hidden" name="candidate" value="' + esc(r.id) + '">'
+            + '<button type="submit" class="adm-act adm-act--verify">Match</button>'
+            + '</form>'
+          : '');
+
+    return '<div class="mt-cand-row' + (r.already_matched ? ' is-done' : '') + '">'
+      + '<div class="mt-score ' + scoreClass(r.score) + '" title="Match score out of 100">' + r.score + '</div>'
+      + '<div class="mt-cand-avatar">' + esc(r.avatar) + '</div>'
+      + '<div class="mt-cand-info">'
+        + '<strong>' + esc(r.name) + '</strong>'
+        + '<span>' + esc(specs) + (meta ? ' · ' + meta : '') + '</span>'
+        + (reasons ? '<ul class="mt-reasons">' + reasons + '</ul>' : '')
+      + '</div>'
+      + '<div class="mt-cand-action">' + action
+        + '<a class="adm-row-btn" href="/admin/website/profile/' + r.id + '/change/">Full profile</a>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderResults(data, term) {
+    var rows = data.results || [];
+    if (!rows.length) {
+      resultsEl.innerHTML = '<div class="adm-empty-inline">'
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+        + '<span>No verified candidates matched &ldquo;' + esc(term) + '&rdquo;.</span></div>';
+    } else {
+      resultsEl.innerHTML = '<div class="mt-cand-list">'
+        + rows.map(buildRow).join('') + '</div>';
+      // re-wire confirm forms in the new HTML
+      resultsEl.querySelectorAll('form[data-confirm]').forEach(function (f) {
+        f.addEventListener('submit', function (e) {
+          if (!window.confirm(f.dataset.confirm)) e.preventDefault();
+        });
+      });
+    }
+    if (statusEl) statusEl.textContent = rows.length + ' result' + (rows.length === 1 ? '' : 's');
+    resultsEl.hidden = false;
+    if (defaultHead) defaultHead.hidden = true;
+    if (defaultList) defaultList.hidden = true;
+  }
+
+  function runSearch(term) {
+    if (controller) controller.abort();
+    controller = new AbortController();
+    busy(true);
+
+    var url = endpoint + '?q=' + encodeURIComponent(term)
+      + (reqPk ? '&request=' + encodeURIComponent(reqPk) : '');
+
+    fetch(url, {
+      signal: controller.signal,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+    .then(function (data) { renderResults(data, term); })
+    .catch(function (e) { if (e.name !== 'AbortError') showDefault(); })
+    .finally(function () { busy(false); });
+  }
+
+  input.addEventListener('input', function () {
+    var term = input.value.trim();
+    clearTimeout(timer);
+    if (term.length < 2) { showDefault(); return; }
+    busy(true);
+    timer = setTimeout(function () { runSearch(term); }, DEBOUNCE);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { input.value = ''; showDefault(); input.blur(); }
+  });
+
+  // Expose CSRF token globally for the dynamically injected match forms
+  window.CSRF_TOKEN = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+})();
 </script>
 {% endblock %}
 

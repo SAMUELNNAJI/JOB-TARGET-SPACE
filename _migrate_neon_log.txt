@@ -1,0 +1,86 @@
+========================================================================
+DRY RUN - nothing will be written
+source: db.sqlite3   target host: ep-misty-hat-b1fnojb6-pooler.c-5.eu-central-1.aws.neon.tech
+excluding test accounts: dbg@example.com, pce@example.com
+========================================================================
+
+--- Specialization  (website_specialization)  source rows: 7
+    WOULD UPDATE  src pk 1 -> website_specialization pk 1
+    WOULD UPDATE  src pk 2 -> website_specialization pk 2
+    WOULD UPDATE  src pk 3 -> website_specialization pk 3
+    WOULD UPDATE  src pk 4 -> website_specialization pk 4
+    WOULD UPDATE  src pk 5 -> website_specialization pk 5
+    WOULD UPDATE  src pk 6 -> website_specialization pk 6
+    WOULD UPDATE  src pk 7 -> website_specialization pk 7
+
+--- User  (auth_user)  source rows: 4
+    WOULD UPDATE  src pk 4 -> auth_user pk 3
+    WOULD UPDATE  src pk 26 -> auth_user pk 2
+    WOULD UPDATE  src pk 33 -> auth_user pk 1
+    SKIP (excluded test account) dbg@example.com <dbg@example.com>
+
+--- Profile  (website_profile)  source rows: 3
+    WOULD UPDATE  src pk 3 -> website_profile pk 2
+    WOULD UPDATE  src pk 14 -> website_profile pk 1
+    SKIP (owner excluded)  src pk 50
+
+--- Qualification  (website_qualification)  source rows: 0
+    (nothing to copy)
+
+--- CandidateDocument  (website_candidatedocument)  source rows: 1
+    WOULD UPDATE  src pk 3 -> website_candidatedocument pk 1
+
+--- Subscription  (website_subscription)  source rows: 0
+    (nothing to copy)
+
+--- Payment  (website_payment)  source rows: 0
+    (nothing to copy)
+
+--- RecruitmentRequest  (website_recruitmentrequest)  source rows: 1
+    WOULD UPDATE  src pk 1 -> website_recruitmentrequest pk 1
+
+--- CandidateMatch  (website_candidatematch)  source rows: 0
+    (nothing to copy)
+
+--- Shortlist  (website_shortlist)  source rows: 0
+    (nothing to copy)
+
+--- ReplacementRequest  (website_replacementrequest)  source rows: 0
+    (nothing to copy)
+
+--- Notification  (website_notification)  source rows: 5
+    WOULD CREATE  src pk 1 -> website_notification pk 1
+    WOULD CREATE  src pk 2 -> website_notification pk 2
+    WOULD CREATE  src pk 3 -> website_notification pk 3
+    WOULD CREATE  src pk 4 -> website_notification pk 4
+    WOULD CREATE  src pk 23 -> website_notification pk 23
+
+--- AuditLog  (website_auditlog)  source rows: 10
+    WOULD UPDATE  src pk 1 -> website_auditlog pk 1
+    WOULD CREATE  src pk 26 -> website_auditlog pk 26
+    WOULD CREATE  src pk 27 -> website_auditlog pk 27
+    WOULD CREATE  src pk 28 -> website_auditlog pk 28
+    WOULD CREATE  src pk 29 -> website_auditlog pk 29
+    WOULD CREATE  src pk 30 -> website_auditlog pk 30
+    WOULD CREATE  src pk 31 -> website_auditlog pk 31
+    WOULD CREATE  src pk 32 -> website_auditlog pk 32
+    WOULD CREATE  src pk 33 -> website_auditlog pk 33
+    WOULD CREATE  src pk 34 -> website_auditlog pk 34
+
+========================================================================
+done: 0 created, 0 updated
+
+FINAL ROW COUNTS (sqlite -> neon)
+  website_specialization                   7 -> 7    
+  auth_user                                3 -> 3    
+  website_profile                          2 -> 2    
+  website_qualification                    0 -> 0    
+  website_candidatedocument                1 -> 1    
+  website_subscription                     0 -> 0    
+  website_payment                          0 -> 0    
+  website_recruitmentrequest               1 -> 1    
+  website_candidatematch                   0 -> 1    
+  website_shortlist                        0 -> 0    
+  website_replacementrequest               0 -> 0    
+  website_notification                     5 -> 7    
+  website_auditlog                        10 -> 8       <-- LOWER THAN SOURCE

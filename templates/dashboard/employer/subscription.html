@@ -2,6 +2,90 @@
 {% block title %}Subscription - JobSpace{% endblock %}
 {% block body_class %}employer-dashboard{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+<script>
+(function () {
+  var csrfToken   = '{{ csrf_token }}';
+  var initiateUrl = '{% url "website:initiate_subscription" %}';
+
+  function launchCheckout(plan) {
+    var btn     = document.querySelector('[data-plan="' + plan + '"]');
+    var spinner = document.getElementById('subPageSpinner');
+    var errBox  = document.getElementById('subPageError');
+
+    if (spinner) spinner.hidden = false;
+    if (errBox)  errBox.hidden  = true;
+    if (btn)     btn.disabled   = true;
+
+    fetch(initiateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+      },
+      body: 'plan=' + encodeURIComponent(plan),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (spinner) spinner.hidden = true;
+      if (!data.ok) {
+        if (btn) btn.disabled = false;
+        if (errBox) { errBox.textContent = data.error || 'Something went wrong.'; errBox.hidden = false; }
+        return;
+      }
+      FlutterwaveCheckout({
+        public_key:      data.public_key,
+        tx_ref:          data.tx_ref,
+        amount:          data.amount,
+        currency:        data.currency,
+        payment_options: 'card,banktransfer,ussd',
+        redirect_url:    data.redirect_url,
+        meta: { plan: plan },
+        customer: {
+          email:        data.email,
+          name:         data.name,
+          phone_number: data.phone,
+        },
+        customizations: {
+          title:       'JobSPACE Subscription',
+          description: data.plan_label + ' Plan — ₦' + data.amount.toLocaleString() + '/month',
+          logo:        '{{ request.scheme }}://{{ request.get_host }}{% load static %}{% static "images/Logo.png" %}',
+        },
+        callback: function (response) {
+          if (response.status === 'successful') {
+            window.location.href = data.redirect_url
+              + '?status=successful'
+              + '&tx_ref='         + encodeURIComponent(response.tx_ref)
+              + '&transaction_id=' + encodeURIComponent(response.transaction_id);
+          } else {
+            if (btn) btn.disabled = false;
+            if (errBox) { errBox.textContent = 'Payment was not completed. Please try again.'; errBox.hidden = false; }
+          }
+        },
+        onclose: function () {
+          if (btn) btn.disabled = false;
+          if (spinner) spinner.hidden = true;
+        },
+      });
+    })
+    .catch(function () {
+      if (btn) btn.disabled = false;
+      if (spinner) spinner.hidden = true;
+      if (errBox) { errBox.textContent = 'Network error. Please try again.'; errBox.hidden = false; }
+    });
+  }
+
+  document.querySelectorAll('.emp-plan-pay-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      launchCheckout(btn.dataset.plan);
+    });
+  });
+})();
+</script>
+{% endblock %}
+
 {% block content %}
 <main class="dashboard-content emp-sub-page">
   <section class="emp-form-hero">
@@ -13,6 +97,7 @@
     </div>
     {% if subscription %}<div class="emp-sub-active-badge"><div class="emp-sub-active-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg></div><div><strong>{{ subscription.get_plan_display }} Plan — Active</strong><span>Renews {{ subscription.expires_at|date:"d M Y" }}</span></div></div>{% endif %}
   </section>
+
   {% if subscription %}
     <div class="emp-plan-banner">
       <div class="emp-plan-banner-left">
@@ -22,26 +107,54 @@
       <div class="emp-plan-banner-right"><span class="emp-plan-active-chip"><span class="emp-kicker-dot"></span>Active</span><strong>₦{{ subscription.amount|floatformat:0 }}/mo</strong></div>
     </div>
   {% endif %}
+
   <div class="emp-plans-heading"><h2>Choose a plan</h2><p>All plans include access to the JobSPACE talent pool of vetted professionals.</p></div>
+
+  {# Global error / spinner for this page #}
+  <div style="text-align:center;padding:0 24px 4px">
+    <div class="sub-gate-spinner" id="subPageSpinner" hidden aria-live="polite">
+      <span class="sub-gate-spinner-ring"></span> Opening payment… please wait
+    </div>
+    <p class="sub-gate-error" id="subPageError" hidden role="alert" style="display:inline-block;max-width:500px"></p>
+  </div>
+
   <div class="emp-plan-grid">
     <article class="emp-plan-card {% if subscription and subscription.plan == 'basic' %}emp-plan-card--active{% endif %}">
       {% if subscription and subscription.plan == 'basic' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
       <div class="emp-plan-icon emp-plan-icon--basic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
       <h3 class="emp-plan-name">Basic</h3>
       <div class="emp-plan-price"><strong>₦50,000</strong><span>/ month</span></div>
-      <ul class="emp-plan-features"><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Up to 5 vetted profiles per request</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>48–72 hour response window</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1 free replacement within 30 days</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Standard dashboard support</li></ul>
-      <form method="post">{% csrf_token %}<input type="hidden" name="plan" value="basic"><button type="submit" class="emp-plan-btn {% if subscription and subscription.plan == 'basic' %}emp-plan-btn--current{% endif %}">{% if subscription and subscription.plan == 'basic' %}Renew Basic Plan{% else %}Choose Basic{% endif %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button></form>
+      <ul class="emp-plan-features">
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Up to 5 vetted profiles per request</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>48–72 hour response window</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1 free replacement within 30 days</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Standard dashboard support</li>
+      </ul>
+      <button type="button" data-plan="basic" class="emp-plan-btn emp-plan-pay-btn {% if subscription and subscription.plan == 'basic' %}emp-plan-btn--current{% endif %}">
+        {% if subscription and subscription.plan == 'basic' %}Renew Basic Plan{% else %}Choose Basic{% endif %}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </article>
+
     <article class="emp-plan-card emp-plan-card--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-card--active{% endif %}">
       <div class="emp-plan-recommended"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Most Popular</div>
       {% if subscription and subscription.plan == 'premium' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
       <div class="emp-plan-icon emp-plan-icon--premium"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
       <h3 class="emp-plan-name">Premium</h3>
       <div class="emp-plan-price"><strong>₦100,000</strong><span>/ month</span></div>
-      <ul class="emp-plan-features"><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Unlimited matched profiles pushed</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority 24-hour dashboard delivery</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Uncapped replacements within 90 days</li><li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager support</li></ul>
-      <form method="post">{% csrf_token %}<input type="hidden" name="plan" value="premium"><button type="submit" class="emp-plan-btn emp-plan-btn--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-btn--current{% endif %}">{% if subscription and subscription.plan == 'premium' %}Renew Premium Plan{% else %}Choose Premium{% endif %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button></form>
+      <ul class="emp-plan-features">
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Unlimited matched profiles pushed</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority 24-hour dashboard delivery</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Uncapped replacements within 90 days</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager support</li>
+      </ul>
+      <button type="button" data-plan="premium" class="emp-plan-btn emp-plan-btn--premium emp-plan-pay-btn {% if subscription and subscription.plan == 'premium' %}emp-plan-btn--current{% endif %}">
+        {% if subscription and subscription.plan == 'premium' %}Renew Premium Plan{% else %}Choose Premium{% endif %}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </article>
   </div>
+
   {% if payments %}
     <div class="emp-payment-history">
       <div class="emp-section-head" style="padding:20px 24px 16px"><h2 class="emp-panel-title">Payment History</h2><a class="emp-link" href="/dashboard/employer/payments/">View all →</a></div>

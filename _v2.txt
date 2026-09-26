@@ -1,0 +1,61 @@
+DEBUG              = False
+MEDIA_ROOT         = C:\Users\ADMIN\Desktop\JOB TARGET SPACE\media
+MEDIA_URL          = /media/
+database vendor    = postgresql
+Traceback (most recent call last):
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 279, in ensure_connection
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 256, in connect
+    self.connection = self.get_new_connection(conn_params)
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 332, in get_new_connection
+    connection = self.Database.connect(**conn_params)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\psycopg\connection.py", line 100, in connect
+    attempts = conninfo_attempts(params)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\psycopg\_conninfo_attempts.py", line 55, in conninfo_attempts
+    raise last_exc
+psycopg.OperationalError: failed to resolve host 'ep-misty-hat-b1fnojb6-pooler.c-5.eu-central-1.aws.neon.tech': [Errno 11001] getaddrinfo failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\_check_media.py", line 27, in <module>
+    doc = connection.cursor().execute(
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 320, in cursor
+    return self._cursor()
+           ~~~~~~~~~~~~^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 296, in _cursor
+    self.ensure_connection()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 278, in ensure_connection
+    with self.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 279, in ensure_connection
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\base\base.py", line 256, in connect
+    self.connection = self.get_new_connection(conn_params)
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 332, in get_new_connection
+    connection = self.Database.connect(**conn_params)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\psycopg\connection.py", line 100, in connect
+    attempts = conninfo_attempts(params)
+  File "C:\Users\ADMIN\Desktop\JOB TARGET SPACE\.venv\Lib\site-packages\psycopg\_conninfo_attempts.py", line 55, in conninfo_attempts
+    raise last_exc
+django.db.utils.OperationalError: failed to resolve host 'ep-misty-hat-b1fnojb6-pooler.c-5.eu-central-1.aws.neon.tech': [Errno 11001] getaddrinfo failed

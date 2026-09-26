@@ -66,6 +66,16 @@ def dashboard_badges(request):
                 "employer_requests": 0 if _viewed(request, "/dashboard/employer/requests/") else req_count,
                 "employer_notifications": 0 if on_page else unread,
             }
+            # Inject active subscription so every employer template can check it
+            # without an extra DB query in each individual view.
+            active_sub = profile.subscriptions.filter(is_active=True).first()
+            ctx["employer_active_subscription"] = active_sub
+            # Show the subscribe modal on employer pages that are NOT the
+            # subscription page itself, and only when there is no active plan.
+            ctx["show_subscribe_modal"] = (
+                active_sub is None
+                and not _viewed(request, "/dashboard/employer/subscription/")
+            )
     except Exception:
         pass
     return ctx

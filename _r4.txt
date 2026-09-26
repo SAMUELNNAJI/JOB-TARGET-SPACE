@@ -1,0 +1,73 @@
+==============================================================================
+ROW COUNT COMPARISON  (sqlite -> neon)
+==============================================================================
+  table                              sqlite     neon  status
+  auth_user                               3        3  ok
+  website_profile                         2        2  ok
+  website_specialization                  7        7  ok
+  website_qualification                   0        0  ok
+  website_candidatedocument               1        1  ok
+  website_subscription                    0        1  ok
+  website_payment                         0        1  ok
+  website_recruitmentrequest              1        1  ok
+  website_candidatematch                  0        1  ok
+  website_shortlist                       0        0  ok
+  website_replacementrequest              0        0  ok
+  website_notification                    5        7  ok
+  website_auditlog                        1        2  ok
+
+==============================================================================
+USERS
+==============================================================================
+    1  Admin@gmail.com            Admin@gmail.com                    staff=True super=True active=True
+    2  coderjoe16@gmail.com       coderjoe16@gmail.com               staff=False super=False active=True
+    3  9jaflavzmedia@gmail.com    9jaflavzmedia@gmail.com            staff=False super=False active=True
+
+==============================================================================
+PROFILES
+==============================================================================
+  p  1 u2   employer  name=                         co=Coder jeo              draft
+        degree=                                             salary=None
+  p  2 u3   candidate name=nnaji samuel             co=                       verified
+        degree=national Diploma                             salary=200000
+
+==============================================================================
+CANDIDATE DOCUMENTS  (file must also exist in media/)
+==============================================================================
+  d1 profile=2  candidate_documents/2026/09/GIT_COMMANDS.docx
+      on disk: YES
+
+==============================================================================
+NOTIFICATIONS / AUDITLOG / REQUESTS
+==============================================================================
+  notifications       : 7
+  auditlog            : 2
+  recruitmentrequest  : 1
+    req 1: employer=1 'Marketer' [available]
+    n  1 profile        read=True CV uploaded successfully
+    n  2 profile        read=True Professional profile completed
+    n  3 verification   read=True Profile submitted for review
+    n  4 verification   read=True Profile verified
+    n 23 system         read=True Recruitment request submitted
+    n 24 match          read=False A new candidate is available for your request
+    n 25 match          read=True A new opportunity was matched to you
+
+==============================================================================
+M2M  (profile.specializations)
+==============================================================================
+  p2 nnaji samuel             -> Computer
+
+==============================================================================
+SPECIALIZATIONS
+==============================================================================
+    1 Finance & Auditing
+    2 Engineering & Systems Infrastructure
+    3 Corporate Marketing & Growth
+    4 Architecture & Space Planning
+    5 Healthcare & Medical Operations
+    6 Technical Operations & Equipment Management
+    7 Computer
+
+==============================================================================
+RESULT: ALL TABLES FULLY MIGRATED
+==============================================================================
