@@ -221,13 +221,50 @@ class EmployerProfileForm(forms.ModelForm):
 
 
 class RecruitmentRequestForm(forms.ModelForm):
+    OTHER = "__other__"
+
+    # Dropdown of common professions. The employer can pick one, or choose
+    # "Other" and type any profession we don't have listed.
+    position = forms.ChoiceField(
+        required=False,
+        label="Professional position",
+        choices=[("", "Select a position…")] + list(RecruitmentRequest.POSITION_CHOICES)
+                + [(OTHER, "Other — type it below")],
+    )
+    # Non-model field, excluded from Meta.fields intentionally (same pattern as
+    # custom_specialization on the candidate profile form).
+    custom_position = forms.CharField(
+        required=False,
+        max_length=120,
+        label="Enter the position you need",
+        widget=forms.TextInput(attrs={"placeholder": "e.g.Quantity Surveyor, Data Analyst, welder…"}),
+    )
+
     class Meta:
         model = RecruitmentRequest
         fields = ("position", "professionals_required", "minimum_qualification", "certifications", "years_experience", "required_skills", "salary_min", "salary_max", "salary_period")
         widgets = {"certifications": forms.Textarea(attrs={"rows": 3}), "required_skills": forms.Textarea(attrs={"rows": 3})}
 
+    def clean_custom_position(self):
+        # Whitespace-only input counts as "not provided".
+        return self.cleaned_data.get("custom_position", "").strip()
+
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("salary_min") and cleaned.get("salary_max") and cleaned["salary_min"] > cleaned["salary_max"]:
             raise forms.ValidationError("Maximum salary must be greater than minimum salary.")
+
+        selected  = (cleaned.get("position") or "").strip()
+        custom    = (cleaned.get("custom_position") or "").strip()
+
+        # Resolve the two inputs into a single stored position value.
+        if selected == self.OTHER or not selected:
+            cleaned["position"] = custom
+            if not custom:
+                message = ("Enter the position you need." if selected == self.OTHER
+                           else "Select a position or type the one you need.")
+                self.add_error("custom_position" if selected == self.OTHER else "position", message)
+        else:
+            cleaned["position"] = selected
+
         return cleaned

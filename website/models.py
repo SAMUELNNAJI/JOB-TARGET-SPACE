@@ -157,9 +157,11 @@ class RecruitmentRequest(models.Model):
         AVAILABLE = "available", "Candidates Available"
         COMPLETED = "completed", "Completed"
 
+    # Suggested positions offered in the employer's dropdown. This is a plain list,
+    # NOT model `choices` — employers may submit any other profession by typing it.
     POSITION_CHOICES = [(name, name) for name in ("Accountant", "Auditor", "Marketer", "Planner", "Architect", "Civil Engineer", "Mechanical Engineer", "Electrical Engineer", "Software Engineer", "Doctor", "Medical Technologist", "Equipment Operator", "Heavy Duty Technician", "Technical Supervisor", "Administrative Staff")]
     employer = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="recruitment_requests")
-    position = models.CharField(max_length=120, choices=POSITION_CHOICES)
+    position = models.CharField(max_length=120)
     professionals_required = models.PositiveIntegerField(default=1)
     minimum_qualification = models.CharField(max_length=200)
     certifications = models.TextField(blank=True)

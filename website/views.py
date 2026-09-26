@@ -7,6 +7,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
@@ -391,6 +392,8 @@ def employer_section(request, section):
     # ── Recruitment requests ──────────────────────────────────
     if section == "requests":
         form = RecruitmentRequestForm(request.POST or None)
+        submitted = None
+
         if request.method == "POST" and form.is_valid():
             req          = form.save(commit=False)
             req.employer = employer
@@ -401,14 +404,27 @@ def employer_section(request, section):
                 kind=Notification.Kind.SYSTEM,
             )
             messages.success(request, "Recruitment request submitted.")
-            return redirect("website:employer_section", section="requests")
+            # Redirect (POST/redirect/GET) and tag the URL so the page can open the
+            # confirmation modal for exactly this request.
+            url = reverse("website:employer_section", kwargs={"section": "requests"})
+            return redirect(f"{url}?submitted={req.pk}")
+
         requests_qs = employer.recruitment_requests.order_by("-created_at")
+
+        # ?submitted=<pk> → render the confirmation modal (validated against this
+        # employer so a hand-edited URL can't expose another company's request).
+        submitted_id = request.GET.get("submitted")
+        if submitted_id and submitted_id.isdigit():
+            submitted = employer.recruitment_requests.filter(pk=int(submitted_id)).first()
+
         return render(request, "dashboard/employer/requests.html", {
-            "employer":      employer,
-            "form":          form,
-            "unread_count":  unread,
-            "page_obj":      paginate(request, requests_qs),
-            "section_title": "Recruitment Requests",
+            "employer":         employer,
+            "form":             form,
+            "unread_count":     unread,
+            "page_obj":         paginate(request, requests_qs),
+            "section_title":    "Recruitment Requests",
+            "other_choice":     RecruitmentRequestForm.OTHER,
+            "submitted_request": submitted,
         })
 
     # ── Candidates received ───────────────────────────────────

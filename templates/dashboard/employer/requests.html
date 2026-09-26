@@ -18,19 +18,83 @@
       <div class="emp-form-card-head-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
       <div><h2 class="emp-form-card-title">New Recruitment Request</h2><p class="emp-form-card-sub">Describe the professional you need — our team will source and vet candidates for you.</p></div>
     </div>
-    <form method="post" class="emp-form">
+    <form method="post" class="emp-form" id="empRequestForm">
       {% csrf_token %}
+
+      {# ── Success confirmation modal (shown after a request is submitted) ── #}
+      {% if submitted_request %}
+      <div class="emp-modal-overlay" id="requestSuccessModal" role="dialog" aria-modal="true" aria-labelledby="requestSuccessTitle">
+        <div class="emp-modal">
+          <div class="emp-modal-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 class="emp-modal-title" id="requestSuccessTitle">Request submitted</h2>
+          <p class="emp-modal-text">
+            Your request has been sent to the JobSPACE team. We will source, vet and
+            push matching candidates straight to your dashboard.
+          </p>
+
+          <div class="emp-modal-summary">
+            <div class="emp-modal-summary-row">
+              <span>Position</span>
+              <strong>{{ submitted_request.position }}</strong>
+            </div>
+            <div class="emp-modal-summary-row">
+              <span>Number required</span>
+              <strong>{{ submitted_request.professionals_required }}</strong>
+            </div>
+            <div class="emp-modal-summary-row">
+              <span>Salary range</span>
+              <strong>₦{{ submitted_request.salary_min|floatformat:0 }} – ₦{{ submitted_request.salary_max|floatformat:0 }} / {{ submitted_request.get_salary_period_display|lower }}</strong>
+            </div>
+            <div class="emp-modal-summary-row">
+              <span>Status</span>
+              <strong><span class="emp-modal-status">{{ submitted_request.get_status_display }}</span></strong>
+            </div>
+          </div>
+
+          <p class="emp-modal-next">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Candidates usually appear under <em>Candidates Received</em> once a
+            JobSPACE administrator has matched them to you.
+          </p>
+
+          <div class="emp-modal-actions">
+            <a class="emp-modal-btn emp-modal-btn--ghost" href="/dashboard/employer/candidates/">View candidates</a>
+            <button type="button" class="emp-modal-btn emp-modal-btn--primary" data-emp-modal-close>Done</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="emp-form-section">
         <h3 class="emp-form-section-title">Position Details</h3>
+        {% if form.non_field_errors %}
+        <div class="emp-alert" role="alert">
+          {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+        </div>
+        {% endif %}
         <div class="emp-form-grid">
-          <div class="emp-field"><label class="emp-label">Professional position</label>{{ form.position }}</div>
-          <div class="emp-field"><label class="emp-label">Number required</label>{{ form.professionals_required }}</div>
-          <div class="emp-field"><label class="emp-label">Minimum qualification</label>{{ form.minimum_qualification }}</div>
-          <div class="emp-field"><label class="emp-label">Years of experience</label>{{ form.years_experience }}</div>
+          <div class="emp-field">
+            <label class="emp-label" for="{{ form.position.id_for_label }}">Professional position</label>
+            {{ form.position }}
+            {% if form.position.errors %}<span class="emp-error">{{ form.position.errors|join:", " }}</span>{% endif %}
+
+            {# ── Free-text fallback: revealed when "Other" is selected ── #}
+            <div class="emp-field-other" data-position-custom hidden>
+              <label class="emp-label" for="{{ form.custom_position.id_for_label }}">Enter the position you need</label>
+              {{ form.custom_position }}
+              {% if form.custom_position.errors %}<span class="emp-error">{{ form.custom_position.errors|join:", " }}</span>{% endif %}
+              <small class="emp-hint">Not on the list? Type the exact profession and we will match it to the right talent.</small>
+            </div>
+          </div>
+          <div class="emp-field"><label class="emp-label">Number required</label>{{ form.professionals_required }}{% if form.professionals_required.errors %}<span class="emp-error">{{ form.professionals_required.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Minimum qualification</label>{{ form.minimum_qualification }}{% if form.minimum_qualification.errors %}<span class="emp-error">{{ form.minimum_qualification.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Years of experience</label>{{ form.years_experience }}{% if form.years_experience.errors %}<span class="emp-error">{{ form.years_experience.errors|join:", " }}</span>{% endif %}</div>
           <div class="emp-field emp-field--full"><label class="emp-label">Professional certifications</label>{{ form.certifications }}</div>
-          <div class="emp-field emp-field--full"><label class="emp-label">Required skills / proficiencies</label>{{ form.required_skills }}</div>
-          <div class="emp-field"><label class="emp-label">Minimum salary (₦)</label>{{ form.salary_min }}</div>
-          <div class="emp-field"><label class="emp-label">Maximum salary (₦)</label>{{ form.salary_max }}</div>
+          <div class="emp-field emp-field--full"><label class="emp-label">Required skills / proficiencies</label>{{ form.required_skills }}{% if form.required_skills.errors %}<span class="emp-error">{{ form.required_skills.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Minimum salary (₦)</label>{{ form.salary_min }}{% if form.salary_min.errors %}<span class="emp-error">{{ form.salary_min.errors|join:", " }}</span>{% endif %}</div>
+          <div class="emp-field"><label class="emp-label">Maximum salary (₦)</label>{{ form.salary_max }}{% if form.salary_max.errors %}<span class="emp-error">{{ form.salary_max.errors|join:", " }}</span>{% endif %}</div>
           <div class="emp-field"><label class="emp-label">Salary period</label>{{ form.salary_period }}</div>
         </div>
       </div>
@@ -53,4 +117,65 @@
     <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
   </div>
 </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ── Position field: reveal the free-text box when "Other" is chosen ── */
+(function () {
+  const select = document.getElementById('id_position');
+  const other  = document.querySelector('[data-position-custom]');
+  if (!select || !other) return;
+
+  const custom = other.querySelector('input');
+  const OTHER  = "{{ other_choice|default:'__other__' }}";
+
+  function sync() {
+    const isOther = select.value === OTHER;
+    other.hidden = !isOther;
+    if (isOther && custom) { custom.focus(); }
+  }
+
+  // If the form came back with a validation error on the custom field, show it.
+  if (other.querySelector('.emp-error')) { select.value = OTHER; }
+  select.addEventListener('change', sync);
+  sync();
+})();
+
+/* ── Success modal: open, close, and restore focus ── */
+(function () {
+  const modal = document.getElementById('requestSuccessModal');
+  if (!modal) return;
+
+  let lastFocus = null;
+
+  function open() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    const close = modal.querySelector('[data-emp-modal-close]');
+    if (close) close.focus();
+  }
+
+  function close() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocus) { lastFocus.focus(); }
+    // Drop ?submitted= from the URL so a refresh does not reopen the modal.
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }
+
+  modal.querySelectorAll('[data-emp-modal-close]').forEach(function (btn) {
+    btn.addEventListener('click', close);
+  });
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+
+  open();
+})();
+</script>
 {% endblock %}
