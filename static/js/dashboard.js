@@ -315,7 +315,10 @@ document.querySelectorAll('[data-dashboard-action]').forEach(button => {
   /* ── fetch and render notifications ── */
   function load() {
     if (!listEl) return;
-    listEl.innerHTML = '<div class="notif-dropdown-loading"><span class="notif-spinner"></span></div>';
+    // Show spinner, clear previous content
+    const loadingEl = listEl.querySelector('.notif-dropdown-loading');
+    if (loadingEl) loadingEl.hidden = false;
+    listEl.querySelectorAll('.notif-drop-item, .notif-drop-empty').forEach(el => el.remove());
 
     fetch(FETCH_URL, {
       credentials: 'same-origin',
@@ -323,21 +326,24 @@ document.querySelectorAll('[data-dashboard-action]').forEach(button => {
     })
     .then(r => r.ok ? r.json() : Promise.reject(r))
     .then(data => {
+      if (loadingEl) loadingEl.hidden = true;
       const items = data.notifications || [];
       if (!items.length) {
-        listEl.innerHTML = `
+        listEl.insertAdjacentHTML('beforeend', `
           <div class="notif-drop-empty">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span>You're all caught up!</span>
-          </div>`;
+          </div>`);
       } else {
-        listEl.innerHTML = items.map(buildItem).join('');
+        listEl.insertAdjacentHTML('beforeend', items.map(buildItem).join(''));
       }
       setBadge(data.unread || 0);
       loaded = true;
     })
     .catch(() => {
-      listEl.innerHTML = '<div class="notif-drop-empty"><span>Could not load notifications.</span></div>';
+      if (loadingEl) loadingEl.hidden = true;
+      listEl.insertAdjacentHTML('beforeend',
+        '<div class="notif-drop-empty"><span>Could not load notifications.</span></div>');
     });
   }
 
