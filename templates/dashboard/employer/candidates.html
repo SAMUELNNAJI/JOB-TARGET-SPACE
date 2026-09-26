@@ -195,11 +195,13 @@
   function set(id, html) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = html;
+    return el;
   }
 
   function show(id, visible) {
     var el = document.getElementById(id);
     if (el) el.hidden = !visible;
+    return el;
   }
 
   function openModal(detailUrl, acceptUrl) {
@@ -219,7 +221,13 @@
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
-    .then(function (d) { renderProfile(d); })
+    .then(function (d) {
+      try { renderProfile(d); } catch(e) {
+        loading.hidden = true;
+        body.hidden = false;
+        set('candModalTitle', 'Could not render profile');
+      }
+    })
     .catch(function () {
       loading.hidden = true;
       body.hidden    = false;

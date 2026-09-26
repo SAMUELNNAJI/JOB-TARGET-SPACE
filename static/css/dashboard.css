@@ -6163,11 +6163,11 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   gap: 5px;
 }
 .adm-row-btn {
-  padding: 5px 11px;
+  padding: 7px 14px;
   border-radius: 7px;
   background: #f4f6fc;
   color: #0e1420;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   border: 1px solid var(--dash-line);
   transition: all 0.18s;
@@ -6606,7 +6606,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-candidate-info span{display:block;font-size:10px;color:var(--emp-muted,#7a8599);margin-top:2px}
 .emp-candidate-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .emp-avail-badge{display:inline-flex;padding:3px 9px;border-radius:999px;background:#e8faf1;color:#0a7a48;font-size:9px;font-weight:700;white-space:nowrap}
-.emp-candidate-btn{padding:5px 12px;border-radius:7px;background:var(--emp-soft,#f4f6fc);color:var(--emp-ink,#0e1420);font-size:10px;font-weight:700;border:1px solid var(--emp-line,#e6eaf4);transition:all .18s;white-space:nowrap}
+.emp-candidate-btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid var(--emp-red,#d90429);color:var(--emp-red,#d90429);background:#fff;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;white-space:nowrap}rder-radius:7px;background:var(--emp-soft,#f4f6fc);color:var(--emp-ink,#0e1420);font-size:10px;font-weight:700;border:1px solid var(--emp-line,#e6eaf4);transition:all .18s;white-space:nowrap}
 .emp-candidate-btn:hover{background:var(--emp-red,#d90429);color:#fff;border-color:var(--emp-red,#d90429)}
 
 /* notification rows */
@@ -6977,10 +6977,10 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 11px;
+  padding: 9px 16px;
   border-radius: 7px;
   border: 1px solid transparent;
-  font: 700 10px "DM Sans", sans-serif;
+  font: 700 13px "DM Sans", sans-serif;
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.18s;
@@ -8574,3 +8574,182 @@ button.notif-bell-btn:focus-visible {
   animation: spin .7s linear infinite;
   margin: 0 auto;
 }
+
+
+/* ============================================================
+   GLOBAL TEXT + BUTTON SIZE UPLIFT  (final pass)
+   All dashboard text bumped to comfortable reading sizes.
+   ============================================================ */
+
+/* Base body copy */
+body { font-size: 15px !important; }
+
+/* All dashboard <p> */
+.dashboard-content p,
+.dashboard-content li,
+.dashboard-content span:not(.badge):not(.nav-badge):not(.emp-kicker-dot):not(.adm-kicker-dot) {
+  font-size: inherit;
+}
+
+/* Portal table — readable rows */
+.portal-table th { font-size: 12px !important; padding: 12px 12px !important; }
+.portal-table td { font-size: 14px !important; padding: 14px 12px !important; }
+
+/* Sidebar nav links */
+.dashboard-nav a { font-size: 14px !important; }
+
+/* Topbar user */
+.dashboard-user strong { font-size: 14px !important; }
+.dashboard-user small  { font-size: 12px !important; }
+
+/* Admin action buttons (Verify / Reject / Revoke / Match / Withdraw) */
+.adm-act {
+  padding: 9px 16px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+}
+
+/* Admin "Full profile" / row buttons */
+.adm-row-btn {
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  border-radius: 7px !important;
+}
+
+/* Employer CTA buttons */
+.emp-btn        { padding: 12px 24px !important; font-size: 14px !important; }
+.emp-candidate-btn { padding: 9px 16px !important; font-size: 13px !important; }
+
+/* Employer form labels, inputs, textarea */
+.emp-form label,
+.emp-form .emp-label { font-size: 14px !important; }
+.emp-form input,
+.emp-form select,
+.emp-form textarea { font-size: 14px !important; }
+
+/* Plan cards */
+.emp-plan-name           { font-size: 22px !important; }
+.emp-plan-price strong   { font-size: 28px !important; }
+.emp-plan-price span     { font-size: 14px !important; }
+.emp-plan-features li    { font-size: 14px !important; }
+.emp-plan-btn            { font-size: 14px !important; padding: 12px 22px !important; }
+
+/* Notification page */
+.notif-title             { font-size: 15px !important; }
+.notif-message           { font-size: 14px !important; }
+.notif-time              { font-size: 12px !important; }
+.notif-heading           { font-size: 22px !important; }
+.notif-sub               { font-size: 15px !important; }
+.notif-kind-tag          { font-size: 12px !important; }
+
+/* Notification bell dropdown */
+.notif-drop-title        { font-size: 14px !important; }
+.notif-drop-msg          { font-size: 13px !important; }
+.notif-drop-time         { font-size: 12px !important; }
+.notif-dropdown-title    { font-size: 15px !important; }
+.notif-mark-all-btn      { font-size: 13px !important; }
+.notif-view-all          { font-size: 13px !important; }
+
+/* Admin hero / section headings */
+.adm-hero-title          { font-size: clamp(32px, 4vw, 44px) !important; }
+.adm-hero-sub            { font-size: 16px !important; }
+.adm-metric-val          { font-size: 28px !important; }
+.adm-metric-label        { font-size: 13px !important; }
+.adm-section-title       { font-size: 14px !important; }
+.adm-panel-title         { font-size: 18px !important; }
+.adm-panel-sub           { font-size: 14px !important; }
+.adm-log-body strong     { font-size: 13px !important; }
+.adm-log-body span       { font-size: 13px !important; }
+.adm-mini-info strong    { font-size: 14px !important; }
+.adm-mini-info span      { font-size: 13px !important; }
+.adm-action-info strong  { font-size: 14px !important; }
+.adm-action-info span    { font-size: 13px !important; }
+.adm-status-badge        { font-size: 12px !important; padding: 4px 10px !important; }
+.adm-flash-item          { font-size: 14px !important; }
+.adm-empty-inline span   { font-size: 14px !important; }
+.adm-btn                 { font-size: 14px !important; padding: 12px 24px !important; }
+
+/* Matching page */
+.mt-block-title          { font-size: 15px !important; }
+.mt-cand-info strong     { font-size: 14px !important; }
+.mt-cand-info span       { font-size: 13px !important; }
+.mt-reasons li           { font-size: 12px !important; }
+.mt-request-pos          { font-size: 14px !important; }
+.mt-request-meta span    { font-size: 13px !important; }
+.mt-head-sub             { font-size: 14px !important; }
+.mt-req-detail span      { font-size: 13px !important; }
+.mt-req-detail strong    { font-size: 14px !important; }
+.mt-score                { font-size: 15px !important; min-width: 40px !important; height: 40px !important; }
+.mt-done-badge           { font-size: 12px !important; padding: 5px 10px !important; }
+
+/* Employer dashboard */
+.emp-hero-title          { font-size: clamp(34px, 4.5vw, 48px) !important; }
+.emp-hero-sub            { font-size: 16px !important; }
+.emp-panel-title         { font-size: 18px !important; }
+.emp-panel-sub           { font-size: 14px !important; }
+.emp-stat-val            { font-size: 28px !important; }
+.emp-stat-label          { font-size: 14px !important; }
+.emp-form-card-title     { font-size: 22px !important; }
+.emp-form-card-sub       { font-size: 15px !important; }
+.emp-req-info strong     { font-size: 15px !important; }
+.emp-req-info span       { font-size: 13px !important; }
+.emp-candidate-info strong { font-size: 15px !important; }
+.emp-candidate-info span   { font-size: 13px !important; }
+.emp-section-count       { font-size: 13px !important; }
+.emp-empty-state h3      { font-size: 22px !important; }
+.emp-empty-state p       { font-size: 15px !important; }
+.emp-avail-badge         { font-size: 12px !important; padding: 4px 10px !important; }
+
+/* Candidate dashboard */
+.cand-hero-title         { font-size: clamp(34px, 4.5vw, 50px) !important; }
+.cand-hero-sub           { font-size: 16px !important; }
+.cand-panel-title        { font-size: 18px !important; }
+.cand-panel-sub          { font-size: 14px !important; }
+.cand-stat-val           { font-size: 28px !important; }
+.cand-stat-label         { font-size: 13px !important; }
+.cand-profile-name       { font-size: 20px !important; }
+.cand-profile-detail-row { font-size: 14px !important; }
+.cand-btn                { font-size: 14px !important; padding: 12px 24px !important; }
+.cand-job-info h3        { font-size: 15px !important; }
+.cand-job-info p         { font-size: 14px !important; }
+.cand-tip-card p         { font-size: 14px !important; }
+
+/* Candidate modal */
+.cand-modal-name         { font-size: 22px !important; }
+.cand-modal-section-title { font-size: 12px !important; }
+.cand-modal-pitch        { font-size: 15px !important; }
+.cand-tag                { font-size: 13px !important; }
+.cand-modal-item span    { font-size: 11px !important; }
+.cand-modal-item strong  { font-size: 14px !important; }
+.cand-accept-btn         { font-size: 15px !important; padding: 12px 26px !important; }
+.cand-modal-private-notice { font-size: 13px !important; }
+.cand-modal-footer-note  { font-size: 13px !important; }
+
+/* Profile & verification wizard */
+.pf-hero-sub    { font-size: 16px !important; }
+.pf-pane-desc   { font-size: 15px !important; }
+.pf-hint        { font-size: 13px !important; }
+.pf-label       { font-size: 14px !important; }
+.pf-input, .pf-select, .pf-textarea { font-size: 14px !important; }
+
+.vf-hero-sub            { font-size: 16px !important; }
+.vf-step-body strong    { font-size: 15px !important; }
+.vf-step-body span      { font-size: 14px !important; }
+.vf-detail-text h3      { font-size: 20px !important; }
+.vf-detail-text p       { font-size: 15px !important; }
+.vf-notes-box p         { font-size: 14px !important; }
+
+/* Opportunities page */
+.opp-hero-sub         { font-size: 16px !important; }
+.opp-card-company     { font-size: 17px !important; }
+.opp-card-note        { font-size: 15px !important; }
+.opp-card-meta-item   { font-size: 13px !important; }
+.opp-empty-desc       { font-size: 15px !important; }
+
+/* Search panel */
+.dashboard-search-row strong { font-size: 14px !important; }
+.dashboard-search-row small  { font-size: 13px !important; }
+.dashboard-search-group-label { font-size: 11px !important; }
+
+/* Pagination */
+.pagination-btn, .pagination-page { font-size: 13px !important; padding: 7px 13px !important; }
