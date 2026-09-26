@@ -2,8 +2,14 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load local development overrides from .env. On Render the environment is
+# injected directly by the platform, so there is no .env file and this is a
+# no-op. .env is git-ignored and must never be committed.
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
     "SECRET_KEY",
