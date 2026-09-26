@@ -3,41 +3,325 @@
 {% block notification_count %}0{% endblock %}
 {% block content %}
 <main class="dashboard-content adm-home">
-  <section class="dash-hero"><div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div><div class="dash-hero-content"><span class="dash-hero-kicker">MATCHING &amp; PUSH PROFILES</span><h1 class="dash-hero-title">Make the right<br><em>introduction.</em></h1><p class="dash-hero-sub">Review active employer requests and push only vetted candidates to the correct employer dashboard.</p><div class="dash-hero-actions"><a class="adm-btn adm-btn--primary" href="/admin/website/candidatematch/add/"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Match in Admin</a><a class="adm-btn adm-btn--ghost" href="/dashboard/admin/talent-pool/">View Talent Pool</a></div></div></section>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-    <section class="dashboard-panel admin-table-card">
-      <div class="dashboard-panel-head"><h2>Requests ready for matching</h2><a class="adm-link" href="/dashboard/admin/requests/">All →</a></div>
+  <section class="dash-hero"><div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div><div class="dash-hero-content"><span class="dash-hero-kicker">MATCHING &amp; PUSH PROFILES</span><h1 class="dash-hero-title">Make the right<br><em>introduction.</em></h1><p class="dash-hero-sub">Pick an employer's request, then introduce the best-fit vetted candidates. Matching is tracked per request so nothing is missed or sent twice.</p><div class="dash-hero-actions"><a class="adm-btn adm-btn--ghost" href="/dashboard/admin/talent-pool/">View Talent Pool</a><a class="adm-btn adm-btn--ghost" href="/dashboard/admin/requests/">All Requests</a></div></div></section>
+
+  {% if messages %}
+    <div class="adm-flash">
+      {% for message in messages %}<div class="adm-flash-item adm-flash-item--{{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="mt-layout">
+    {# ════ LEFT: requests awaiting candidates ════ #}
+    <section class="dashboard-panel admin-table-card mt-requests">
+      <div class="dashboard-panel-head">
+        <h2>Requests awaiting candidates</h2>
+        <span class="verified">{{ requests|length }} open</span>
+      </div>
+
       {% if requests %}
-        <div class="adm-action-list">
+        <div class="mt-request-list">
           {% for item in requests %}
-            <div class="adm-action-row">
-              <div class="adm-action-avatar">{{ item.employer.company_name|default:"CO"|slice:":2"|upper }}</div>
-              <div class="adm-action-info"><strong>{{ item.position }} — {{ item.employer.company_name|default:item.employer.user.username }}</strong><span>{{ item.minimum_qualification }} · {{ item.years_experience }} yrs · {{ item.professionals_required }} needed</span></div>
-              <div class="adm-action-right"><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></div>
-            </div>
+            <a class="mt-request {% if selected_request and selected_request.pk == item.pk %}is-active{% endif %}"
+               href="?request={{ item.pk }}">
+              <div class="mt-request-top">
+                <span class="mt-request-pos">{{ item.position }}</span>
+                <span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span>
+              </div>
+              {# Clicking the employer name opens the full employer detail modal #}
+              <button type="button" class="mt-employer-link"
+                      data-employer-detail="{{ item.employer_id }}"
+                      data-employer-name="{{ item.employer.company_name|default:item.employer.user.username }}">
+                {{ item.employer.company_name|default:item.employer.user.username }}
+              </button>
+              <div class="mt-request-meta">
+                <span>{{ item.minimum_qualification }}</span>
+                <span>{{ item.years_experience }} yr{{ item.years_experience|pluralize }}</span>
+                <span>₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</span>
+              </div>
+              <div class="mt-slots">
+                <div class="mt-slots-bar">
+                  <span style="width:{% widthratio item.matched_total item.professionals_required 100 %}%"></span>
+                </div>
+                <small>
+                  {% if item.matched_total == 0 %}
+                    {{ item.professionals_required }} slot{{ item.professionals_required|pluralize }} open
+                  {% elif item.remaining_slots == 0 %}
+                    Fully staffed
+                  {% else %}
+                    {{ item.matched_total }} of {{ item.professionals_required }} matched
+                  {% endif %}
+                </small>
+              </div>
+            </a>
           {% endfor %}
         </div>
       {% else %}
-        <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg><span>No requests waiting for matching.</span></div>
+        <div class="adm-empty-inline">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>No open requests. Everything has been matched or completed.</span>
+        </div>
       {% endif %}
     </section>
-    <section class="dashboard-panel admin-table-card">
-      <div class="dashboard-panel-head"><h2>Eligible candidates</h2><span class="verified">Vetted &amp; Verified only</span></div>
-      {% if candidates %}
-        <div class="adm-action-list">
-          {% for c in candidates|slice:":12" %}
-            <div class="adm-action-row">
-              <div class="adm-action-avatar">{{ c.legal_name|default:c.user.first_name|slice:":2"|upper }}</div>
-              <div class="adm-action-info"><strong>{{ c.legal_name|default:c.user.username }}</strong><span>{{ c.specializations.first|default:"Professional" }} · {{ c.primary_degree|default:"Qualification pending" }}</span></div>
-              <div class="adm-action-right">{% if c.expected_salary %}<span style="font-size:10px;font-weight:700;color:#3d4a63;white-space:nowrap">₦{{ c.expected_salary|floatformat:0 }}</span>{% endif %}<a class="adm-row-btn" href="/admin/website/profile/{{ c.pk }}/change/">View</a></div>
-            </div>
-          {% endfor %}
+    {# ════ RIGHT: candidate picker for the selected request ════ #}
+    <section class="dashboard-panel admin-table-card mt-candidates">
+      {% if selected_request %}
+        <div class="dashboard-panel-head">
+          <div>
+            <h2>{{ selected_request.position }}</h2>
+            <p class="mt-head-sub">
+              <button type="button" class="mt-employer-link"
+                      data-employer-detail="{{ selected_request.employer_id }}"
+                      data-employer-name="{{ selected_request.employer.company_name|default:selected_request.employer.user.username }}">
+                {{ selected_request.employer.company_name|default:selected_request.employer.user.username }}
+              </button>
+              · {{ selected_request.matched_count }} of {{ selected_request.professionals_required }} matched
+            </p>
+          </div>
+          {% if selected_request.remaining_slots > 0 %}
+            <span class="verified">{{ selected_request.remaining_slots }} slot{{ selected_request.remaining_slots|pluralize }} left</span>
+          {% else %}
+            <span class="status-badge status-badge--grey">Fully staffed</span>
+          {% endif %}
         </div>
-        {% if candidates|length > 12 %}<p style="font-size:11px;color:#9ca5b6;padding:12px 8px 0">Showing 12 of {{ candidates|length }}. <a href="/dashboard/admin/talent-pool/" style="color:var(--dash-red,#d90429);font-weight:700">View full pool →</a></p>{% endif %}
+
+        <div class="mt-req-detail">
+          <div><span>Qualification</span><strong>{{ selected_request.minimum_qualification }}</strong></div>
+          <div><span>Experience</span><strong>{{ selected_request.years_experience }} yr{{ selected_request.years_experience|pluralize }}</strong></div>
+          <div><span>Salary</span><strong>₦{{ selected_request.salary_min|floatformat:0 }} – ₦{{ selected_request.salary_max|floatformat:0 }} / {{ selected_request.get_salary_period_display|lower }}</strong></div>
+          <div class="mt-req-skills"><span>Required skills</span><strong>{{ selected_request.required_skills|linebreaksbr }}</strong></div>
+        </div>
+
+        {# ── candidates already matched to this request ── #}
+        {% with matched_rows=selected_request.matches.all %}
+          {% if matched_rows %}
+          <div class="mt-matched-block">
+            <h3 class="mt-block-title">Already matched ({{ matched_rows|length }})</h3>
+            {% for m in matched_rows %}
+              <div class="mt-matched-row">
+                <div class="mt-cand-avatar">{{ m.profile.legal_name|default:m.profile.user.username|slice:":2"|upper }}</div>
+                <div class="mt-cand-info">
+                  <strong>{{ m.profile.legal_name|default:m.profile.user.username }}</strong>
+                  <span>{{ m.profile.specializations.first|default:"Professional" }} · {{ m.created_at|date:"d M Y" }}</span>
+                </div>
+                <form method="post" action="{% url 'website:remove_match' m.pk %}" class="mt-inline-form"
+                      data-confirm="Withdraw the match for {{ m.profile.legal_name|default:m.profile.user.username }}? The employer and candidate will both be notified.">
+                  {% csrf_token %}
+                  <button type="submit" class="adm-act adm-act--reject">Withdraw</button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+        {# ── candidates to introduce, best fit first ── #}
+        <h3 class="mt-block-title">Recommended candidates</h3>
+        {% if ranked %}
+          <div class="mt-cand-list">
+            {% for row in ranked|slice:":40" %}
+              <div class="mt-cand-row {% if row.matched %}is-done{% endif %}">
+                <div class="mt-score {% if row.score >= 70 %}is-high{% elif row.score >= 40 %}is-mid{% endif %}" title="Match score out of 100">{{ row.score }}</div>
+                <div class="mt-cand-avatar">{{ row.profile.legal_name|default:row.profile.user.username|slice:":2"|upper }}</div>
+                <div class="mt-cand-info">
+                  <strong>{{ row.profile.legal_name|default:row.profile.user.username }}</strong>
+                  <span>
+                    {{ row.profile.specializations.first|default:"Professional" }}
+                    {% if row.profile.primary_degree %} · {{ row.profile.primary_degree|truncatechars:30 }}{% endif %}
+                    {% if row.profile.expected_salary %} · ₦{{ row.profile.expected_salary|floatformat:0 }}{% endif %}
+                  </span>
+                  {% if row.reasons %}
+                    <ul class="mt-reasons">
+                      {% for reason in row.reasons %}<li>{{ reason }}</li>{% endfor %}
+                    </ul>
+                  {% endif %}
+                </div>
+                <div class="mt-cand-action">
+                  {% if row.matched %}
+                    <span class="mt-done-badge">Matched</span>
+                  {% else %}
+                    <form method="post" action="{% url 'website:create_match' %}" class="mt-inline-form">
+                      {% csrf_token %}
+                      <input type="hidden" name="request" value="{{ selected_request.pk }}">
+                      <input type="hidden" name="candidate" value="{{ row.profile.pk }}">
+                      <button type="submit" class="adm-act adm-act--verify" {% if selected_request.remaining_slots == 0 %}disabled{% endif %}>Match</button>
+                    </form>
+                  {% endif %}
+                  <a class="adm-row-btn" href="/admin/website/profile/{{ row.profile.pk }}/change/">Full profile</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="adm-empty-inline">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span>No verified candidates available. Verify candidates first.</span>
+          </div>
+        {% endif %}
       {% else %}
-        <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>No eligible candidates yet.</span></div>
+        <div class="dashboard-panel-head"><h2>Select a request</h2></div>
+        <div class="mt-placeholder">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <h3>Pick a request to start matching</h3>
+          <p>Choose an employer's open request on the left. Every vetted candidate is ranked by fit, and you can introduce them in one click.</p>
+        </div>
       {% endif %}
     </section>
   </div>
+  {# ════ Recent introductions ════ #}
+  {% if recent_matches %}
+  <section class="dashboard-panel admin-table-card mt-recent">
+    <div class="dashboard-panel-head"><h2>Recent introductions</h2><span class="verified">Latest 15</span></div>
+    <div class="mt-recent-list">
+      {% for m in recent_matches %}
+        <div class="mt-recent-row">
+          <div class="mt-cand-avatar">{{ m.profile.legal_name|default:m.profile.user.username|slice:":2"|upper }}</div>
+          <div class="mt-cand-info">
+            <strong>{{ m.profile.legal_name|default:m.profile.user.username }}</strong>
+            <span>
+              matched to
+              <button type="button" class="mt-employer-link"
+                      data-employer-detail="{{ m.employer_id }}"
+                      data-employer-name="{{ m.employer.company_name|default:m.employer.user.username }}">{{ m.employer.company_name|default:m.employer.user.username }}</button>
+              for “{{ m.request.position }}” · {{ m.created_at|date:"d M Y" }}
+            </span>
+          </div>
+          <form method="post" action="{% url 'website:remove_match' m.pk %}" class="mt-inline-form"
+                data-confirm="Withdraw this match? Both the employer and the candidate will be notified.">
+            {% csrf_token %}
+            <button type="submit" class="adm-act adm-act--reject">Withdraw</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {# ════ Employer detail modal — every employer field ════ #}
+  <div class="adm-modal-overlay" id="employerDetailModal" hidden>
+    <div class="adm-modal adm-modal--profile" role="dialog" aria-modal="true" aria-labelledby="employerDetailTitle">
+      <button type="button" class="adm-modal-close" data-employer-close aria-label="Close employer details">&times;</button>
+      <div class="cch-head">
+        <div class="cch-avatar" data-ed="initials">--</div>
+        <div class="cch-id">
+          <strong id="employerDetailTitle" data-ed="name">Employer</strong>
+          <span data-ed="user_name">&nbsp;</span>
+        </div>
+        <span class="adm-status-badge adm-status-badge--verified" data-ed="status">Active</span>
+      </div>
+
+      <div class="mt-ed-section">
+        <h4 class="cch-block-label">Corporate details</h4>
+        <div class="cch-grid">
+          <div class="cch-item"><span>Company name</span><strong data-ed="name2">&nbsp;</strong></div>
+          <div class="cch-item"><span>Registered name</span><strong data-ed="legal_name">&nbsp;</strong></div>
+          <div class="cch-item"><span>Industry sector</span><strong data-ed="industry">&nbsp;</strong></div>
+          <div class="cch-item"><span>HR / contact name</span><strong data-ed="hr_contact">&nbsp;</strong></div>
+          <div class="cch-item cch-item--wide"><span>Office address</span><strong data-ed="address">&nbsp;</strong></div>
+        </div>
+      </div>
+
+      <div class="mt-ed-section">
+        <h4 class="cch-block-label">Contact details</h4>
+        <div class="cch-grid">
+          <div class="cch-item"><span>Official email</span><strong data-ed="email">&nbsp;</strong></div>
+          <div class="cch-item"><span>Phone</span><strong data-ed="phone">&nbsp;</strong></div>
+          <div class="cch-item"><span>WhatsApp</span><strong data-ed="whatsapp">&nbsp;</strong></div>
+          <div class="cch-item"><span>Account holder</span><strong data-ed="user_name2">&nbsp;</strong></div>
+        </div>
+      </div>
+
+      <div class="mt-ed-section">
+        <h4 class="cch-block-label">Account &amp; subscription</h4>
+        <div class="cch-grid">
+          <div class="cch-item"><span>Registered on</span><strong data-ed="joined">&nbsp;</strong></div>
+          <div class="cch-item"><span>Last login</span><strong data-ed="last_login">&nbsp;</strong></div>
+          <div class="cch-item"><span>Plan</span><strong data-ed="plan">&nbsp;</strong></div>
+          <div class="cch-item"><span>Plan expires</span><strong data-ed="plan_expires">&nbsp;</strong></div>
+        </div>
+      </div>
+
+      <div class="mt-ed-section">
+        <h4 class="cch-block-label">Activity</h4>
+        <div class="cch-foot">
+          <div><span>Open requests</span><strong data-ed="requests_total">0</strong></div>
+          <div><span>Active matches</span><strong data-ed="matches_total">0</strong></div>
+          <div><span>Shortlisted</span><strong data-ed="shortlists">0</strong></div>
+          <div><span>Payments</span><strong data-ed="payments">0</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+window.MT_EMPLOYER_DETAIL_URL = "{% url 'website:admin_employer_detail' 0 %}";
+
+/* ── Employer detail modal ── */
+(function () {
+  const modal = document.getElementById('employerDetailModal');
+  if (!modal) return;
+  const base = window.MT_EMPLOYER_DETAIL_URL;
+  let lastFocus = null;
+
+  function setField(key, value) {
+    const text = (value === null || value === undefined || value === '') ? '—' : String(value);
+    modal.querySelectorAll('[data-ed="' + key + '"]').forEach(function (el) { el.textContent = text; });
+  }
+
+  function open(id, fallbackName) {
+    lastFocus = document.activeElement;
+    setField('name', fallbackName);   // show something immediately
+    setField('name2', fallbackName);
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    fetch(base.replace(/0$/, id), { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+      .then(function (d) {
+        Object.keys(d).forEach(function (k) { if (k !== 'initials') setField(k, d[k]); });
+        setField('initials', (d.name || '?').slice(0, 2).toUpperCase());
+        const st = modal.querySelector('[data-ed="status"]');
+        if (st) {
+          st.textContent = d.status;
+          st.className = 'adm-status-badge ' + (d.status === 'Active'
+            ? 'adm-status-badge--verified' : 'adm-status-badge--rejected');
+        }
+        const closeBtn = modal.querySelector('[data-employer-close]');
+        if (closeBtn) closeBtn.focus();
+      })
+      .catch(function () { setField('name', 'Could not load employer details'); });
+  }
+
+  function close() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocus) lastFocus.focus();
+  }
+
+  document.querySelectorAll('[data-employer-detail]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();       // employer buttons live inside a request link
+      e.stopPropagation();
+      open(btn.dataset.employerDetail, btn.dataset.employerName);
+    });
+  });
+
+  modal.querySelectorAll('[data-employer-close]').forEach(function (b) {
+    b.addEventListener('click', close);
+  });
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+})();
+
+/* ── Confirm before withdrawing a match ── */
+document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+  form.addEventListener('submit', function (e) {
+    if (!window.confirm(form.dataset.confirm)) e.preventDefault();
+  });
+});
+</script>
+{% endblock %}
+

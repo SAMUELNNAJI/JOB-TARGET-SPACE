@@ -110,12 +110,28 @@ class Notification(models.Model):
 class CandidateMatch(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="matches")
     employer = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="candidate_matches")
+    # The recruitment request this match fulfils. Nullable so pre-existing matches
+    # (created before this field existed) stay valid.
+    request = models.ForeignKey(
+        "RecruitmentRequest",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="matches",
+    )
     note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("-created_at",)
+        constraints = [
+            # A candidate can only be pushed once per employer per request.
+            models.UniqueConstraint(
+                fields=("employer", "profile", "request"),
+                name="unique_candidate_match_per_request",
+            ),
+        ]
 
 
 class Subscription(models.Model):
@@ -172,6 +188,45 @@ class RecruitmentRequest(models.Model):
     salary_period = models.CharField(max_length=20, choices=(("monthly", "Monthly"), ("annual", "Annual")), default="monthly")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SUBMITTED)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def matched_count(self):
+        """How many candidates are currently matched to this request."""
+        return self.matches.filter(is_active=True).count()
+
+    @property
+    def remaining_slots(self):
+        return max(self.professionals_required - self.matched_count, 0)
+
+    @property
+    def is_fully_matched(self):
+        return self.remaining_slots == 0
+
+    @property
+    def is_open(self):
+        return self.status != self.Status.COMPLETED
+
+    def sync_status(self):
+        """Keep the request status in step with how many candidates are matched.
+
+        0 matches -> Under Review, partial -> Matching Candidates,
+        all slots filled -> Candidates Available.
+        """
+        if self.status == self.Status.COMPLETED:
+            return False
+
+        if self.matched_count == 0:
+            new_status = self.Status.REVIEW
+        elif self.is_fully_matched:
+            new_status = self.Status.AVAILABLE
+        else:
+            new_status = self.Status.MATCHING
+
+        if new_status != self.status:
+            self.status = new_status
+            self.save(update_fields=["status"])
+            return True
+        return False
 
 
 class Shortlist(models.Model):

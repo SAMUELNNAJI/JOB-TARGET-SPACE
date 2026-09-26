@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -612,14 +612,64 @@ def admin_section(request, section):
 
     # ── Matching ──────────────────────────────────────────────
     if section == "matching":
+        # Requests that still need candidates. Annotated with how many are
+        # already matched so the admin can see outstanding slots at a glance.
+        requests_qs = (
+            RecruitmentRequest.objects
+            .exclude(status=RecruitmentRequest.Status.COMPLETED)
+            .select_related("employer__user")
+            .annotate(matched_total=Count("matches", filter=Q(matches__is_active=True)))
+            .order_by("-created_at")
+        )
+
+        # Optional ?request=<pk> focuses the workspace on one request.
+        selected_request = None
+        request_id = request.GET.get("request")
+        if request_id and request_id.isdigit():
+            selected_request = next(
+                (r for r in requests_qs if r.pk == int(request_id)), None
+            )
+
+        # Verified candidates only — nobody else may be pushed to an employer.
+        candidates_qs = (
+            Profile.objects
+            .filter(role=Profile.Role.CANDIDATE,
+                    verification_status=Profile.VerificationStatus.VERIFIED)
+            .select_related("user")
+            .prefetch_related("specializations", "qualifications", "cv_documents")
+            .order_by("-user__date_joined")
+        )
+
+        # Rank candidates against the selected request so the best fit is first.
+        ranked = []
+        already_matched = set()
+        if selected_request:
+            already_matched = set(
+                selected_request.matches
+                .filter(is_active=True)
+                .values_list("profile_id", flat=True)
+            )
+            for cand in candidates_qs:
+                score, reasons = _match_score(cand, selected_request)
+                ranked.append({
+                    "profile": cand,
+                    "score": score,
+                    "reasons": reasons,
+                    "matched": cand.pk in already_matched,
+                })
+            ranked.sort(key=lambda row: (row["matched"], -row["score"]))
+
         return render(request, "dashboard/admin/matching.html", {
-            "requests":     RecruitmentRequest.objects.exclude(
-                status=RecruitmentRequest.Status.COMPLETED
-            ).select_related("employer"),
-            "candidates":   Profile.objects.filter(
-                role=Profile.Role.CANDIDATE,
-                verification_status=Profile.VerificationStatus.VERIFIED,
-            ).prefetch_related("specializations"),
+            "requests":         requests_qs,
+            "candidates":       candidates_qs,
+            "ranked":           ranked,
+            "selected_request": selected_request,
+            "recent_matches":   (
+                CandidateMatch.objects
+                .filter(is_active=True, request__isnull=False)
+                .select_related("profile__user", "employer__user", "request")
+                .order_by("-created_at")[:15]
+            ),
             "unread_count": 0,
         })
 
@@ -683,9 +733,274 @@ def admin_section(request, section):
     raise Http404
 
 
+# ─────────────────────────────────────────────────────────────
+# Admin — matching engine
+# ─────────────────────────────────────────────────────────────
+
+_STOP_WORDS = {
+    "and", "or", "with", "for", "the", "of", "in", "to", "a", "an",
+    "years", "year", "experience", "required", "must", "good", "knowledge",
+}
+
+
+def _tokens(value):
+    """Split free text into comparable lowercase tokens."""
+    if not value:
+        return []
+    cleaned = "".join(ch if ch.isalnum() or ch.isspace() else " " for ch in str(value))
+    return [t for t in cleaned.lower().split() if t and t not in _STOP_WORDS and len(t) > 1]
+
+
+def _match_score(candidate, req):
+    """Rank *candidate* against recruitment request *req*.
+
+    Returns (score, reasons) where score is a 0-100 relevance number and
+    reasons is a short, human-readable explanation shown in the admin UI.
+    """
+    score = 0
+    reasons = []
+
+    # ── Specialization / position alignment (heaviest signal, 40 pts) ──
+    spec_names = " ".join(s.name for s in candidate.specializations.all())
+    pos_tokens = _tokens(req.position)
+    spec_tokens = set(_tokens(spec_names))
+
+    if pos_tokens and spec_tokens:
+        overlap = spec_tokens.intersection(pos_tokens)
+        if overlap:
+            score += 40
+            reasons.append("Specialization matches: " + ", ".join(sorted(overlap)))
+        else:
+            # Partial credit when a token of the position appears in the specs.
+            if any(tok in " ".join(spec_tokens) for tok in pos_tokens):
+                score += 20
+                reasons.append("Specialization partially matches the position")
+
+    # ── Required skills overlap (25 pts) ──
+    req_skills = set(_tokens(req.required_skills))
+    if req_skills:
+        cand_skills = set(_tokens(
+            " ".join([
+                candidate.software_competencies or "",
+                candidate.equipment_competencies or "",
+                candidate.professional_pitch or "",
+            ])
+        ))
+        shared = req_skills.intersection(cand_skills)
+        if shared:
+            score += min(25, 10 * len(shared))
+            reasons.append("Shares required skill: " + ", ".join(sorted(shared)[:3]))
+
+    # ── Profile completeness as a confidence signal (up to 15 pts) ──
+    score += round(candidate.completion_percentage * 0.15)
+
+    # ── Availability (10 pts) ──
+    if candidate.availability == Profile.Availability.IMMEDIATE:
+        score += 10
+        reasons.append("Available immediately")
+    elif candidate.availability:
+        score += 5
+
+    # ── Has a CV on file (10 pts) ──
+    if candidate.cv_documents.exists():
+        score += 10
+        reasons.append("CV on file")
+
+    # ── Expected salary within / near the employer's band (bonus) ──
+    if candidate.expected_salary:
+        if req.salary_min <= candidate.expected_salary <= req.salary_max:
+            score += 10
+            reasons.append("Salary expectation within the offered range")
+        elif candidate.expected_salary <= req.salary_max:
+            score += 5
+
+    return min(score, 100), reasons
+
+
+def _employer_context(employer):
+    """Counts + active plan used by the admin employer-detail modal."""
+    active_sub = employer.subscriptions.filter(is_active=True).first()
+    open_requests = employer.recruitment_requests.exclude(
+        status=RecruitmentRequest.Status.COMPLETED
+    )
+    active_matches = employer.candidate_matches.filter(is_active=True)
+    return {
+        "plan":         active_sub.get_plan_display() if active_sub else "No active plan",
+        "plan_expires": active_sub.expires_at.strftime("%d %b %Y") if active_sub else "—",
+        "requests_total": open_requests.count(),
+        "matches_total":  active_matches.count(),
+        "shortlists":     employer.shortlists.count(),
+        "payments":       employer.payments.count(),
+    }
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_employer_detail(request, profile_id):
+    """JSON payload of every employer field, for the matching-page modal."""
+    employer = get_object_or_404(
+        Profile.objects.select_related("user"), pk=profile_id, role=Profile.Role.EMPLOYER
+    )
+    ctx = _employer_context(employer)
+
+    return JsonResponse({
+        "name":         employer.company_name or employer.user.username,
+        "legal_name":   employer.legal_name or "—",
+        "user_name":    employer.user.get_full_name() or employer.user.username,
+        "email":        employer.user.email or "—",
+        "phone":        employer.phone or "—",
+        "whatsapp":     employer.whatsapp_number or "—",
+        "industry":     employer.industry_sector or "—",
+        "hr_contact":   employer.hr_contact_name or "—",
+        "address":      employer.office_address or "—",
+        "joined":       employer.user.date_joined.strftime("%d %b %Y"),
+        "last_login":   employer.user.last_login.strftime("%d %b %Y") if employer.user.last_login else "Never",
+        "status":       "Active" if employer.user.is_active else "Inactive",
+        "plan":         ctx["plan"],
+        "plan_expires": ctx["plan_expires"],
+        "requests_total": ctx["requests_total"],
+        "matches_total":  ctx["matches_total"],
+        "shortlists":     ctx["shortlists"],
+        "payments":       ctx["payments"],
+    })
+
+
+def _matching_redirect(request, req_obj, notice):
+    """Back to the matching workspace, focused on the request just acted on."""
+    messages.success(request, notice)
+    url = reverse("website:admin_section", kwargs={"section": "matching"})
+    return redirect(f"{url}?request={req_obj.pk}")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def create_match(request):
+    """POST — match a verified candidate to an employer's recruitment request."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="matching")
+
+    req_obj = get_object_or_404(
+        RecruitmentRequest.objects.select_related("employer__user"), pk=request.POST.get("request")
+    )
+    candidate = get_object_or_404(
+        Profile.objects.select_related("user"),
+        pk=request.POST.get("candidate"),
+        role=Profile.Role.CANDIDATE,
+    )
+
+    if req_obj.status == RecruitmentRequest.Status.COMPLETED:
+        messages.error(request, "That request is already completed.")
+        return _matching_redirect(request, req_obj, "")
+
+    # Only vetted candidates may be introduced to an employer.
+    if candidate.verification_status != Profile.VerificationStatus.VERIFIED:
+        messages.error(
+            request,
+            f"{_candidate_label(candidate)} is not verified yet — verify the profile before matching.",
+        )
+        return _matching_redirect(request, req_obj, "")
+
+    # Don't exceed the number of professionals the employer asked for.
+    if req_obj.is_fully_matched:
+        messages.error(
+            request,
+            f"All {req_obj.professionals_required} slot(s) for this request are already filled.",
+        )
+        return _matching_redirect(request, req_obj, "")
+
+    employer_name = req_obj.employer.company_name or req_obj.employer.user.username
+    match, created = CandidateMatch.objects.get_or_create(
+        employer=req_obj.employer,
+        profile=candidate,
+        request=req_obj,
+        defaults={"note": request.POST.get("note", "").strip()},
+    )
+
+    if not created:
+        messages.warning(
+            request,
+            f"{_candidate_label(candidate)} is already matched to this request.",
+        )
+        return _matching_redirect(request, req_obj, "")
+
+    req_obj.sync_status()
+
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Candidate matched to request",
+        subject=f"{_candidate_label(candidate)} -> {employer_name} ({req_obj.position})",
+    )
+    req_obj.employer.notify(
+        title="A new candidate is available for your request",
+        message=(
+            f"{_candidate_label(candidate)} has been matched to your "
+            f"{req_obj.position} requirement. Log in to review the profile."
+        ),
+        kind=Notification.Kind.MATCH,
+    )
+    candidate.notify(
+        title="A new opportunity was matched to you",
+        message=(
+            f"Your verified profile has been matched to a {req_obj.position} "
+            f"opportunity at {employer_name}."
+        ),
+        kind=Notification.Kind.MATCH,
+    )
+
+    return _matching_redirect(
+        request, req_obj,
+        f"{_candidate_label(candidate)} matched to “{req_obj.position}” at {employer_name}.",
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def remove_match(request, match_id):
+    """POST — withdraw a match and roll the request status back."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="matching")
+
+    match = get_object_or_404(
+        CandidateMatch.objects.select_related("profile__user", "employer__user", "request"),
+        pk=match_id,
+        is_active=True,
+    )
+    req_obj = match.request
+    label   = _candidate_label(match.profile)
+    employer_name = match.employer.company_name or match.employer.user.username
+
+    match.is_active = False
+    match.save(update_fields=["is_active"])
+
+    if req_obj:
+        req_obj.sync_status()
+
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Candidate match withdrawn",
+        subject=f"{label} -> {employer_name}" + (f" ({req_obj.position})" if req_obj else ""),
+    )
+    match.employer.notify(
+        title="A candidate match was withdrawn",
+        message=f"{label} is no longer available for your request. Please review your candidate list again.",
+        kind=Notification.Kind.MATCH,
+    )
+    match.profile.notify(
+        title="An introduction was withdrawn",
+        message=f"A previous match with {employer_name} has been withdrawn by the JobSPACE team.",
+        kind=Notification.Kind.MATCH,
+    )
+
+    if req_obj:
+        return _matching_redirect(request, req_obj, f"Match withdrawn for {label}.")
+    messages.success(request, f"Match withdrawn for {label}.")
+    return redirect("website:admin_section", section="matching")
+
+
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def push_candidate(request, match_id):
+    """Legacy endpoint: re-notify both sides about an existing match."""
     match = get_object_or_404(CandidateMatch, pk=match_id)
     AuditLog.objects.create(
         actor=request.user,
