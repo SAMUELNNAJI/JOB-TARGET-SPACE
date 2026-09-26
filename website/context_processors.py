@@ -7,6 +7,50 @@ def _viewed(request, *paths):
     return request.path in paths
 
 
+# Session key holding the last count the user actually saw for each badge.
+SEEN_BADGES_KEY = "seen_badges"
+
+
+def _apply_seen(request, badges, visited_map):
+    """Suppress badges the user has already opened.
+
+    `badges` maps a badge key to its current count; `visited_map` maps the
+    same keys to whether the user is on that page right now.
+
+    Opening a page records the count it had at that moment. The badge then
+    stays hidden on every later page until the underlying count *grows* —
+    that is what makes a badge mean "there is something new here" rather
+    than "this section is non-empty". Without this the old behaviour only
+    hid the badge for the duration of the visit, so it reappeared as soon
+    as the user navigated away.
+    """
+    try:
+        seen = request.session.get(SEEN_BADGES_KEY) or {}
+    except Exception:
+        seen = {}
+
+    out = {}
+    dirty = False
+    for key, count in badges.items():
+        if visited_map.get(key):
+            # Viewing the page marks whatever is queued right now as seen.
+            if seen.get(key) != count:
+                seen[key] = count
+                dirty = True
+            out[key] = 0
+        else:
+            # Show only what has appeared since the last visit.
+            out[key] = count if count > seen.get(key, 0) else 0
+
+    if dirty:
+        try:
+            request.session[SEEN_BADGES_KEY] = seen
+            request.session.modified = True
+        except Exception:
+            pass
+    return out
+
+
 def dashboard_badges(request):
     ctx = {"unread_count": 0, "notif_url": None, "sidebar_badges": {}, "header_unread": 0, "header_notif_url": None}
     user = getattr(request, "user", None)
@@ -59,15 +103,27 @@ def dashboard_badges(request):
             ctx["notif_url"]         = "/dashboard/admin/notifications/"
             ctx["header_unread"]     = ctx["unread_count"]
             ctx["header_notif_url"]  = ctx["notif_url"]
-            ctx["sidebar_badges"]    = {
-                "admin_candidates":   0 if on_cand_page     else pending_candidates,
-                "admin_requests":     0 if on_requests_page else open_requests,
-                "admin_talent_pool":  0 if on_pool_page     else verified_pool,
-                "admin_matching":     0 if on_matching_page else open_requests,
-                "admin_replacements": 0 if on_replacements  else pending_replacements,
-                "admin_payments":     0 if on_payments_page else pending_payments,
-                "admin_notifications": 0 if on_notif_page   else global_unread,
-            }
+            ctx["sidebar_badges"]    = _apply_seen(
+                request,
+                {
+                    "admin_candidates":    pending_candidates,
+                    "admin_requests":      open_requests,
+                    "admin_talent_pool":   verified_pool,
+                    "admin_matching":      open_requests,
+                    "admin_replacements":  pending_replacements,
+                    "admin_payments":      pending_payments,
+                    "admin_notifications": global_unread,
+                },
+                {
+                    "admin_candidates":    on_cand_page,
+                    "admin_requests":      on_requests_page,
+                    "admin_talent_pool":   on_pool_page,
+                    "admin_matching":      on_matching_page,
+                    "admin_replacements":  on_replacements,
+                    "admin_payments":      on_payments_page,
+                    "admin_notifications": on_notif_page,
+                },
+            )
             return ctx
 
         profile = getattr(user, "profile", None)
@@ -90,10 +146,17 @@ def dashboard_badges(request):
             ctx["notif_url"]        = "/dashboard/candidate/notifications/"
             ctx["header_unread"]    = ctx["unread_count"]
             ctx["header_notif_url"] = ctx["notif_url"]
-            ctx["sidebar_badges"]   = {
-                "candidate_matches":       0 if on_matches_page else active_matches,
-                "candidate_notifications": 0 if on_page         else unread,
-            }
+            ctx["sidebar_badges"]   = _apply_seen(
+                request,
+                {
+                    "candidate_matches":       active_matches,
+                    "candidate_notifications": unread,
+                },
+                {
+                    "candidate_matches":       on_matches_page,
+                    "candidate_notifications": on_page,
+                },
+            )
 
         # ── Employer ─────────────────────────────────────────────────────────
         elif profile.role == Profile.Role.EMPLOYER:
@@ -115,12 +178,21 @@ def dashboard_badges(request):
             ctx["notif_url"]        = "/dashboard/employer/notifications/"
             ctx["header_unread"]    = ctx["unread_count"]
             ctx["header_notif_url"] = ctx["notif_url"]
-            ctx["sidebar_badges"]   = {
-                "employer_candidates":    0 if on_cand_page else received,
-                "employer_shortlist":     0 if on_shortlist else shortlisted,
-                "employer_requests":      0 if on_req_page  else req_count,
-                "employer_notifications": 0 if on_page      else unread,
-            }
+            ctx["sidebar_badges"]   = _apply_seen(
+                request,
+                {
+                    "employer_candidates":    received,
+                    "employer_shortlist":     shortlisted,
+                    "employer_requests":      req_count,
+                    "employer_notifications": unread,
+                },
+                {
+                    "employer_candidates":    on_cand_page,
+                    "employer_shortlist":     on_shortlist,
+                    "employer_requests":      on_req_page,
+                    "employer_notifications": on_page,
+                },
+            )
             active_sub = profile.subscriptions.filter(is_active=True).first()
             ctx["employer_active_subscription"] = active_sub
             ctx["show_subscribe_modal"] = (

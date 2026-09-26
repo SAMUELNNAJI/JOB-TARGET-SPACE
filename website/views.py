@@ -880,6 +880,16 @@ def admin_dashboard(request):
         "active_subscriptions": Subscription.objects.filter(is_active=True),
         "requests":  RecruitmentRequest.objects.select_related("employer").order_by("-created_at"),
         "matches":   CandidateMatch.objects.filter(is_active=True),
+        # Candidates an employer has formally accepted. Surfaced on the admin
+        # dashboard so the team can act on them (arrange interviews, etc.)
+        # instead of having to open the matching workspace to find them.
+        "accepted_matches": (
+            CandidateMatch.objects
+            .filter(is_active=True, is_accepted=True)
+            .select_related("profile__user", "employer__user", "request")
+            .order_by("-accepted_at")
+        ),
+        "accepted_count": CandidateMatch.objects.filter(is_active=True, is_accepted=True).count(),
         "payments":  Payment.objects.select_related("employer", "subscription").order_by("-paid_at"),
         "recent_candidates": Profile.objects.filter(role=Profile.Role.CANDIDATE).order_by("-user__date_joined")[:5],
         "recent_employers":  Profile.objects.filter(role=Profile.Role.EMPLOYER).order_by("-user__date_joined")[:5],

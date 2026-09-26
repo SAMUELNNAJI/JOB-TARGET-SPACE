@@ -136,6 +136,11 @@
         {% endblock %}
         <div class="dashboard-tools">
           {# ── Notification bell with live dropdown ── #}
+          {# Dimmed backdrop shown only on mobile, where the panel is a
+             centred modal rather than a bell-anchored dropdown. Sits
+             outside [data-notif-bell] so a tap on it counts as an
+             outside click and closes the panel. #}
+          <div class="notif-dropdown-backdrop" data-notif-backdrop hidden></div>
           <div class="notif-bell-wrap" data-notif-bell
                data-fetch-url="{% url 'website:notifications_json' %}"
                data-read-url="{% url 'website:notifications_mark_read' %}"

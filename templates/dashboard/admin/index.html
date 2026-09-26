@@ -28,6 +28,7 @@
     <article class="adm-metric adm-metric--subscriptions"><div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div><a class="adm-metric-link" href="/dashboard/admin/subscriptions/">View →</a></div><strong class="adm-metric-val">{{ active_subscriptions.count }}</strong><small class="adm-metric-label">Active Subscriptions</small><div class="adm-metric-glow"></div></article>
     <article class="adm-metric adm-metric--requests"><div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><a class="adm-metric-link" href="/dashboard/admin/requests/">View →</a></div><strong class="adm-metric-val">{{ requests.count }}</strong><small class="adm-metric-label">Active Requests</small><div class="adm-metric-glow"></div></article>
     <article class="adm-metric adm-metric--matches"><div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div><a class="adm-metric-link" href="/dashboard/admin/matching/">View →</a></div><strong class="adm-metric-val">{{ matches.count }}</strong><small class="adm-metric-label">Successful Matches</small><div class="adm-metric-glow"></div></article>
+    <article class="adm-metric adm-metric--accepted"><div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><a class="adm-metric-link" href="#accepted-candidates">View →</a></div><strong class="adm-metric-val">{{ accepted_count }}</strong><small class="adm-metric-label">Accepted by Employers</small><div class="adm-metric-glow"></div></article>
     <article class="adm-metric adm-metric--payments"><div class="adm-metric-top"><div class="adm-metric-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><a class="adm-metric-link" href="/dashboard/admin/payments/">View →</a></div><strong class="adm-metric-val">{{ payments|length }}</strong><small class="adm-metric-label">Total Payments</small><div class="adm-metric-glow"></div></article>
   </div>
 
@@ -47,6 +48,25 @@
           </div>
         {% else %}
           <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg><span>All clear — no pending candidate reviews.</span></div>
+        {% endif %}
+      </section>
+      <section class="adm-panel" id="accepted-candidates">
+        <div class="adm-panel-head"><div><h2 class="adm-panel-title">Accepted Candidates</h2><p class="adm-panel-sub">Candidates employers have formally accepted</p></div><a class="adm-link" href="/dashboard/admin/matching/">Matching →</a></div>
+        {% if accepted_matches %}
+          <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Accepted candidates table">
+            <table class="portal-table">
+              <thead><tr><th>Candidate</th><th>Employer</th><th>Position</th><th>Accepted</th></tr></thead>
+              <tbody>
+                {% for m in accepted_matches|slice:":8" %}<tr><td><strong>{{ m.profile.legal_name|default:m.profile.user.username }}</strong></td><td>{{ m.employer.company_name|default:m.employer.user.username }}</td><td>{{ m.request.position|default:"—" }}</td><td style="white-space:nowrap">{{ m.accepted_at|date:"d M Y" }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if accepted_count > 8 %}
+            <div class="adm-panel-foot"><a class="adm-link" href="/dashboard/admin/matching/">View all {{ accepted_count }} accepted →</a></div>
+          {% endif %}
+        {% else %}
+          <div class="adm-empty-inline"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg><span>No candidates accepted yet — accepted candidates will appear here.</span></div>
         {% endif %}
       </section>
       <section class="adm-panel">

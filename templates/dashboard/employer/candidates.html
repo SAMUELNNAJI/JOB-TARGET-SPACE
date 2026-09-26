@@ -25,10 +25,9 @@
     </div>
 
     {% if page_obj.object_list %}
-      <div style="padding:0 20px 8px">
+      <div class="emp-candidate-list-pad">
         {% for match in page_obj %}
-          <div class="emp-candidate-row emp-candidate-row--clickable"
-               style="padding:14px 10px;cursor:pointer"
+          <div class="emp-candidate-row emp-candidate-row--clickable emp-candidate-row--pad"
                data-match-id="{{ match.id }}"
                data-detail-url="{% url 'website:employer_candidate_detail' match.id %}"
                data-accept-url="{% url 'website:accept_candidate' match.id %}"
@@ -57,14 +56,21 @@
               {% if match.profile.expected_salary %}
                 <span style="font-size:10px;font-weight:700;color:#3d4a63">₦{{ match.profile.expected_salary|floatformat:0 }}/mo</span>
               {% endif %}
-              {# Stop click on shortlist so it doesn't open the modal #}
+              {# Stop click so it doesn't bubble to the row and open the modal #}
               <a class="emp-candidate-btn"
                  href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"
                  onclick="event.stopPropagation()">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 Shortlist
               </a>
-              <span class="emp-view-profile-hint">View profile →</span>
+              {# A real button, not a hover-only hint — it has to be reachable
+                 by touch and readable as an action on small screens. #}
+              <button type="button" class="emp-candidate-btn emp-view-profile-btn"
+                      data-view-profile
+                      aria-label="View profile of {{ match.profile.legal_name|default:match.profile.user.first_name|default:'Candidate' }}">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                View profile
+              </button>
             </div>
 
             {% if match.profile.verification_status == 'rejected' %}
@@ -346,6 +352,17 @@
     row.addEventListener('click', function () { openModal(row.dataset.detailUrl, row.dataset.acceptUrl); });
     row.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(row.dataset.detailUrl, row.dataset.acceptUrl); }
+    });
+  });
+
+  // The explicit "View profile" button lives inside the clickable row, so it
+  // must stop propagation or the row handler would open the modal twice.
+  document.querySelectorAll('[data-view-profile]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var row = btn.closest('[data-detail-url]');
+      if (row) openModal(row.dataset.detailUrl, row.dataset.acceptUrl);
     });
   });
 

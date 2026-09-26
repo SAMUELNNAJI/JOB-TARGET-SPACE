@@ -259,6 +259,10 @@ document.querySelectorAll('[data-dashboard-action]').forEach(button => {
   const countEl  = wrap.querySelector('[data-notif-count]');
   const markAllBtn = wrap.querySelector('[data-notif-mark-all]');
 
+  /* Mobile-only dimmed backdrop. Sits outside [data-notif-bell], so tapping
+     it also trips the document click listener below and closes the panel. */
+  const backdrop = document.querySelector('[data-notif-backdrop]');
+
   const FETCH_URL = wrap.dataset.fetchUrl;
   const READ_URL  = wrap.dataset.readUrl;
 
@@ -350,6 +354,7 @@ document.querySelectorAll('[data-dashboard-action]').forEach(button => {
   /* ── open / close ── */
   function openPanel() {
     panel.hidden = false;
+    if (backdrop) backdrop.hidden = false;
     btn.setAttribute('aria-expanded', 'true');
     isOpen = true;
     if (!loaded) load();
@@ -357,6 +362,7 @@ document.querySelectorAll('[data-dashboard-action]').forEach(button => {
 
   function closePanel() {
     panel.hidden = true;
+    if (backdrop) backdrop.hidden = true;
     btn.setAttribute('aria-expanded', 'false');
     isOpen = false;
   }

@@ -1533,7 +1533,10 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
     z-index: 20;
     left: 0;
     top: 0;
-    width: 245px;
+    /* Roomier than the 245px it started at — nav labels plus their badges
+       were cramping on narrow phones. */
+    width: 288px;
+    max-width: 86vw;
     transform: translateX(-100%);
     transition: transform 0.25s;
     box-shadow: 15px 0 35px rgba(0, 0, 0, 0.25);
@@ -6606,7 +6609,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-candidate-info span{display:block;font-size:10px;color:var(--emp-muted,#7a8599);margin-top:2px}
 .emp-candidate-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .emp-avail-badge{display:inline-flex;padding:3px 9px;border-radius:999px;background:#e8faf1;color:#0a7a48;font-size:9px;font-weight:700;white-space:nowrap}
-.emp-candidate-btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid var(--emp-red,#d90429);color:var(--emp-red,#d90429);background:#fff;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;white-space:nowrap}rder-radius:7px;background:var(--emp-soft,#f4f6fc);color:var(--emp-ink,#0e1420);font-size:10px;font-weight:700;border:1px solid var(--emp-line,#e6eaf4);transition:all .18s;white-space:nowrap}
+.emp-candidate-btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid var(--emp-red,#d90429);color:var(--emp-red,#d90429);background:#fff;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;white-space:nowrap}
 .emp-candidate-btn:hover{background:var(--emp-red,#d90429);color:#fff;border-color:var(--emp-red,#d90429)}
 
 /* notification rows */
@@ -8105,11 +8108,58 @@ button.notif-bell-btn:focus-visible {
   text-decoration: underline;
 }
 
-/* Responsive: on small screens make it full-width */
-@media (max-width: 400px) {
+/* ── Notification panel: centred modal on mobile ──────────────────────────
+   On desktop this stays a dropdown anchored to the bell (top/right offsets
+   below). On phones there is no room to hang it off the icon: between 401px
+   and 760px it was a 340px panel jammed against the right edge, and at
+   400px and below it overflowed the viewport. Below 760px it becomes a
+   fixed, viewport-centred modal backed by .notif-dropdown-backdrop.
+
+   The resting transform must be the centring translate, so the drop-in
+   animation is replaced with one that keeps translate(-50%,-50%) in both
+   keyframes instead of the desktop scale/translateY version. */
+@keyframes notif-modal-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (max-width: 760px) {
   .notif-dropdown {
-    width: calc(100vw - 24px);
-    right: -4px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    animation: notif-modal-in 0.2s ease both;
+  }
+  /* The body owns the scrolling, so the panel never drags the page. */
+  .notif-dropdown-body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Dimmed backdrop behind the centred mobile panel. It is a SIBLING of
+   .notif-bell-wrap, not a child, so the existing "click outside to close"
+   listener in dashboard.js already dismisses the panel when it is tapped. */
+.notif-dropdown-backdrop {
+  display: none;
+}
+@media (max-width: 760px) {
+  .notif-dropdown-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    /* Just under .notif-dropdown's z-index: 9000. */
+    z-index: 8990;
+    background: rgba(10, 15, 30, 0.5);
+  }
+  .notif-dropdown-backdrop[hidden] {
+    display: none;
   }
 }
 
@@ -8753,3 +8803,227 @@ body { font-size: 15px !important; }
 
 /* Pagination */
 .pagination-btn, .pagination-page { font-size: 13px !important; padding: 7px 13px !important; }
+
+/* ============================================================
+   1. Sticky dashboard header (all 3 dashboards)
+   ============================================================ */
+/* The topbar is a direct child of .dashboard-main, which is a plain
+   block in the .dashboard-app grid, so position: sticky resolves against
+   the viewport and keeps working. z-index sits above the mobile sidebar
+   (20) but below the notification dropdown (9000). */
+.dashboard-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+/* The sidebar is a sibling in the grid and scrolls independently, so it
+   must not cover the pinned header. */
+.dashboard-sidebar {
+  z-index: 40;
+}
+
+/* ============================================================
+   2. Responsive table headers on mobile
+   ============================================================ */
+/* Columns are too tight on phones: the desktop sizes plus nowrap headers
+   squeeze labels into unreadable slivers. Headers now wrap to two lines
+   with room to breathe, and the sticky-first-column trick keeps the row
+   label anchored while the table scrolls sideways. */
+@media (max-width: 760px) {
+  .portal-table th {
+    padding: 12px 9px;
+    font-size: 10.5px !important;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    white-space: normal;
+    vertical-align: bottom;
+  }
+  .portal-table td {
+    padding: 13px 9px;
+  }
+  /* Let long header words break instead of forcing the table wider. */
+  .portal-table th,
+  .portal-table td {
+    overflow-wrap: anywhere;
+  }
+  /* Sticky first column so the entity stays identifiable mid-scroll. */
+  .dashboard-table-scroll .portal-table th:first-child,
+  .dashboard-table-scroll .portal-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fff;
+    box-shadow: 1px 0 0 var(--dash-line, #e8ebf2);
+  }
+  .dashboard-table-scroll .portal-table thead th:first-child {
+    z-index: 2;
+    background: #fff;
+  }
+  /* Keep a usable floor but stop forcing a 700px scroll on every table. */
+  .dashboard-table-scroll .portal-table {
+    min-width: 560px;
+  }
+}
+
+/* ============================================================
+   3. Employer dashboard — kill the mobile overflow
+   ============================================================ */
+/* The overflow came from fixed-ish widths and inline padding that the
+   760px rules never touched: the hero's 50px/48px padding, the stat
+   grid, and the candidate row (42px avatar + 1fr + auto action column)
+   which cannot fit two action buttons plus badges on a narrow screen. */
+.emp-candidate-list-pad {
+  padding: 0 20px 8px;
+}
+.emp-candidate-row--pad {
+  padding: 14px 10px;
+  cursor: pointer;
+}
+/* The "View profile" action is a real button now, so it inherits the
+   shortlist button's shape and reads as a peer action. */
+.emp-view-profile-btn {
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  /* Inline padding moved into .emp-candidate-list-pad above. */
+  .emp-candidate-list-pad {
+    padding: 0 12px 8px;
+  }
+  .emp-hero,
+  .emp-form-hero {
+    padding: 24px 18px;
+  }
+  .emp-hero,
+  .emp-form-hero,
+  .emp-form-hero-content,
+  .emp-hero-content {
+    min-width: 0;
+  }
+  .emp-hero-title,
+  .emp-form-hero .emp-hero-title {
+    font-size: 26px;
+    overflow-wrap: break-word;
+  }
+  .emp-hero-sub,
+  .emp-form-hero-content .emp-hero-sub {
+    font-size: 14px !important;
+    max-width: 100%;
+  }
+  .emp-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .emp-stat {
+    min-width: 0;
+  }
+  .emp-stat-val {
+    font-size: 20px;
+  }
+  /* Section header stacks so the badge/count never squeezes the title. */
+  .emp-section-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* The candidate row becomes two stacked bands: identity on top,
+     actions on a full-width row underneath. */
+  .emp-candidate-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar info"
+      "actions actions";
+    row-gap: 10px;
+  }
+  .emp-candidate-avatar { grid-area: avatar; }
+  .emp-candidate-info   { grid-area: info; min-width: 0; }
+  .emp-candidate-right  {
+    grid-area: actions;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid var(--emp-line, #e6eaf4);
+  }
+  /* Both actions share the row evenly and stay tappable. */
+  .emp-candidate-right .emp-candidate-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+  .emp-reject-note {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Accepted-candidates panel footer on the admin dashboard. */
+.adm-panel-foot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--dash-line, #e8ebf2);
+}
+.adm-metric--accepted .adm-metric-icon {
+  background: #e8faf1;
+  color: #0a7a48;
+}
+.adm-metric--accepted .adm-metric-glow {
+  background: #12b76a;
+}
+
+@media (max-width: 760px) {
+  .adm-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Anchor jumps shouldn't hide the target under the sticky header. */
+  #accepted-candidates {
+    scroll-margin-top: 80px;
+  }
+}
+
+/* ============================================================
+   4. Mobile: centre every modal in the viewport
+   ============================================================ */
+/* The four overlay families above already flex-centre their panels, but on
+   phones they still needed three fixes:
+
+     1. 100vh includes the mobile URL bar, so a max-height derived from it
+        pushes a tall modal past the visible area. 100dvh tracks the real
+        viewport; the vh line above it stays as a fallback.
+     2. Notched devices need the safe-area insets, otherwise a panel sits
+        under the status bar or the home indicator.
+     3. align-items:center on a flex container clips the TOP of any child
+        taller than the container and makes it unreachable. Capping the
+        panel below the overlay's content box keeps it fully scrollable,
+        and `safe center` degrades to plain `center` where unsupported. */
+@media (max-width: 760px) {
+  .pf-modal-overlay,
+  .emp-modal-overlay,
+  .adm-modal-overlay,
+  .cand-modal-overlay {
+    display: flex;
+    align-items: center;
+    align-items: safe center;
+    justify-content: center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+  .pf-modal,
+  .emp-modal,
+  .adm-modal {
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
+  /* .cand-modal is capped at 88vh above; keep that intent, just make it
+     track the real viewport height. */
+  .cand-modal {
+    max-height: 88vh;
+    max-height: 88dvh;
+  }
+}
+
