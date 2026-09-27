@@ -2305,7 +2305,6 @@ def admin_support_inbox(request):
             ),
         )
         .order_by(
-            F("has_messages").desc(),
             F("latest_msg_time").desc(nulls_last=True),
             "-created_at",
         )
@@ -2320,31 +2319,16 @@ def admin_support_inbox(request):
         return redirect(f"{reverse('website:admin_support_inbox')}?thread={thread.pk}")
 
     active_filter = request.GET.get("filter", "all").strip().lower()
-    if active_filter == "candidate":
-        threads_filtered = threads.filter(profile__role="candidate")
-    elif active_filter == "employer":
-        threads_filtered = threads.filter(profile__role="employer")
-    elif active_filter == "unread":
-        threads_filtered = threads.filter(
-            messages__sender_role=SupportMessage.Role.USER,
-            messages__is_read=False,
-        ).distinct()
-    else:
-        active_filter = "all"
-        threads_filtered = threads
-
     selected = None
     thread_id = request.GET.get("thread")
     if thread_id and thread_id.isdigit():
         selected = next((t for t in threads if t.pk == int(thread_id)), None)
     if selected is None:
-        # User requested: active chat should be the latest person that sent a message chat.
-        # threads_filtered is already ordered by has_messages DESC, latest_msg_time DESC.
-        selected = next((t for t in threads_filtered if getattr(t, "has_messages", 0) > 0), None)
+        # Active chat defaults to the person who sent the latest message.
+        # threads is ordered strictly by latest_msg_time DESC.
+        selected = next((t for t in threads if getattr(t, "has_messages", 0) > 0), None)
         if selected is None:
-            selected = next((t for t in threads if getattr(t, "has_messages", 0) > 0), None)
-        if selected is None:
-            selected = next(iter(threads_filtered), None) or next(iter(threads), None)
+            selected = next(iter(threads), None)
 
     if selected is not None:
         # Staff reading the thread marks the user's messages as seen.
@@ -2360,8 +2344,7 @@ def admin_support_inbox(request):
     ).count()
 
     context = {
-        "threads":       threads_filtered,
-        "all_threads":   threads,
+        "threads":       threads,
         "thread":        selected,
         "active_filter": active_filter,
         "messages":      _mark_mine(

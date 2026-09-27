@@ -144,8 +144,11 @@
       </button>
 
       <div class="chat-input-wrap">
+        {# Short on purpose: on a 320-390px phone the composer is only ~210px
+           wide, and a long placeholder wraps to a second line that the
+           one-row textarea then clips, which reads as a broken input. #}
         <textarea class="chat-input" name="body" rows="1" data-chat-input
-                  placeholder="Reply to {{ thread.profile.company_name|default:thread.profile.user.username|truncatechars:20 }}… (Enter to send)"></textarea>
+                  placeholder="Reply to {{ thread.profile.company_name|default:thread.profile.user.username|truncatechars:14 }}…"></textarea>
       </div>
 
       <button class="chat-send" type="submit" aria-label="Send reply" title="Send reply">
