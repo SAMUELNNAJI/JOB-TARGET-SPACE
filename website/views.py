@@ -2385,10 +2385,10 @@ def admin_support_messages(request):
         SupportThread.objects.select_related("profile__user"),
         pk=request.GET.get("thread"),
     )
-    # Polling counts as reading the user's messages.
-    thread.messages.filter(
-        sender_role=SupportMessage.Role.USER, is_read=False
-    ).update(is_read=True)
+    # Polling counts as reading the user's messages, only update when unread exist
+    unread_qs = thread.messages.filter(sender_role=SupportMessage.Role.USER, is_read=False)
+    if unread_qs.exists():
+        unread_qs.update(is_read=True)
 
     after = request.GET.get("after")
     if after is None or not after.isdigit():

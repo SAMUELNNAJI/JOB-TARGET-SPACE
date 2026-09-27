@@ -4,9 +4,10 @@ Poll updates are seamlessly managed in chat.js with deduplication and countdown 
 {% endcomment %}
 <div class="chat-thread"
      id="chat-thread"
+     hx-trigger="none"
      data-last-id="{% with newest=messages|last %}{% if newest %}{{ newest.id }}{% else %}0{% endif %}{% endwith %}"
-     {% if is_admin or request.user.is_staff or request.user.is_superuser %}hx-get="{% url 'website:admin_support_messages' %}?thread={{ thread.id }}"
-     {% else %}hx-get="{% url 'website:support_chat_messages' %}"
+     {% if is_admin or request.user.is_staff or request.user.is_superuser %}data-poll-url="{% url 'website:admin_support_messages' %}?thread={{ thread.id }}"
+     {% else %}data-poll-url="{% url 'website:support_chat_messages' %}"
      {% endif %}>
   {% if messages %}
     <div class="chat-date-divider">

@@ -59,13 +59,16 @@
   function refreshUrl(el) {
     if (!el) return;
     var after = el.dataset.lastId || '0';
-    var url = el.getAttribute('hx-get');
+    var url = el.getAttribute('data-poll-url') || el.getAttribute('hx-get');
     if (!url) return;
+    var newUrl = '';
     if (url.indexOf('after=') !== -1) {
-      el.setAttribute('hx-get', url.replace(/after=\d+/, 'after=' + after));
+      newUrl = url.replace(/after=\d+/, 'after=' + after);
     } else {
-      el.setAttribute('hx-get', url + (url.indexOf('?') === -1 ? '?' : '&') + 'after=' + after);
+      newUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'after=' + after;
     }
+    if (el.hasAttribute('data-poll-url')) el.setAttribute('data-poll-url', newUrl);
+    if (el.hasAttribute('hx-get')) el.setAttribute('hx-get', newUrl);
   }
 
   function syncEmptyState() {
@@ -96,7 +99,7 @@
     var el = threadEl();
     if (!el || isPolling) return;
 
-    var url = el.getAttribute('hx-get');
+    var url = el.getAttribute('data-poll-url') || el.getAttribute('hx-get');
     if (!url) return;
 
     var after = el.dataset.lastId;
@@ -163,7 +166,7 @@
 
   function startRealtimePolling() {
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(runPoll, 1000); // 1.0 second fast poll for instant delivery
+    pollTimer = setInterval(runPoll, 650); // Ultra-fast 650ms polling for instant delivery
   }
 
   /* ── Admin Sidebar Inbox Real-Time Updates ────────────────────────── */
@@ -790,56 +793,74 @@
     }
   });
 
-  /* ── AUDIO PLAYER WITH COUNTDOWN PLAYBACK ─────────────────────────── */
-  function probeWebmDuration(audio, onReady) {
-    if (isFinite(audio.duration) && audio.duration > 0) {
-      audio.__lastDur = audio.duration;
-      if (onReady) onReady(audio.duration);
+  /* ── AUDIO PLAYER WITH EXACT DURATION & COUNTDOWN PLAYBACK ──────── */
+  var audioCtx = null;
+  function getAudioCtx() {
+    try {
+      if (!audioCtx) {
+        var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) audioCtx = new AudioCtxClass();
+      }
+    } catch (_) {}
+    return audioCtx;
+  }
+
+  function fetchAudioDuration(audio, onReady) {
+    if (audio.__exactDur && isFinite(audio.__exactDur) && audio.__exactDur > 0) {
+      if (onReady) onReady(audio.__exactDur);
       return;
     }
-    if (audio.duration === Infinity) {
-      var prev = audio.currentTime;
-      var handled = false;
-      var onTime = function () {
-        if (handled) return;
-        handled = true;
-        audio.removeEventListener('timeupdate', onTime);
-        if (isFinite(audio.duration) && audio.duration > 0) {
-          audio.__lastDur = audio.duration;
-          if (onReady) onReady(audio.duration);
+    var src = audio.currentSrc || audio.src;
+    if (!src) return;
+
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+
+    fetch(src)
+      .then(function (res) {
+        if (!res.ok) throw new Error('Fetch failed');
+        return res.arrayBuffer();
+      })
+      .then(function (buf) {
+        return ctx.decodeAudioData(buf);
+      })
+      .then(function (decoded) {
+        if (decoded && isFinite(decoded.duration) && decoded.duration > 0) {
+          audio.__exactDur = decoded.duration;
+          if (onReady) onReady(decoded.duration);
         }
-        audio.currentTime = prev;
-      };
-      audio.addEventListener('timeupdate', onTime);
-      audio.currentTime = 1e101;
-    }
+      })
+      .catch(function () {});
   }
 
   function getAudioDuration(audio) {
+    if (audio.__exactDur && isFinite(audio.__exactDur) && audio.__exactDur > 0) {
+      return audio.__exactDur;
+    }
     if (isFinite(audio.duration) && audio.duration > 0) {
-      audio.__lastDur = audio.duration;
+      audio.__exactDur = audio.duration;
       return audio.duration;
-    }
-    if (audio.__lastDur && audio.__lastDur > 0) {
-      return audio.__lastDur;
-    }
-    if (audio.duration === Infinity) {
-      probeWebmDuration(audio);
     }
     return 0;
   }
 
-  function updateAudioDisplay(audio, remainingTime, dur) {
+  function updateAudioDisplay(audio, cur, dur) {
     var wrap = audio.closest('.chat-audio');
     if (!wrap) return;
     var timeEl = wrap.querySelector('[data-audio-time]');
     var fillEl = wrap.querySelector('.chat-audio-fill');
 
-    if (timeEl && remainingTime !== undefined) {
-      timeEl.textContent = fmtTime(remainingTime);
+    if (timeEl) {
+      if (dur > 0 && isFinite(dur)) {
+        var remaining = Math.max(0, dur - cur);
+        timeEl.textContent = fmtTime(remaining);
+      } else {
+        timeEl.textContent = fmtTime(cur);
+      }
     }
-    if (fillEl && dur > 0) {
-      var pct = Math.min(100, Math.max(0, (audio.currentTime / dur) * 100));
+
+    if (fillEl && dur > 0 && isFinite(dur)) {
+      var pct = Math.min(100, Math.max(0, (cur / dur) * 100));
       fillEl.style.width = pct + '%';
     }
   }
@@ -857,20 +878,16 @@
     };
 
     if (isFinite(audio.duration) && audio.duration > 0) {
+      audio.__exactDur = audio.duration;
       applyDur(audio.duration);
-    } else if (audio.duration === Infinity) {
-      probeWebmDuration(audio, applyDur);
     } else {
       audio.addEventListener('loadedmetadata', function () {
         if (isFinite(audio.duration) && audio.duration > 0) {
+          audio.__exactDur = audio.duration;
           applyDur(audio.duration);
-        } else if (audio.duration === Infinity) {
-          probeWebmDuration(audio, applyDur);
         }
-      }, { once: true });
-      if (audio.readyState === 0) {
-        try { audio.load(); } catch (e) {}
-      }
+      });
+      fetchAudioDuration(audio, applyDur);
     }
   }
 
@@ -884,11 +901,14 @@
     var btn = evt.target.closest('[data-audio-toggle]');
     if (!btn) return;
     evt.preventDefault();
+    evt.stopPropagation();
     var wrap = btn.closest('.chat-audio');
     var audio = wrap && wrap.querySelector('[data-audio-el]');
     if (!audio) return;
+
     if (audio.paused) {
-      audio.play();
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () {});
     } else {
       audio.pause();
     }
@@ -904,9 +924,9 @@
       if (other !== audio && !other.paused) other.pause();
     });
 
+    var cur = audio.currentTime || 0;
     var dur = getAudioDuration(audio);
-    var remaining = dur > 0 ? Math.max(0, dur - audio.currentTime) : 0;
-    updateAudioDisplay(audio, remaining, dur);
+    updateAudioDisplay(audio, cur, dur);
   }, true);
 
   document.addEventListener('pause', function (evt) {
@@ -920,9 +940,9 @@
   document.addEventListener('timeupdate', function (evt) {
     var audio = evt.target;
     if (!audio.matches || !audio.matches('[data-audio-el]')) return;
+    var cur = audio.currentTime || 0;
     var dur = getAudioDuration(audio);
-    var remaining = dur > 0 ? Math.max(0, dur - audio.currentTime) : 0;
-    updateAudioDisplay(audio, remaining, dur);
+    updateAudioDisplay(audio, cur, dur);
   });
 
   document.addEventListener('ended', function (evt) {
@@ -935,24 +955,29 @@
     var fillEl = wrap && wrap.querySelector('.chat-audio-fill');
     var timeEl = wrap && wrap.querySelector('[data-audio-time]');
     if (fillEl) fillEl.style.width = '0%';
-    if (timeEl) timeEl.textContent = fmtTime(dur);
+    if (timeEl) {
+      timeEl.textContent = dur > 0 ? fmtTime(dur) : '0:00';
+    }
+    audio.currentTime = 0;
   });
 
   document.addEventListener('click', function (evt) {
     var track = evt.target.closest('.chat-audio-track');
     if (!track) return;
+    evt.preventDefault();
+    evt.stopPropagation();
     var wrap = track.closest('.chat-audio');
     var audio = wrap && wrap.querySelector('[data-audio-el]');
     if (!audio) return;
     var dur = getAudioDuration(audio);
-    if (!dur) return;
+    if (!dur || !isFinite(dur)) return;
 
     var r = track.getBoundingClientRect();
     var ratio = Math.max(0, Math.min(1, (evt.clientX - r.left) / r.width));
     audio.currentTime = ratio * dur;
 
-    var remaining = Math.max(0, dur - audio.currentTime);
-    updateAudioDisplay(audio, remaining, dur);
+    var cur = audio.currentTime || 0;
+    updateAudioDisplay(audio, cur, dur);
   });
 
   /* ── Admin Support Inbox Filter, Search & Real-Time Switching ─────── */
