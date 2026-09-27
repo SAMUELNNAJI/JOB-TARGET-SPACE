@@ -1,0 +1,65 @@
+{% comment %}
+One chat bubble. Shared by the initial transcript and by every message that
+arrives later, so a polled-in bubble is identical to a rendered one.
+
+`mine` is precomputed in the view (was the message sent by the viewer looking
+at it) so both the user and admin sides render from this one file.
+{% endcomment %}
+{% if message %}
+<div class="chat-msg {% if mine %}chat-msg--out{% else %}chat-msg--in{% endif %}"
+     id="msg-{{ message.id }}"
+     data-msg-id="{{ message.id }}">
+
+  {% if not mine %}
+    <div class="chat-sender-label">
+      {% if message.sender_role == 'staff' %}
+        <span class="chat-sender-badge">JobSPACE Support</span>
+      {% else %}
+        <span class="chat-sender-badge chat-sender-badge--user">{{ message.sender.get_full_name|default:message.sender.username|default:"Member" }}</span>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if message.audio %}
+    <div class="chat-audio">
+      <button class="chat-audio-play" type="button" data-audio-toggle
+              aria-label="Play voice note">
+        <svg class="chat-audio-icon chat-audio-icon--play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="6 4 20 12 6 20 6 4"></polygon>
+        </svg>
+        <svg class="chat-audio-icon chat-audio-icon--pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+        </svg>
+      </button>
+      <div class="chat-audio-body">
+        <div class="chat-audio-track">
+          <div class="chat-audio-fill" style="width:0%"></div>
+        </div>
+        <div class="chat-audio-info">
+          <span class="chat-audio-tag">Voice Note</span>
+          <span class="chat-audio-time" data-audio-time>0:00</span>
+        </div>
+      </div>
+      <audio preload="metadata" src="{{ message.audio.url }}" data-audio-el></audio>
+    </div>
+  {% endif %}
+
+  {% if message.body %}
+    <div class="chat-bubble">{{ message.body|linebreaksbr }}</div>
+  {% endif %}
+
+  <div class="chat-meta">
+    <time class="chat-time">{{ message.created_at|date:"H:i" }}</time>
+    {% if mine %}
+      <span class="chat-ticks" title="Delivered">
+        <svg width="15" height="10" viewBox="0 0 16 11" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 6 4.5 9.5 9 3"/>
+          <polyline points="6 6 9.5 9.5 15 2"/>
+        </svg>
+      </span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

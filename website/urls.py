@@ -30,6 +30,12 @@ urlpatterns = [
     path("dashboard/employer/candidates/<int:match_id>/accept/", views.accept_candidate, name="accept_candidate"),
     path("dashboard/employer/<slug:section>/", views.employer_section, name="employer_section"),
     path("dashboard/admin/", views.admin_dashboard, name="admin_dashboard"),
+    # ── Support chat (htmx) ─────────────────────────────────────────────
+    # These MUST come before the `admin/<slug:section>/` catch-all below,
+    # otherwise "support" is matched as a section slug and 404s.
+    path("dashboard/admin/support/messages/", views.admin_support_messages, name="admin_support_messages"),
+    path("dashboard/admin/support/send/", views.admin_support_send, name="admin_support_send"),
+    path("dashboard/admin/support/", views.admin_support_inbox, name="admin_support_inbox"),
     path("dashboard/admin/<slug:section>/", views.admin_section, name="admin_section"),
     path("dashboard/admin/matching/push/<int:match_id>/", views.push_candidate, name="push_candidate"),
     path("dashboard/admin/matching/create/", views.create_match, name="create_match"),
@@ -42,6 +48,10 @@ urlpatterns = [
     path("dashboard/notifications/json/", views.notifications_json, name="notifications_json"),
     path("dashboard/notifications/mark-read/", views.notifications_mark_read, name="notifications_mark_read"),
     path("dashboard/admin/matching/search/", views.matching_candidate_search, name="matching_candidate_search"),
+    # ── Support chat — user side ───────────────────────────────────────
+    path("dashboard/support/chat/messages/", views.support_chat_messages, name="support_chat_messages"),
+    path("dashboard/support/chat/send/", views.support_chat_send, name="support_chat_send"),
+    path("dashboard/support/chat/", views.support_chat, name="support_chat"),
     path("about.html", views.page, {"page_name": "about"}),
     path("employers.html", views.page, {"page_name": "employers"}),
     path("candidates.html", views.page, {"page_name": "candidates"}),

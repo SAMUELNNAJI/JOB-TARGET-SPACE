@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Profile(models.Model):
@@ -280,3 +281,72 @@ class AuditLog(models.Model):
 
     class Meta:
         ordering = ("-created_at",)
+
+
+class SupportThread(models.Model):
+    """One conversation between a Profile (candidate or employer) and JobSPACE.
+
+    There is exactly one thread per profile — a user always resumes the same
+    conversation rather than starting a new one each time they open Support.
+    `last_message_at` drives the admin inbox ordering so the thread with the
+    most recent activity floats to the top.
+    """
+
+    profile = models.OneToOneField(
+        Profile, on_delete=models.CASCADE, related_name="support_thread"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_message_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ("-last_message_at", "-created_at")
+
+    def __str__(self):
+        return f"Support thread — {self.profile}"
+
+    @property
+    def last_message(self):
+        return self.messages.order_by("-created_at").first()
+
+    def touch(self):
+        """Stamp the thread after a new message so the inbox reorders."""
+        now = timezone.now()
+        self.last_message_at = now
+        self.save(update_fields=["last_message_at", "updated_at"])
+
+    def unread_for_admin(self):
+        """Messages the user sent that staff have not opened yet."""
+        return self.messages.filter(sender_role=SupportMessage.Role.USER, is_read=False)
+
+    def unread_for_user(self):
+        """Staff replies the user has not opened yet."""
+        return self.messages.filter(sender_role=SupportMessage.Role.STAFF, is_read=False)
+
+
+class SupportMessage(models.Model):
+    class Role(models.TextChoices):
+        USER  = "user",  "User"
+        STAFF = "staff", "JobSPACE"
+
+    thread = models.ForeignKey(
+        SupportThread, on_delete=models.CASCADE, related_name="messages"
+    )
+    # NULL sender = staff. Staff accounts have no Profile, and making this
+    # nullable keeps the thread usable even if a staff user is later deleted.
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="support_messages",
+    )
+    sender_role = models.CharField(max_length=10, choices=Role.choices)
+    body = models.TextField(blank=True)
+    # Voice note. Optional — a message is either text, audio, or both.
+    audio = models.FileField(upload_to="chat_audio/%Y/%m/", blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        # Oldest first so a chat transcript reads top-to-bottom, and the id
+        # tiebreaker keeps ordering stable when two rows share a timestamp.
+        ordering = ("created_at", "id")
+        indexes = [models.Index(fields=("thread", "id"))]

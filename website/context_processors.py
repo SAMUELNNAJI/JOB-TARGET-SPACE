@@ -52,14 +52,23 @@ def _apply_seen(request, badges, visited_map):
 
 
 def dashboard_badges(request):
-    ctx = {"unread_count": 0, "notif_url": None, "sidebar_badges": {}, "header_unread": 0, "header_notif_url": None}
+    ctx = {"unread_count": 0, "notif_url": None, "sidebar_badges": {}, "header_unread": 0, "header_notif_url": None, "chat_unread": 0}
     user = getattr(request, "user", None)
     if not user or not getattr(user, "is_authenticated", False):
         return ctx
     try:
-        from .models import CandidateMatch, Notification, Profile, RecruitmentRequest, ReplacementRequest, Payment
+        from .models import (
+            CandidateMatch, Notification, Payment, Profile, RecruitmentRequest,
+            ReplacementRequest, SupportMessage,
+        )
 
         if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+            # Unread chat messages waiting for a staff reply. The admin Support
+            # Inbox nav link shows this count.
+            ctx["chat_unread"] = SupportMessage.objects.filter(
+                sender_role=SupportMessage.Role.USER, is_read=False,
+            ).count()
+
             # ── Mark items as seen when admin visits a section ──────────────
             on_cand_page     = _viewed(request, "/dashboard/admin/candidates/")
             on_requests_page = _viewed(request, "/dashboard/admin/requests/")
@@ -141,6 +150,13 @@ def dashboard_badges(request):
 
             active_matches = profile.matches.filter(is_active=True).count()
             unread         = profile.notifications.filter(is_read=False).count()
+            # Unread staff replies in the support chat — cleared when the user
+            # opens the Support page.
+            try:
+                chat_unread = profile.support_thread.unread_for_user().count()
+            except SupportThread.DoesNotExist:
+                chat_unread = 0
+            ctx["chat_unread"] = chat_unread
 
             ctx["unread_count"]     = 0 if on_page else unread
             ctx["notif_url"]        = "/dashboard/candidate/notifications/"
@@ -173,6 +189,13 @@ def dashboard_badges(request):
             shortlisted = profile.shortlists.count()
             req_count   = profile.recruitment_requests.count()
             unread      = profile.notifications.filter(is_read=False).count()
+            # Unread staff replies in the support chat — cleared when the user
+            # opens the Support page.
+            try:
+                chat_unread = profile.support_thread.unread_for_user().count()
+            except SupportThread.DoesNotExist:
+                chat_unread = 0
+            ctx["chat_unread"] = chat_unread
 
             ctx["unread_count"]     = 0 if on_page else unread
             ctx["notif_url"]        = "/dashboard/employer/notifications/"

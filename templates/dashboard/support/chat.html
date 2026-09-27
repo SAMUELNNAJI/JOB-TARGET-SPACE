@@ -1,0 +1,220 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}{% if profile.role == 'employer' %}Employer Concierge & Support - JobSpace{% else %}Candidate Support Chat - JobSpace{% endif %}{% endblock %}
+{% block body_class %}{% if profile.role == 'employer' %}employer-dashboard{% else %}candidate-dashboard{% endif %}{% endblock %}
+{% block notification_count %}{{ unread_count }}{% endblock %}
+
+{% block extra_head %}
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'js/chat.js' %}?v=7"></script>
+  <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=7">
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-content chat-page">
+
+  {# ── HERO SECTION (RESPONSIVE) ── #}
+  <section class="dash-hero chat-hero {% if profile.role == 'employer' %}chat-hero--employer{% else %}chat-hero--candidate{% endif %}">
+    <div class="dash-hero-bg">
+      <span class="dash-hero-orb dash-hero-orb--1"></span>
+      <span class="dash-hero-orb dash-hero-orb--2"></span>
+      <div class="dash-hero-grid"></div>
+    </div>
+    <div class="dash-hero-content">
+      {% if profile.role == 'employer' %}
+        <span class="chat-hero-kicker">
+          <span class="chat-live-beacon"></span>
+          EMPLOYER HIRING CONCIERGE
+        </span>
+        <h1 class="dash-hero-title">Dedicated<br><em>Hiring Support.</em></h1>
+        <p class="dash-hero-sub">Direct access to your JobSPACE account manager for {{ profile.company_name|default:"your organization" }}. Priority assistance with candidate requisitions, talent shortlists, replacements, and subscription billing.</p>
+      {% else %}
+        <span class="chat-hero-kicker">
+          <span class="chat-live-beacon"></span>
+          CANDIDATE ADVISORY &amp; SUPPORT
+        </span>
+        <h1 class="dash-hero-title">Support &amp;<br><em>Career Desk.</em></h1>
+        <p class="dash-hero-sub">Have questions about your verification status, talent pool visibility, or matched opportunities? Chat directly with our verified talent specialists.</p>
+      {% endif %}
+
+      <div class="chat-hero-badges">
+        <span class="chat-hero-badge"><span class="chat-beacon-dot"></span> Online Desk</span>
+        <span class="chat-hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Avg. reply &lt; 15 mins</span>
+        <span class="chat-hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Confidential</span>
+      </div>
+    </div>
+  </section>
+
+  {# ── MAIN CHAT PANEL ── #}
+  <section class="chat-panel">
+    {# Panel Header #}
+    <header class="chat-head">
+      <div class="chat-head-person">
+        <div class="chat-head-avatar-wrap">
+          <span class="chat-head-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </span>
+          <span class="chat-avatar-status" title="Active"></span>
+        </div>
+        <div class="chat-head-info">
+          <div class="chat-head-title-row">
+            <strong>JobSPACE Support Team</strong>
+            <span class="chat-role-pill">
+              {% if profile.role == 'employer' %}Employer Concierge{% else %}Candidate Support{% endif %}
+            </span>
+          </div>
+          <span class="chat-head-status">
+            <span class="chat-online-dot"></span>
+            <span>Typically replies in a few minutes &bull; Live agent channel</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="chat-head-actions">
+        <span class="chat-secure-tag" title="Your conversation is safely logged in your profile">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Encrypted
+        </span>
+        <button class="chat-action-btn" type="button" data-chat-refresh aria-label="Refresh conversation" title="Refresh messages">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    {# Quick suggestions drawer / chips (All with real SVG icons, no emojis) #}
+    <div class="chat-quick-section">
+      <div class="chat-quick-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Quick Topics:
+      </div>
+      <div class="chat-quick-chips">
+        {% if profile.role == 'employer' %}
+          <button type="button" class="chat-chip" data-prompt="Hello! We would like to request candidate recommendations for a new role.">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Request new candidates</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="Could you explain our replacement policy and timeline?">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>Replacement policy</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="We have a question regarding our subscription plan and payment invoices.">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span>Subscription &amp; billing</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="Can our team get assistance scheduling an interview with a candidate?">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Interview scheduling</span>
+          </button>
+        {% else %}
+          <button type="button" class="chat-chip" data-prompt="Hello, could you give me an update on my profile verification status?">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            <span>Check verification status</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="How does the JobSPACE matching process work once I am verified?">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>How matching works</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="I need help updating my resume and work experience on my profile.">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Update resume / CV</span>
+          </button>
+          <button type="button" class="chat-chip" data-prompt="How will I be notified when an employer requests my profile?">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Match notifications</span>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Empty state (lives OUTSIDE #chat-thread so polling never duplicates it) #}
+    <div class="chat-empty" data-chat-empty {% if messages %}hidden{% endif %}>
+      <div class="chat-empty-mark">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h3>Welcome to JobSPACE Support</h3>
+      <p>Send your inquiry below or tap a quick topic above. Our specialized team receives your message immediately and will reply directly in this thread.</p>
+    </div>
+
+    {# Transcript (Polled in real time) #}
+    {% include "dashboard/support/_messages.html" %}
+
+    {# Voice Recording Bar with Pause, Delete, and Send #}
+    <div class="chat-recording" data-recording-bar hidden>
+      <button class="chat-rec-btn chat-rec-btn--delete" type="button" data-rec-delete aria-label="Delete recording" title="Discard voice note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </button>
+
+      <div class="chat-rec-center">
+        <div class="chat-rec-left">
+          <span class="chat-rec-dot" data-rec-dot></span>
+          <span class="chat-rec-badge" data-rec-badge>Recording</span>
+          <span class="chat-rec-time" data-rec-time>0:00</span>
+        </div>
+        <div class="chat-rec-wave" data-rec-wave>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+
+      <div class="chat-rec-actions">
+        <button class="chat-rec-btn chat-rec-btn--pause" type="button" data-rec-pause aria-label="Pause or Resume recording" title="Pause / Resume">
+          <svg class="chat-rec-icon-pause" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+          <svg class="chat-rec-icon-resume" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+            <polygon points="6 4 20 12 6 20 6 4"></polygon>
+          </svg>
+        </button>
+
+        <button class="chat-rec-btn chat-rec-btn--send" type="button" data-rec-send aria-label="Send voice note" title="Send voice note">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {# Composer Form #}
+    <form class="chat-composer"
+          action="{% url 'website:support_chat_send' %}"
+          method="post"
+          enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="audio" data-audio-input accept="audio/*" hidden>
+
+      <button class="chat-mic" type="button" data-mic
+              aria-label="Record a voice message" title="Hold or click to record voice note">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+        </svg>
+      </button>
+
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" name="body" rows="1" data-chat-input
+                  placeholder="Type your message here… (Enter to send, Shift+Enter for new line)"
+                  aria-label="Chat message"></textarea>
+      </div>
+
+      <button class="chat-send" type="submit" aria-label="Send message" title="Send message">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+  </section>
+</main>
+{% endblock %}

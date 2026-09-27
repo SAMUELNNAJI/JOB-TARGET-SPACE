@@ -1,0 +1,130 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Support Control Center - JobSpace Admin{% endblock %}
+{% block body_class %}admin-dashboard{% endblock %}
+{% block notification_count %}{{ unread_count|default:0 }}{% endblock %}
+
+{% block extra_head %}
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'js/chat.js' %}?v=7"></script>
+  <link rel="stylesheet" href="{% static 'css/chat.css' %}?v=7">
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-content adm-home adm-chat-page">
+
+  {# ── ADMIN HERO (COMPACT ON MOBILE) ── #}
+  <section class="adm-hero chat-hero--admin">
+    <div class="adm-hero-bg">
+      <span class="adm-orb adm-orb--1"></span>
+      <span class="adm-orb adm-orb--2"></span>
+      <span class="adm-orb adm-orb--3"></span>
+      <div class="adm-hero-grid"></div>
+    </div>
+    <div class="adm-hero-content">
+      <span class="adm-hero-kicker">
+        <span class="adm-kicker-dot"></span>
+        JOBSPACE ADMIN CONTROL CENTER
+      </span>
+      <h1 class="adm-hero-title">Support &amp;<br><em>Inquiry Hub.</em></h1>
+      <p class="adm-hero-sub">Unified messaging across all candidates and employers. Select any thread to review inquiries, voice notes, and send real-time replies.</p>
+    </div>
+    <div class="adm-hero-stats-box">
+      <div class="adm-hero-stat-row">
+        <div class="adm-hero-vstat">
+          <strong>{{ threads|length }}</strong>
+          <span>Total Threads</span>
+        </div>
+        <div class="adm-hero-vstat-div"></div>
+        <div class="adm-hero-vstat">
+          <strong class="{% if total_unread %}stat-alert{% endif %}">{{ total_unread }}</strong>
+          <span>Unread Inquiries</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ── MOBILE SEGMENTED TABS (VISIBLE ON MOBILE ONLY) ── #}
+  <div class="adm-mobile-tabs">
+    <button type="button" class="adm-tab-btn is-active" data-view-target="chat">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Active Chat</span>
+      {% if thread %}<span class="adm-tab-name">({{ thread.profile.company_name|default:thread.profile.user.username|truncatechars:10 }})</span>{% endif %}
+    </button>
+    <button type="button" class="adm-tab-btn" data-view-target="inbox">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Inbox List</span>
+      <span class="adm-tab-badge">{{ threads|length }}</span>
+    </button>
+  </div>
+
+  {# ── DUAL COLUMN ADMIN CHAT SUITE ── #}
+  <div class="adm-chat-layout" id="admChatLayout">
+
+    {# LEFT / MAIN COLUMN: ACTIVE THREAD (SWAPPABLE IN REAL TIME) #}
+    <div class="adm-chat-main" id="admChatMain">
+      {% include "dashboard/admin/_active_thread.html" %}
+    </div>
+
+    {# RIGHT COLUMN: CONVERSATION DIRECTORY SIDEBAR #}
+    <aside class="adm-chat-sidebar" id="admChatSidebar">
+      <div class="adm-sidebar-card">
+        {# Sidebar Directory Header #}
+        <div class="adm-sidebar-head">
+          <div class="adm-sidebar-head-title">
+            <h2 class="adm-panel-title">Inbox Directory</h2>
+            <span class="adm-counter-pill">{{ threads|length }} total</span>
+          </div>
+          {% if total_unread %}
+            <span class="adm-unread-pill">{{ total_unread }} unread</span>
+          {% endif %}
+        </div>
+
+        {# Search Box #}
+        <div class="adm-search-wrap">
+          <svg class="adm-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="adm-search-input" data-inbox-search placeholder="Search by name, company, email…" aria-label="Search conversations">
+        </div>
+
+        {# Filter Segmented Tabs #}
+        <div class="adm-filter-bar">
+          <button type="button" class="adm-filter-pill is-active" data-filter="all">All</button>
+          <button type="button" class="adm-filter-pill" data-filter="candidate">Candidates</button>
+          <button type="button" class="adm-filter-pill" data-filter="employer">Employers</button>
+          <button type="button" class="adm-filter-pill" data-filter="unread">Unread</button>
+        </div>
+
+        {# Directory List #}
+        {% if threads %}
+          <div class="chat-inbox" data-inbox-list id="admInboxList">
+            {% include "dashboard/admin/_inbox_list.html" %}
+          </div>
+        {% else %}
+          <div class="adm-empty-inline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/></svg>
+            <span>No support conversations logged yet.</span>
+          </div>
+        {% endif %}
+      </div>
+
+      {# Quick shortcuts card #}
+      <div class="adm-sidebar-card adm-shortcuts-card">
+        <div class="adm-shortcuts-head">
+          <span class="adm-shortcuts-title">Management Quicklinks</span>
+        </div>
+        <div class="adm-quick-grid">
+          <a class="adm-quick-btn" href="/dashboard/admin/candidates/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span>All Candidates</span>
+          </a>
+          <a class="adm-quick-btn" href="/dashboard/admin/employers/">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>All Employers</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+{% endblock %}

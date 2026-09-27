@@ -1,0 +1,174 @@
+{% if thread %}
+  <section class="chat-panel adm-chat-panel" id="admActivePanel" data-active-thread-id="{{ thread.id }}">
+    {# Active Thread Header #}
+    <header class="chat-head adm-chat-head">
+      {# Mobile back button to inbox #}
+      <button type="button" class="adm-mobile-back" data-view-target="inbox" aria-label="Back to inbox list">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Inbox</span>
+      </button>
+
+      <div class="chat-head-person">
+        <span class="chat-inbox-avatar {% if thread.profile.role == 'employer' %}is-emp{% else %}is-cand{% endif %}">
+          {{ thread.profile.company_name|default:thread.profile.user.username|slice:":2"|upper }}
+        </span>
+        <div class="chat-head-info">
+          <div class="chat-head-title-row">
+            <strong>{{ thread.profile.company_name|default:thread.profile.user.get_full_name|default:thread.profile.user.username }}</strong>
+            <span class="chat-role-pill {% if thread.profile.role == 'employer' %}chat-role-pill--emp{% else %}chat-role-pill--cand{% endif %}">
+              {{ thread.profile.get_role_display|default:"Member" }}
+            </span>
+          </div>
+          <div class="chat-head-status">
+            <span>{{ thread.profile.user.email }}</span>
+            {% if thread.profile.phone %}&bull; <span>{{ thread.profile.phone }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-head-actions">
+        {% if thread.profile.role == 'employer' and thread.profile.id %}
+          <a class="adm-head-link" href="/dashboard/admin/employer/{{ thread.profile.id }}/detail/" target="_blank" title="View company profile">
+            <span>Company Profile</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        {% elif thread.profile.id %}
+          <a class="adm-head-link" href="/dashboard/admin/candidates/?search={{ thread.profile.user.username }}" target="_blank" title="View candidate profile">
+            <span>Candidate Details</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        {% endif %}
+        <button class="chat-action-btn" type="button" data-chat-refresh aria-label="Refresh conversation" title="Refresh messages">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    {# Admin Canned Quick Responses Bar (Real SVG icons only) #}
+    <div class="chat-quick-section adm-canned-bar">
+      <div class="chat-quick-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Canned Replies:
+      </div>
+      <div class="chat-quick-chips">
+        <button type="button" class="chat-chip" data-prompt="Hello! Thank you for contacting JobSPACE Support. How can our team assist you today?">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>Greeting</span>
+        </button>
+        <button type="button" class="chat-chip" data-prompt="Thank you for providing the requested details. Your profile verification is currently under review by our admin team and should be completed shortly.">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Under Review</span>
+        </button>
+        <button type="button" class="chat-chip" data-prompt="We have verified and updated your profile details in the system. Everything is active.">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Details Updated</span>
+        </button>
+        <button type="button" class="chat-chip" data-prompt="Our recruitment coordinator will follow up with you directly regarding next steps on your account.">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Team Follow-up</span>
+        </button>
+      </div>
+    </div>
+
+    {# Transcript #}
+    {% include "dashboard/support/_messages.html" %}
+
+    {# Empty State #}
+    <div class="chat-empty" data-chat-empty {% if messages %}hidden{% endif %}>
+      <div class="chat-empty-mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h3>Conversation is Ready</h3>
+      <p>No messages have been exchanged with this member yet. Type a response or select a canned reply below to reach out.</p>
+    </div>
+
+    {# Voice Recording Bar with Pause, Delete, and Send #}
+    <div class="chat-recording" data-recording-bar hidden>
+      <button class="chat-rec-btn chat-rec-btn--delete" type="button" data-rec-delete aria-label="Delete recording" title="Discard voice note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </button>
+
+      <div class="chat-rec-center">
+        <div class="chat-rec-left">
+          <span class="chat-rec-dot" data-rec-dot></span>
+          <span class="chat-rec-badge" data-rec-badge>Staff Recording</span>
+          <span class="chat-rec-time" data-rec-time>0:00</span>
+        </div>
+        <div class="chat-rec-wave" data-rec-wave>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+
+      <div class="chat-rec-actions">
+        <button class="chat-rec-btn chat-rec-btn--pause" type="button" data-rec-pause aria-label="Pause or Resume recording" title="Pause / Resume">
+          <svg class="chat-rec-icon-pause" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+          <svg class="chat-rec-icon-resume" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+            <polygon points="6 4 20 12 6 20 6 4"></polygon>
+          </svg>
+        </button>
+
+        <button class="chat-rec-btn chat-rec-btn--send" type="button" data-rec-send aria-label="Send voice note" title="Send voice note">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {# Staff Composer #}
+    <form class="chat-composer"
+          action="{% url 'website:admin_support_send' %}"
+          method="post"
+          enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="thread" value="{{ thread.id }}">
+      <input type="file" name="audio" data-audio-input accept="audio/*" hidden>
+
+      <button class="chat-mic" type="button" data-mic
+              aria-label="Record voice reply" title="Record a voice message for member">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+        </svg>
+      </button>
+
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" name="body" rows="1" data-chat-input
+                  placeholder="Reply to {{ thread.profile.company_name|default:thread.profile.user.username }}… (Enter to send, Shift+Enter for newline)"></textarea>
+      </div>
+
+      <button class="chat-send" type="submit" aria-label="Send reply" title="Send reply">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+  </section>
+{% else %}
+  <section class="chat-panel adm-chat-panel">
+    <div class="adm-no-thread">
+      <div class="adm-no-thread-graphic">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h2>No Conversation Selected</h2>
+      <p>Select any candidate or employer from the directory list to view their conversation history and reply in real time.</p>
+      <button type="button" class="adm-select-btn" data-view-target="inbox">
+        Browse All Conversations
+      </button>
+    </div>
+  </section>
+{% endif %}

@@ -1,0 +1,52 @@
+{% for t in threads %}
+  {% with unread_cnt=t.unread_for_admin.count %}
+    <a class="chat-inbox-row {% if thread and t.id == thread.id %}is-active{% endif %}"
+       href="?thread={{ t.id }}"
+       hx-get="?thread={{ t.id }}&partial=1"
+       hx-target="#admChatMain"
+       hx-swap="innerHTML"
+       hx-push-url="?thread={{ t.id }}"
+       data-thread-id="{{ t.id }}"
+       data-role="{{ t.profile.role|lower }}"
+       data-unread="{{ unread_cnt }}"
+       data-name="{{ t.profile.company_name|default:t.profile.user.username|lower }} {{ t.profile.user.email|lower }}">
+      
+      <span class="chat-inbox-avatar {% if t.profile.role == 'employer' %}is-emp{% else %}is-cand{% endif %}">
+        {{ t.profile.company_name|default:t.profile.user.username|slice:":2"|upper }}
+      </span>
+
+      <span class="chat-inbox-copy">
+        <span class="chat-inbox-top-row">
+          <strong class="chat-inbox-name">{{ t.profile.company_name|default:t.profile.user.username }}</strong>
+          <time class="chat-inbox-time">{% if t.last_message_at %}{{ t.last_message_at|timesince }} ago{% else %}—{% endif %}</time>
+        </span>
+
+        <span class="chat-inbox-meta-row">
+          <span class="chat-inbox-role-tag {% if t.profile.role == 'employer' %}is-emp{% else %}is-cand{% endif %}">
+            {{ t.profile.get_role_display|default:"Member" }}
+          </span>
+          {% if unread_cnt %}
+            <span class="chat-inbox-badge">{{ unread_cnt }} new</span>
+          {% endif %}
+        </span>
+
+        <span class="chat-inbox-last">
+          {% with m=t.last_message %}
+            {% if m.audio and not m.body %}
+              <span class="chat-audio-snippet">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                Voice note
+              </span>
+            {% else %}
+              {{ m.body|default:"No messages yet"|truncatechars:42 }}
+            {% endif %}
+          {% endwith %}
+        </span>
+      </span>
+    </a>
+  {% endwith %}
+{% endfor %}
+<div class="adm-inbox-empty" data-search-empty hidden>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <span>No conversations match your search.</span>
+</div>

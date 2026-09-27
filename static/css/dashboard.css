@@ -9027,3 +9027,106 @@ body { font-size: 15px !important; }
   }
 }
 
+
+/* ============================================================
+   5. Support chat — WhatsApp-style (htmx)
+   ============================================================ */
+.chat-page {
+  max-width: 940px;
+  margin: 0 auto;
+}
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  background: #efeae2;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(11, 20, 26, 0.13);
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: #f0f2f5;
+  border-bottom: 1px solid #e3e5e8;
+}
+.chat-head-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.chat-head-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #00a884;
+  color: #fff;
+}
+.chat-head-person strong {
+  display: block;
+  font: 600 15px/1.35 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #111b21;
+}
+.chat-head-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: #667781;
+}
+.chat-online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #25d366;
+  flex-shrink: 0;
+}
+/* Empty state sits OUTSIDE #chat-thread so polling cannot duplicate it. */
+.chat-empty {
+  padding: 40px 26px;
+  text-align: center;
+  color: #667781;
+  background: #efeae2;
+}
+.chat-empty[hidden] { display: none; }
+.chat-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #fff;
+  color: #00a884;
+  box-shadow: 0 1px 3px rgba(11, 20, 26, 0.12);
+}
+.chat-empty p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.chat-empty p strong {
+  display: block;
+  color: #111b21;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 58vh;
+  height: 58dvh;
+  min-height: 320px;
+  padding: 12px 5% 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: #efeae2;
+}

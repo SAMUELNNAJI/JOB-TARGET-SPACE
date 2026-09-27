@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -17,7 +17,7 @@ from .forms import (
 from .models import (
     AuditLog, CandidateMatch, Notification, Payment, Profile,
     Qualification, RecruitmentRequest, ReplacementRequest,
-    Shortlist, Specialization, Subscription,
+    Shortlist, Specialization, Subscription, SupportMessage, SupportThread,
 )
 
 # ─────────────────────────────────────────────────────────────
@@ -148,6 +148,11 @@ def candidate_section(request, section):
             "See opportunities selected for you by JobSPACE administrators.",
             "Candidates cannot browse or contact employers directly. Only approved matches appear here.",
         ),
+        "support": (
+            "Support Chat",
+            "Ask our team anything about your account, verification, or matches.",
+            "Messages go straight to the JobSPACE team and you will get a reply in the same thread.",
+        ),
         "applications": (
             "Applications",
             "Track applications created through an administrator-approved match.",
@@ -181,6 +186,9 @@ def candidate_section(request, section):
             "unread_count": _unread_count(profile),
             "page_obj":     paginate(request, matches_qs),
         })
+
+    if section == "support":
+        return redirect("website:support_chat")
 
     if section == "notifications":
         # Mark all unread as read, then paginate
@@ -500,13 +508,17 @@ def employer_section(request, section):
             "section_title": "Notifications",
         })
 
-    # ── Support / Settings fallback ───────────────────────────
-    if section in {"support", "settings"}:
+    # ── Support → real chat with JobSPACE ─────────────────────
+    if section == "support":
+        return redirect("website:support_chat")
+
+    # ── Settings fallback ─────────────────────────────────────
+    if section == "settings":
         return render(request, "dashboard/employer/section.html", {
             "employer":      employer,
             "unread_count":  unread,
-            "section_title": section.title(),
-            "section_detail": "Contact JobSPACE support for help with your account and recruitment workflow.",
+            "section_title": "Settings",
+            "section_detail": "Account settings for your company profile.",
         })
 
     raise Http404
@@ -1982,3 +1994,265 @@ def dashboard_search(request):
         "placeholder": placeholder,
         "count":       len(results),
     })
+
+
+# ─────────────────────────────────────────────────────────────
+# Support chat — user <-> JobSPACE, rendered with htmx
+# ─────────────────────────────────────────────────────────────
+#
+# The transcript is polled with htmx rather than pushed over a websocket:
+# this is a server-rendered Django app on gunicorn with no Channels/Redis,
+# and a short poll gives effectively-live chat with none of that
+# infrastructure. Swapping in SSE later only replaces the poll endpoint.
+
+MAX_MESSAGE_CHARS = 4000
+# Voice notes are capped so a stuck recording cannot fill the disk. 5 MB is
+# roughly several minutes of compressed browser audio.
+MAX_AUDIO_BYTES = 5 * 1024 * 1024
+CHAT_PAGE_MESSAGES = 60
+POLL_MS = 2500
+
+
+def _is_admin(user):
+    return bool(user.is_staff or user.is_superuser)
+
+
+def _thread_for(profile):
+    """Get or create the single support thread for *profile*."""
+    thread, _ = SupportThread.objects.get_or_create(profile=profile)
+    return thread
+
+
+def _thread_profile(user):
+    return get_object_or_404(Profile, user=user)
+
+
+def _is_chat_user(user):
+    """True when *user* is a candidate/employer who may open a support chat."""
+    if not user.is_authenticated or _is_admin(user):
+        return False
+    return getattr(user, "profile", None) is not None
+
+
+@login_required
+def support_chat(request):
+    """The user's Support page: one thread, transcript + composer."""
+    if not _is_chat_user(request.user):
+        return redirect("website:admin_dashboard")
+    profile = _thread_profile(request.user)
+    thread  = _thread_for(profile)
+
+    # Opening the page counts as reading any staff replies that were waiting.
+    thread.unread_for_user().update(is_read=True)
+
+    return render(request, "dashboard/support/chat.html", {
+        "profile":      profile,
+        "thread":       thread,
+        "messages":     _mark_mine(
+            list(thread.messages.select_related("sender")), mine_sender="user"
+        ),
+        "unread_count": _unread_count(profile),
+        "poll_ms":      POLL_MS,
+        "is_admin":     False,
+    })
+
+
+@login_required
+def support_chat_messages(request):
+    """htmx poll target — returns ONLY the new bubbles, never a wrapper.
+
+    `?after=<id>` is required in practice. Without it we deliberately return
+    NOTHING rather than a recent-history dump: chat.js only ever appends this
+    response to the transcript, so a full-history response would re-insert
+    messages the user can already see (the just-sent one included) and every
+    message would appear twice. The initial transcript is rendered by the page
+    view, never by this endpoint.
+    """
+    if not _is_chat_user(request.user):
+        return HttpResponse(status=403)
+
+    thread = _thread_for(_thread_profile(request.user))
+    after = request.GET.get("after")
+    if after is None or not after.isdigit():
+        return render(request, "dashboard/support/_new_messages.html", {"messages": []})
+
+    messages = list(
+        thread.messages.select_related("sender").filter(id__gt=int(after))
+    )
+    return render(request, "dashboard/support/_new_messages.html", {
+        "messages": _mark_mine(messages, mine_sender="user"),
+    })
+
+
+def _mark_mine(messages, mine_sender):
+    """Flag which messages the current viewer sent, for bubble alignment."""
+    role = SupportMessage.Role.STAFF if mine_sender == "staff" else SupportMessage.Role.USER
+    for m in messages:
+        m.mine = (m.sender_role == role)
+    return messages
+
+
+@login_required
+def support_chat_send(request):
+    """htmx POST target — appends a message and returns the new bubble."""
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if not _is_chat_user(request.user):
+        return HttpResponse(status=403)
+
+    body = (request.POST.get("body") or "").strip()
+    audio = request.FILES.get("audio")
+
+    # Reject an empty post, and cap the recording length.
+    if not body and not audio:
+        return render(request, "dashboard/support/_message.html", {"message": None})
+    if audio and audio.size > MAX_AUDIO_BYTES:
+        return render(request, "dashboard/support/_message.html", {"message": None})
+    if len(body) > MAX_MESSAGE_CHARS:
+        body = body[:MAX_MESSAGE_CHARS]
+
+    thread = _thread_for(_thread_profile(request.user))
+    message = SupportMessage.objects.create(
+        thread=thread,
+        sender=request.user,
+        sender_role=SupportMessage.Role.USER,
+        body=body,
+        audio=audio,
+        is_read=False,
+    )
+    thread.touch()
+
+    return render(request, "dashboard/support/_message.html", {
+        "message": message,
+        "mine":    True,
+    })
+
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_support_inbox(request):
+    """Admin inbox: every thread, newest activity first, with one chat open.
+
+    Accepts ?thread=<id> to open an existing conversation, or ?profile=<id>
+    to open (creating if needed) the conversation with a specific candidate or
+    employer — that is what the "Chat now" buttons on the management tables
+    link to, so staff can start a conversation rather than only reply to one.
+    """
+    threads = SupportThread.objects.select_related("profile__user")
+
+    # ?profile=<id> — find or create that member's thread, then redirect so
+    # the canonical ?thread=<id> URL is what gets bookmarked and polled.
+    profile_id = request.GET.get("profile")
+    if profile_id and profile_id.isdigit():
+        member = get_object_or_404(Profile, pk=int(profile_id))
+        thread, _ = SupportThread.objects.get_or_create(profile=member)
+        return redirect(f"{reverse('website:admin_support_inbox')}?thread={thread.pk}")
+
+    selected = None
+    thread_id = request.GET.get("thread")
+    if thread_id and thread_id.isdigit():
+        selected = next((t for t in threads if t.pk == int(thread_id)), None)
+    if selected is None:
+        selected = next(iter(threads), None)
+
+    if selected is not None:
+        # Staff reading the thread marks the user's messages as seen.
+        selected.messages.filter(
+            sender_role=SupportMessage.Role.USER, is_read=False
+        ).update(is_read=True)
+        selected.refresh_from_db()
+
+    total_unread = SupportMessage.objects.filter(
+        thread__in=threads,
+        sender_role=SupportMessage.Role.USER,
+        is_read=False,
+    ).count()
+
+    context = {
+        "threads":      threads,
+        "thread":       selected,
+        "messages":     _mark_mine(
+            list(selected.messages.select_related("sender")), mine_sender="staff"
+        ) if selected else [],
+        "total_unread": total_unread,
+        "poll_ms":      POLL_MS,
+        "unread_count": 0,
+        "is_admin":     True,
+    }
+
+    if request.headers.get("HX-Request") and request.GET.get("partial") == "1":
+        return render(request, "dashboard/admin/_active_thread.html", context)
+
+    if request.headers.get("HX-Request") and request.GET.get("inbox_partial") == "1":
+        return render(request, "dashboard/admin/_inbox_list.html", context)
+
+    return render(request, "dashboard/admin/support.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_support_messages(request):
+    """htmx poll target for the admin side of a thread."""
+    thread = get_object_or_404(
+        SupportThread.objects.select_related("profile__user"),
+        pk=request.GET.get("thread"),
+    )
+    # Polling counts as reading the user's messages.
+    thread.messages.filter(
+        sender_role=SupportMessage.Role.USER, is_read=False
+    ).update(is_read=True)
+
+    after = request.GET.get("after")
+    if after is None or not after.isdigit():
+        return render(request, "dashboard/support/_new_messages.html", {"messages": []})
+
+    messages = list(
+        thread.messages.select_related("sender").filter(id__gt=int(after))
+    )
+    # Bubbles only — see the note in support_chat_messages.
+    return render(request, "dashboard/support/_new_messages.html", {
+        "messages": _mark_mine(messages, mine_sender="staff"),
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_support_send(request):
+    """htmx POST target — staff reply."""
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    thread = get_object_or_404(SupportThread, pk=request.POST.get("thread"))
+    body = (request.POST.get("body") or "").strip()
+    audio = request.FILES.get("audio")
+
+    if not body and not audio:
+        return render(request, "dashboard/support/_message.html", {"message": None})
+    if audio and audio.size > MAX_AUDIO_BYTES:
+        return render(request, "dashboard/support/_message.html", {"message": None})
+    if len(body) > MAX_MESSAGE_CHARS:
+        body = body[:MAX_MESSAGE_CHARS]
+
+    message = SupportMessage.objects.create(
+        thread=thread,
+        sender=request.user,
+        sender_role=SupportMessage.Role.STAFF,
+        body=body,
+        audio=audio,
+        is_read=True,
+    )
+    thread.touch()
+
+    # Nudge the user through their normal notification channel.
+    thread.profile.notify(
+        title="New message from JobSPACE support",
+        message=body[:120] + ("…" if len(body) > 120 else ""),
+        kind=Notification.Kind.SYSTEM,
+    )
+
+    return render(request, "dashboard/support/_message.html", {
+        "message": message,
+        "mine":    True,
+    })
+

@@ -1,0 +1,11 @@
+{% comment %}
+Transcript fragment — the NEW BUBBLES ONLY, with no wrapper element.
+
+This is what the poll endpoint returns. It must NOT re-render the
+`#chat-thread` container: the wrapper swaps with `beforeend`, so returning
+the wrapper here would nest a copy of #chat-thread inside itself on every
+tick (duplicated empty states, nested scrollbars, ever-growing DOM).
+{% endcomment %}
+{% for m in messages %}
+  {% include "dashboard/support/_message.html" with message=m mine=m.mine %}
+{% endfor %}

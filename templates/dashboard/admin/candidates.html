@@ -66,6 +66,12 @@
           <td>{{ c.user.date_joined|date:"d M Y" }}</td>
           <td>
             <div class="adm-act-group">
+              <a class="adm-act adm-act--chat"
+                 href="{% url 'website:admin_support_inbox' %}?profile={{ c.pk }}"
+                 title="Open a support chat with {{ c.legal_name|default:c.user.username }}">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Chat now
+              </a>
               {% if c.verification_status == "verified" %}
                 <button type="button" class="adm-act adm-act--revoke" data-revoke-url="{% url 'website:admin_revoke_verification' c.pk %}" data-name="{{ c.legal_name|default:c.user.username }}">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
