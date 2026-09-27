@@ -1,2 +1,0 @@
-Forbidden: /dashboard/support/chat/send/
-Forbidden (CSRF token missing.): /dashboard/support/chat/send/

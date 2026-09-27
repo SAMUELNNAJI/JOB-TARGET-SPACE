@@ -1,8 +1,0 @@
-... user opens Support
-... staff side
-  FAIL: staff poll returns transcript
-... permissions
-... chat badge
-... csrf enforcement
-... cleanup
-RESULT: 55 passed, 1 failed
