@@ -1,6 +1,7 @@
 {% for t in threads %}
   {% with unread_cnt=t.unread_admin|default:t.unread_for_admin.count %}
     <a class="chat-inbox-row {% if thread and t.id == thread.id %}is-active{% endif %}"
+       {% if active_filter == 'candidate' and t.profile.role != 'candidate' %}style="display:none;"{% elif active_filter == 'employer' and t.profile.role != 'employer' %}style="display:none;"{% elif active_filter == 'unread' and unread_cnt == 0 and t.id != thread.id %}style="display:none;"{% endif %}
        href="?thread={{ t.id }}{% if active_filter and active_filter != 'all' %}&filter={{ active_filter }}{% endif %}"
        hx-get="?thread={{ t.id }}&partial=1{% if active_filter and active_filter != 'all' %}&filter={{ active_filter }}{% endif %}"
        hx-target="#admChatMain"

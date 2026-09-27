@@ -2324,9 +2324,21 @@ def admin_support_inbox(request):
     if thread_id and thread_id.isdigit():
         selected = next((t for t in threads if t.pk == int(thread_id)), None)
     if selected is None:
-        # Active chat defaults to the person who sent the latest message.
-        # threads is ordered strictly by latest_msg_time DESC.
-        selected = next((t for t in threads if getattr(t, "has_messages", 0) > 0), None)
+        # Active chat defaults to the person who sent the latest message in the active section
+        if active_filter == "candidate":
+            selected = next((t for t in threads if getattr(t.profile, "role", None) == Profile.Role.CANDIDATE and getattr(t, "has_messages", 0) > 0), None)
+            if selected is None:
+                selected = next((t for t in threads if getattr(t.profile, "role", None) == Profile.Role.CANDIDATE), None)
+        elif active_filter == "employer":
+            selected = next((t for t in threads if getattr(t.profile, "role", None) == Profile.Role.EMPLOYER and getattr(t, "has_messages", 0) > 0), None)
+            if selected is None:
+                selected = next((t for t in threads if getattr(t.profile, "role", None) == Profile.Role.EMPLOYER), None)
+        elif active_filter == "unread":
+            selected = next((t for t in threads if getattr(t, "unread_admin", 0) > 0), None)
+
+        if selected is None:
+            # Fallback to the thread with the newest message overall
+            selected = next((t for t in threads if getattr(t, "has_messages", 0) > 0), None)
         if selected is None:
             selected = next(iter(threads), None)
 

@@ -152,6 +152,7 @@
               scrollToEnd(el);
             }
             initAllAudios(el);
+            runSidebarPoll();
           }
         }
       })
@@ -236,15 +237,40 @@
         isSidebarPolling = false;
         if (!html || !html.trim()) return;
         var trimmed = html.trim();
-        if (list.innerHTML.trim() === trimmed) {
-          filterInbox();
-          return;
-        }
 
+        var temp = document.createElement('div');
+        temp.innerHTML = trimmed;
+
+        // Pre-apply current filter & active state so rows never flicker on render
+        var currPill = document.querySelector('.adm-filter-pill.is-active');
+        var currFilter = currPill ? (currPill.getAttribute('data-filter') || 'all') : 'all';
         var currentActive = document.querySelector('.chat-inbox-row.is-active');
         var currId = activeThreadId || (currentActive ? currentActive.getAttribute('data-thread-id') : null);
 
-        list.innerHTML = trimmed;
+        temp.querySelectorAll('.chat-inbox-row').forEach(function (row) {
+          var role = (row.getAttribute('data-role') || '').toLowerCase();
+          var unread = parseInt(row.getAttribute('data-unread') || '0', 10);
+          var rowId = row.getAttribute('data-thread-id');
+          if (currId && rowId === String(currId)) {
+            row.classList.add('is-active');
+          }
+          if (currFilter === 'candidate') {
+            row.style.display = (role === 'candidate') ? 'grid' : 'none';
+          } else if (currFilter === 'employer') {
+            row.style.display = (role === 'employer') ? 'grid' : 'none';
+          } else if (currFilter === 'unread') {
+            row.style.display = (unread > 0 || (currId && rowId === String(currId))) ? 'grid' : 'none';
+          } else {
+            row.style.display = 'grid';
+          }
+        });
+
+        // Fast check: if the list HTML is already matching, avoid rebuilding DOM
+        if (list.innerHTML.trim() === temp.innerHTML.trim()) {
+          return;
+        }
+
+        list.innerHTML = temp.innerHTML;
 
         if (currId) {
           updateActiveInboxRow(currId);
@@ -265,7 +291,7 @@
     if (sidebarTimer) clearInterval(sidebarTimer);
     var list = document.getElementById('admInboxList');
     if (list) {
-      sidebarTimer = setInterval(runSidebarPoll, 6000);
+      sidebarTimer = setInterval(runSidebarPoll, 3500);
     }
   }
 
@@ -524,6 +550,7 @@
         }
 
         setTimeout(runPoll, 150);
+        setTimeout(runSidebarPoll, 150);
       })
       .catch(function () {
         isSubmitting = false;
