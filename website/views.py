@@ -479,12 +479,16 @@ def employer_section(request, section):
     # ── Subscription ──────────────────────────────────────────
     if section == "subscription":
         active = employer.subscriptions.filter(is_active=True).first()
+        pending_payment = employer.payments.filter(status=Payment.Status.PENDING).order_by("-id").first()
+        recent_payments = employer.payments.select_related("subscription").order_by("-id")[:10]
         return render(request, "dashboard/employer/subscription.html", {
-            "employer":      employer,
-            "unread_count":  unread,
-            "subscription":  active,
-            "payments":      employer.payments.order_by("-paid_at"),
-            "section_title": "Subscription",
+            "employer":         employer,
+            "unread_count":     unread,
+            "subscription":     active,
+            "pending_payment":  pending_payment,
+            "recent_payments":  recent_payments,
+            "bank_accounts":    BANK_ACCOUNTS,
+            "section_title":    "Subscription",
         })
 
     # ── Payments ──────────────────────────────────────────────
@@ -653,14 +657,155 @@ def shortlist_candidate(request, match_id):
     return redirect("website:employer_section", section="candidates")
 
 
-# ─────────────────────────────────────────────────────────────
-# Flutterwave payment views
-# ─────────────────────────────────────────────────────────────
+BANK_ACCOUNTS = [
+    {
+        "bank_name": "WEMA BANK",
+        "account_number": "0123883405",
+        "account_number_display": "012 388 3405",
+        "account_name": "TARGET JOBSPACE LIMITED",
+    },
+    {
+        "bank_name": "ZENITH BANK",
+        "account_number": "1310842261",
+        "account_number_display": "131 084 2261",
+        "account_name": "TARGET JOBSPACE LIMITED",
+    },
+]
 
 PLAN_AMOUNTS = {
     Subscription.Plan.BASIC:   50_000,
     Subscription.Plan.PREMIUM: 100_000,
 }
+
+
+@login_required
+def submit_payment_proof(request):
+    """Employer uploads receipt / proof of payment after bank transfer."""
+    if request.method != "POST":
+        return redirect("website:employer_section", section="subscription")
+
+    employer = _employer_profile(request)
+    plan = request.POST.get("plan", Subscription.Plan.BASIC).strip().lower()
+    if plan not in PLAN_AMOUNTS:
+        messages.error(request, "Invalid subscription plan selected.")
+        return redirect("website:employer_section", section="subscription")
+
+    amount = PLAN_AMOUNTS[plan]
+    bank_name = request.POST.get("bank_name", "").strip()
+    sender_name = request.POST.get("sender_name", "").strip()
+    proof_file = request.FILES.get("proof")
+
+    if not proof_file:
+        messages.error(request, "Please attach a screenshot or document of your payment receipt.")
+        return redirect("website:employer_section", section="subscription")
+
+    import uuid
+    tx_ref = f"TJ-TXN-{employer.pk}-{uuid.uuid4().hex[:8].upper()}"
+    now = timezone.now()
+
+    # Create inactive subscription pending approval
+    subscription = Subscription.objects.create(
+        employer=employer,
+        plan=plan,
+        amount=amount,
+        starts_at=now,
+        expires_at=now + timezone.timedelta(days=30),
+        is_active=False,
+    )
+
+    Payment.objects.create(
+        employer=employer,
+        subscription=subscription,
+        reference=tx_ref,
+        amount=amount,
+        status=Payment.Status.PENDING,
+        bank_name=bank_name or "Bank Transfer",
+        sender_name=sender_name or (employer.company_name or request.user.username),
+        proof=proof_file,
+    )
+
+    AuditLog.log(
+        user=request.user,
+        action="payment_proof_uploaded",
+        target=f"Payment {tx_ref} (₦{amount:,}) for {subscription.get_plan_display()} plan",
+    )
+
+    messages.success(
+        request,
+        f"Proof of payment for the {subscription.get_plan_display()} plan (₦{amount:,}) "
+        "has been uploaded successfully! Our team will verify and activate your subscription shortly."
+    )
+    return redirect("website:employer_section", section="subscription")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_payment_action(request, payment_id):
+    """Staff approves or declines an uploaded payment proof."""
+    if request.method != "POST":
+        return redirect("website:admin_section", section="payments")
+
+    payment = get_object_or_404(
+        Payment.objects.select_related("employer__user", "subscription"),
+        pk=payment_id,
+    )
+    action = request.POST.get("action", "").strip().lower()
+    admin_notes = request.POST.get("admin_notes", "").strip()
+
+    now = timezone.now()
+
+    if action == "approve":
+        payment.status = Payment.Status.SUCCESS
+        payment.paid_at = now
+        payment.admin_notes = admin_notes
+        payment.save(update_fields=["status", "paid_at", "admin_notes"])
+
+        if payment.subscription:
+            sub = payment.subscription
+            sub.starts_at = now
+            sub.expires_at = now + timezone.timedelta(days=30)
+            sub.is_active = True
+            sub.save(update_fields=["starts_at", "expires_at", "is_active"])
+
+            # Deactivate older subscriptions for this employer
+            payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
+
+        payment.employer.notify(
+            title="Subscription Activated!",
+            message=f"Your payment of ₦{payment.amount:,} for the {payment.subscription.get_plan_display() if payment.subscription else 'subscription'} plan was approved. Your account is fully active!",
+            kind=Notification.Kind.SYSTEM,
+        )
+
+        AuditLog.log(
+            user=request.user,
+            action="payment_approved",
+            target=f"Payment {payment.reference} approved for {payment.employer}",
+        )
+        messages.success(request, f"Payment {payment.reference} approved. Subscription activated.")
+
+    elif action == "decline":
+        payment.status = Payment.Status.FAILED
+        payment.admin_notes = admin_notes
+        payment.save(update_fields=["status", "admin_notes"])
+
+        if payment.subscription:
+            payment.subscription.is_active = False
+            payment.subscription.save(update_fields=["is_active"])
+
+        payment.employer.notify(
+            title="Payment Proof Declined",
+            message=f"Your payment proof for {payment.subscription.get_plan_display() if payment.subscription else 'subscription'} could not be verified: {admin_notes or 'Please verify transfer details or contact support.'}",
+            kind=Notification.Kind.SYSTEM,
+        )
+
+        AuditLog.log(
+            user=request.user,
+            action="payment_declined",
+            target=f"Payment {payment.reference} declined for {payment.employer}",
+        )
+        messages.warning(request, f"Payment {payment.reference} has been declined.")
+
+    return redirect("website:admin_section", section="payments")
 
 
 @login_required
@@ -1030,10 +1175,12 @@ def admin_section(request, section):
 
     # ── Payments ──────────────────────────────────────────────
     if section == "payments":
-        qs = Payment.objects.select_related("employer", "subscription").order_by("-paid_at")
+        qs = Payment.objects.select_related("employer__user", "subscription").order_by("-id")
+        pending_count = Payment.objects.filter(status=Payment.Status.PENDING).count()
         return render(request, "dashboard/admin/payments.html", {
-            "page_obj":     paginate(request, qs),
-            "unread_count": 0,
+            "page_obj":      paginate(request, qs),
+            "pending_count": pending_count,
+            "unread_count":  0,
         })
 
     # ── Replacements ──────────────────────────────────────────
@@ -2139,7 +2286,30 @@ def admin_support_inbox(request):
     employer — that is what the "Chat now" buttons on the management tables
     link to, so staff can start a conversation rather than only reply to one.
     """
-    threads = SupportThread.objects.select_related("profile__user")
+    from django.db.models import Max, F, Count, Q
+    from django.db.models.functions import Coalesce
+
+    threads = (
+        SupportThread.objects.select_related("profile__user")
+        .annotate(
+            latest_msg_time=Coalesce(
+                Max("messages__created_at"),
+                "last_message_at",
+                "created_at",
+            ),
+            has_messages=Count("messages"),
+            unread_admin=Count(
+                "messages",
+                filter=Q(messages__sender_role=SupportMessage.Role.USER, messages__is_read=False),
+                distinct=True,
+            ),
+        )
+        .order_by(
+            F("has_messages").desc(),
+            F("latest_msg_time").desc(nulls_last=True),
+            "-created_at",
+        )
+    )
 
     # ?profile=<id> — find or create that member's thread, then redirect so
     # the canonical ?thread=<id> URL is what gets bookmarked and polled.
@@ -2149,12 +2319,32 @@ def admin_support_inbox(request):
         thread, _ = SupportThread.objects.get_or_create(profile=member)
         return redirect(f"{reverse('website:admin_support_inbox')}?thread={thread.pk}")
 
+    active_filter = request.GET.get("filter", "all").strip().lower()
+    if active_filter == "candidate":
+        threads_filtered = threads.filter(profile__role="candidate")
+    elif active_filter == "employer":
+        threads_filtered = threads.filter(profile__role="employer")
+    elif active_filter == "unread":
+        threads_filtered = threads.filter(
+            messages__sender_role=SupportMessage.Role.USER,
+            messages__is_read=False,
+        ).distinct()
+    else:
+        active_filter = "all"
+        threads_filtered = threads
+
     selected = None
     thread_id = request.GET.get("thread")
     if thread_id and thread_id.isdigit():
         selected = next((t for t in threads if t.pk == int(thread_id)), None)
     if selected is None:
-        selected = next(iter(threads), None)
+        # User requested: active chat should be the latest person that sent a message chat.
+        # threads_filtered is already ordered by has_messages DESC, latest_msg_time DESC.
+        selected = next((t for t in threads_filtered if getattr(t, "has_messages", 0) > 0), None)
+        if selected is None:
+            selected = next((t for t in threads if getattr(t, "has_messages", 0) > 0), None)
+        if selected is None:
+            selected = next(iter(threads_filtered), None) or next(iter(threads), None)
 
     if selected is not None:
         # Staff reading the thread marks the user's messages as seen.
@@ -2170,15 +2360,17 @@ def admin_support_inbox(request):
     ).count()
 
     context = {
-        "threads":      threads,
-        "thread":       selected,
-        "messages":     _mark_mine(
+        "threads":       threads_filtered,
+        "all_threads":   threads,
+        "thread":        selected,
+        "active_filter": active_filter,
+        "messages":      _mark_mine(
             list(selected.messages.select_related("sender")), mine_sender="staff"
         ) if selected else [],
-        "total_unread": total_unread,
-        "poll_ms":      POLL_MS,
-        "unread_count": 0,
-        "is_admin":     True,
+        "total_unread":  total_unread,
+        "poll_ms":       POLL_MS,
+        "unread_count":  0,
+        "is_admin":      True,
     }
 
     if request.headers.get("HX-Request") and request.GET.get("partial") == "1":

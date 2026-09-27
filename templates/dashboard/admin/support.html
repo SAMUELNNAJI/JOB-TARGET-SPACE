@@ -88,10 +88,10 @@
 
         {# Filter Segmented Tabs #}
         <div class="adm-filter-bar">
-          <button type="button" class="adm-filter-pill is-active" data-filter="all">All</button>
-          <button type="button" class="adm-filter-pill" data-filter="candidate">Candidates</button>
-          <button type="button" class="adm-filter-pill" data-filter="employer">Employers</button>
-          <button type="button" class="adm-filter-pill" data-filter="unread">Unread</button>
+          <button type="button" class="adm-filter-pill {% if not active_filter or active_filter == 'all' %}is-active{% endif %}" data-filter="all">All</button>
+          <button type="button" class="adm-filter-pill {% if active_filter == 'candidate' %}is-active{% endif %}" data-filter="candidate">Candidates</button>
+          <button type="button" class="adm-filter-pill {% if active_filter == 'employer' %}is-active{% endif %}" data-filter="employer">Employers</button>
+          <button type="button" class="adm-filter-pill {% if active_filter == 'unread' %}is-active{% endif %}" data-filter="unread">Unread</button>
         </div>
 
         {# Directory List #}

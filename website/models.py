@@ -170,16 +170,24 @@ class Subscription(models.Model):
 
 class Payment(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        SUCCESS = "success", "Successful"
-        FAILED = "failed", "Failed"
+        PENDING = "pending", "Under Review"
+        SUCCESS = "success", "Approved"
+        FAILED = "failed", "Declined"
 
     employer = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="payments")
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments")
     reference = models.CharField(max_length=120, unique=True)
     amount = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    bank_name = models.CharField(max_length=100, blank=True, default="")
+    sender_name = models.CharField(max_length=150, blank=True, default="")
+    proof = models.FileField(upload_to="payment_proofs/%Y/%m/", null=True, blank=True)
+    admin_notes = models.TextField(blank=True, default="")
     paid_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
 
 
 class RecruitmentRequest(models.Model):

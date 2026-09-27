@@ -169,6 +169,39 @@
   var sidebarTimer = null;
   var isSidebarPolling = false;
 
+  function filterInbox() {
+    var searchInput = document.querySelector('[data-inbox-search]');
+    var emptyMsg = document.querySelector('[data-search-empty]');
+    var query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    var activeFilterBtn = document.querySelector('.adm-filter-pill.is-active');
+    var filterRole = activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
+
+    var visibleCount = 0;
+    each('.chat-inbox-row', function (row) {
+      var name = (row.getAttribute('data-name') || '').toLowerCase();
+      var role = (row.getAttribute('data-role') || '').toLowerCase();
+      var unread = parseInt(row.getAttribute('data-unread') || '0', 10);
+
+      var matchesQuery = !query || name.indexOf(query) !== -1;
+      var matchesFilter = true;
+
+      if (filterRole === 'candidate') matchesFilter = (role === 'candidate');
+      else if (filterRole === 'employer') matchesFilter = (role === 'employer');
+      else if (filterRole === 'unread') matchesFilter = (unread > 0 || row.classList.contains('is-active'));
+
+      if (matchesQuery && matchesFilter) {
+        row.style.display = 'grid';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    if (emptyMsg) {
+      emptyMsg.hidden = (visibleCount > 0);
+    }
+  }
+
   function runSidebarPoll() {
     var list = document.getElementById('admInboxList');
     if (!list || isSidebarPolling) return;
@@ -180,8 +213,16 @@
     var panel = document.getElementById('admActivePanel');
     var activeThreadId = panel ? panel.getAttribute('data-active-thread-id') : null;
 
+    var activePill = document.querySelector('.adm-filter-pill.is-active');
+    var activeFilter = activePill ? (activePill.getAttribute('data-filter') || 'all') : 'all';
+
+    var pollUrl = '/dashboard/admin/support/?inbox_partial=1&filter=' + encodeURIComponent(activeFilter);
+    if (activeThreadId) {
+      pollUrl += '&thread=' + encodeURIComponent(activeThreadId);
+    }
+
     isSidebarPolling = true;
-    fetch('/dashboard/admin/support/?inbox_partial=1', {
+    fetch(pollUrl, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'HX-Request': 'true'
@@ -194,14 +235,22 @@
       .then(function (html) {
         isSidebarPolling = false;
         if (!html || !html.trim()) return;
+        var trimmed = html.trim();
+        if (list.innerHTML.trim() === trimmed) {
+          filterInbox();
+          return;
+        }
+
         var currentActive = document.querySelector('.chat-inbox-row.is-active');
         var currId = activeThreadId || (currentActive ? currentActive.getAttribute('data-thread-id') : null);
 
-        list.innerHTML = html.trim();
+        list.innerHTML = trimmed;
 
         if (currId) {
           updateActiveInboxRow(currId);
         }
+
+        filterInbox();
 
         if (window.htmx) {
           window.htmx.process(list);
@@ -216,7 +265,7 @@
     if (sidebarTimer) clearInterval(sidebarTimer);
     var list = document.getElementById('admInboxList');
     if (list) {
-      sidebarTimer = setInterval(runSidebarPoll, 3500);
+      sidebarTimer = setInterval(runSidebarPoll, 6000);
     }
   }
 
@@ -929,38 +978,6 @@
     });
 
     var searchInput = document.querySelector('[data-inbox-search]');
-    var emptyMsg = document.querySelector('[data-search-empty]');
-
-    function filterInbox() {
-      var query = (searchInput ? searchInput.value : '').toLowerCase().trim();
-      var activeFilterBtn = document.querySelector('.adm-filter-pill.is-active');
-      var filterRole = activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
-
-      var visibleCount = 0;
-      each('.chat-inbox-row', function (row) {
-        var name = (row.getAttribute('data-name') || '').toLowerCase();
-        var role = (row.getAttribute('data-role') || '').toLowerCase();
-        var unread = parseInt(row.getAttribute('data-unread') || '0', 10);
-
-        var matchesQuery = !query || name.indexOf(query) !== -1;
-        var matchesFilter = true;
-
-        if (filterRole === 'candidate') matchesFilter = (role === 'candidate');
-        else if (filterRole === 'employer') matchesFilter = (role === 'employer');
-        else if (filterRole === 'unread') matchesFilter = (unread > 0);
-
-        if (matchesQuery && matchesFilter) {
-          row.style.display = 'grid';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      if (emptyMsg) {
-        emptyMsg.hidden = (visibleCount > 0);
-      }
-    }
 
     if (searchInput) {
       searchInput.addEventListener('input', filterInbox);
@@ -971,9 +988,21 @@
         e.preventDefault();
         each('.adm-filter-pill', function (p) { p.classList.remove('is-active'); });
         pill.classList.add('is-active');
+        var f = pill.getAttribute('data-filter') || 'all';
+        try {
+          var u = new URL(window.location.href);
+          if (f === 'all') {
+            u.searchParams.delete('filter');
+          } else {
+            u.searchParams.set('filter', f);
+          }
+          window.history.replaceState({}, '', u.toString());
+        } catch (_) {}
         filterInbox();
       });
     });
+
+    filterInbox();
   }
 
   function updateMobileTabActive(view) {

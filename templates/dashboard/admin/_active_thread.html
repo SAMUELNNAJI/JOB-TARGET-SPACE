@@ -145,7 +145,7 @@
 
       <div class="chat-input-wrap">
         <textarea class="chat-input" name="body" rows="1" data-chat-input
-                  placeholder="Reply to {{ thread.profile.company_name|default:thread.profile.user.username }}… (Enter to send, Shift+Enter for newline)"></textarea>
+                  placeholder="Reply to {{ thread.profile.company_name|default:thread.profile.user.username|truncatechars:20 }}… (Enter to send)"></textarea>
       </div>
 
       <button class="chat-send" type="submit" aria-label="Send reply" title="Send reply">

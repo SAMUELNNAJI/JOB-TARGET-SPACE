@@ -228,10 +228,10 @@
             <li>48–72 hour response window</li>
             <li>1 free replacement within 30 days</li>
           </ul>
-          <button class="emp-plan-btn sub-gate-pay-btn" data-plan="basic" data-amount="50000" type="button">
+          <a href="/dashboard/employer/subscription/?plan=basic" class="emp-plan-btn" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
             Choose Basic
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
+          </a>
         </div>
 
         <div class="sub-gate-card sub-gate-card--premium">
@@ -248,118 +248,19 @@
             <li>Priority 24-hour delivery</li>
             <li>Uncapped replacements within 90 days</li>
           </ul>
-          <button class="emp-plan-btn emp-plan-btn--premium sub-gate-pay-btn" data-plan="premium" data-amount="100000" type="button">
+          <a href="/dashboard/employer/subscription/?plan=premium" class="emp-plan-btn emp-plan-btn--premium" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
             Choose Premium
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
+          </a>
         </div>
 
       </div>
 
       <p class="sub-gate-footer">
-        <a href="/dashboard/employer/subscription/">View full plan details →</a>
+        <a href="/dashboard/employer/subscription/">View bank accounts &amp; payment instructions →</a>
       </p>
-
-      {# spinner shown while the fetch + FW checkout loads #}
-      <div class="sub-gate-spinner" id="subGateSpinner" hidden aria-live="polite">
-        <span class="sub-gate-spinner-ring"></span> Processing…
-      </div>
-
-      {# error message area #}
-      <p class="sub-gate-error" id="subGateError" hidden role="alert"></p>
     </div>
   </div>
-
-  {# Flutterwave v3 inline JS SDK #}
-  <script src="https://checkout.flutterwave.com/v3.js"></script>
-  <script>
-  (function () {
-    var modal     = document.getElementById('subscribeGateModal');
-    var spinner   = document.getElementById('subGateSpinner');
-    var errorBox  = document.getElementById('subGateError');
-    var csrfToken = '{{ csrf_token }}';
-    var initiateUrl = '{% url "website:initiate_subscription" %}';
-
-    function showError(msg) {
-      errorBox.textContent = msg;
-      errorBox.hidden = false;
-      spinner.hidden = true;
-    }
-
-    function hideError() {
-      errorBox.hidden = true;
-    }
-
-    document.querySelectorAll('.sub-gate-pay-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var plan = btn.dataset.plan;
-        hideError();
-        spinner.hidden = false;
-        btn.disabled = true;
-
-        fetch(initiateUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrfToken,
-          },
-          body: 'plan=' + encodeURIComponent(plan),
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          spinner.hidden = true;
-          if (!data.ok) {
-            btn.disabled = false;
-            showError(data.error || 'Something went wrong. Please try again.');
-            return;
-          }
-          // Launch Flutterwave inline checkout
-          FlutterwaveCheckout({
-            public_key:   data.public_key,
-            tx_ref:       data.tx_ref,
-            amount:       data.amount,
-            currency:     data.currency,
-            payment_options: 'card,banktransfer,ussd',
-            redirect_url: data.redirect_url,
-            meta: { plan: plan },
-            customer: {
-              email: data.email,
-              name:  data.name,
-              phone_number: data.phone,
-            },
-            customizations: {
-              title:       'JobSPACE Subscription',
-              description: data.plan_label + ' Plan — ₦' + data.amount.toLocaleString() + '/month',
-              logo:        '{% static "images/Logo.png" %}',
-            },
-            callback: function (response) {
-              // Flutterwave calls this after a successful inline payment.
-              // Redirect to the server callback to verify + activate.
-              if (response.status === 'successful') {
-                window.location.href = data.redirect_url
-                  + '?status=successful'
-                  + '&tx_ref='          + encodeURIComponent(response.tx_ref)
-                  + '&transaction_id='  + encodeURIComponent(response.transaction_id);
-              } else {
-                btn.disabled = false;
-                showError('Payment was not completed. Please try again.');
-              }
-            },
-            onclose: function () {
-              btn.disabled = false;
-              spinner.hidden = true;
-            },
-          });
-        })
-        .catch(function () {
-          btn.disabled = false;
-          spinner.hidden = true;
-          showError('Network error. Please check your connection and try again.');
-        });
-      });
-    });
-  })();
-  </script>
   {% endif %}
   {# ── end subscription gate modal ── #}
 

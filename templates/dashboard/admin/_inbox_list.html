@@ -1,11 +1,11 @@
 {% for t in threads %}
-  {% with unread_cnt=t.unread_for_admin.count %}
+  {% with unread_cnt=t.unread_admin|default:t.unread_for_admin.count %}
     <a class="chat-inbox-row {% if thread and t.id == thread.id %}is-active{% endif %}"
-       href="?thread={{ t.id }}"
-       hx-get="?thread={{ t.id }}&partial=1"
+       href="?thread={{ t.id }}{% if active_filter and active_filter != 'all' %}&filter={{ active_filter }}{% endif %}"
+       hx-get="?thread={{ t.id }}&partial=1{% if active_filter and active_filter != 'all' %}&filter={{ active_filter }}{% endif %}"
        hx-target="#admChatMain"
        hx-swap="innerHTML"
-       hx-push-url="?thread={{ t.id }}"
+       hx-push-url="?thread={{ t.id }}{% if active_filter and active_filter != 'all' %}&filter={{ active_filter }}{% endif %}"
        data-thread-id="{{ t.id }}"
        data-role="{{ t.profile.role|lower }}"
        data-unread="{{ unread_cnt }}"
@@ -18,7 +18,7 @@
       <span class="chat-inbox-copy">
         <span class="chat-inbox-top-row">
           <strong class="chat-inbox-name">{{ t.profile.company_name|default:t.profile.user.username }}</strong>
-          <time class="chat-inbox-time">{% if t.last_message_at %}{{ t.last_message_at|timesince }} ago{% else %}—{% endif %}</time>
+          <time class="chat-inbox-time">{% if t.last_message_at %}{{ t.last_message_at|timesince }} ago{% elif t.latest_msg_time and t.has_messages %}{{ t.latest_msg_time|timesince }} ago{% else %}—{% endif %}</time>
         </span>
 
         <span class="chat-inbox-meta-row">
