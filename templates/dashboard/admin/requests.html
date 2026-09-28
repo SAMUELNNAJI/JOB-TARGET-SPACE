@@ -8,9 +8,26 @@
     <div class="dashboard-panel-head"><h2>All recruitment requests</h2><span class="verified">{{ page_obj.paginator.count }} total</span></div>
     <div class="admin-filter"><input placeholder="Search employer or position" id="rs"><select id="rf"><option value="">All statuses</option><option>Submitted</option><option>Under Review</option><option>Matching Candidates</option><option>Candidates Available</option><option>Completed</option></select></div>
     <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="All recruitment requests table">
-      <table class="portal-table" id="rt"><thead><tr><th>Employer</th><th>Position</th><th>Qualification</th><th>Experience</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead><tbody>
-      {% for item in page_obj %}<tr><td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td><td>{{ item.position }} <span style="color:#9ca5b6">× {{ item.professionals_required }}</span></td><td>{{ item.minimum_qualification }}</td><td>{{ item.years_experience }} yr{% if item.years_experience != 1 %}s{% endif %}</td><td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td><td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
-      {% empty %}<tr><td colspan="7" style="text-align:center;padding:24px;color:#7a8599">No requests yet.</td></tr>{% endfor %}
+      <table class="portal-table" id="rt"><thead><tr><th>Employer</th><th>Plan</th><th>Position</th><th>Qualification</th><th>Experience</th><th>Salary range</th><th>Status</th><th>Submitted</th></tr></thead><tbody>
+      {% for item in page_obj %}<tr><td><strong>{{ item.employer.company_name|default:item.employer.user.username }}</strong></td>
+        <td>
+          {# Employer's live plan — mirrors the matching page so the admin
+             sees the allowance (Basic = 5/request, Premium = unlimited). #}
+          {% with sub=item.employer.current_subscription %}
+            {% if sub %}
+              {% if sub.plan == 'premium' %}
+                <span class="adm-status-badge" style="background:#fdf4ff;color:#a21caf;border:1px solid #f5d0fe;font-weight:700;">★ Premium</span>
+              {% else %}
+                <span class="adm-status-badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-weight:700;">Basic</span>
+              {% endif %}
+              <small style="display:block;color:#64748b;font-size:11px;margin-top:2px;">{% if sub.match_limit %}{{ sub.match_limit }}/request · {{ sub.days_remaining }}d left{% else %}Unlimited · {{ sub.days_remaining }}d left{% endif %}</small>
+            {% else %}
+              <span class="adm-status-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-weight:600;">No Plan</span>
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td>{{ item.position }} <span style="color:#9ca5b6">× {{ item.professionals_required }}</span></td><td>{{ item.minimum_qualification }}</td><td>{{ item.years_experience }} yr{% if item.years_experience != 1 %}s{% endif %}</td><td style="white-space:nowrap">₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</td><td><span class="adm-status-badge adm-status-badge--{{ item.status }}">{{ item.get_status_display }}</span></td><td>{{ item.created_at|date:"d M Y" }}</td></tr>
+      {% empty %}<tr><td colspan="8" style="text-align:center;padding:24px;color:#7a8599">No requests yet.</td></tr>{% endfor %}
       </tbody></table>
     </div>
     {% include "dashboard/pagination.html" %}

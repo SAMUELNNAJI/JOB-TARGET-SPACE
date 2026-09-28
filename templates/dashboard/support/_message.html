@@ -21,7 +21,7 @@ at it) so both the user and admin sides render from this one file.
   {% endif %}
 
   {% if message.audio %}
-    <div class="chat-audio">
+    <div class="chat-audio" data-audio-is-mine="{% if mine %}1{% else %}0{% endif %}">
       <button class="chat-audio-play" type="button" data-audio-toggle
               aria-label="Play voice note">
         <svg class="chat-audio-icon chat-audio-icon--play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -33,15 +33,18 @@ at it) so both the user and admin sides render from this one file.
         </svg>
       </button>
       <div class="chat-audio-body">
-        <div class="chat-audio-track">
-          <div class="chat-audio-fill" style="width:0%"></div>
+        <div class="chat-audio-waveform" data-waveform-wrap>
+          <canvas data-waveform-canvas></canvas>
+          <div class="chat-audio-scrub" data-audio-scrub></div>
         </div>
         <div class="chat-audio-info">
           <span class="chat-audio-tag">Voice Note</span>
+          <button class="chat-audio-speed" type="button" data-audio-speed
+                  aria-label="Change playback speed" title="Playback speed">1×</button>
           <span class="chat-audio-time" data-audio-time>0:00</span>
         </div>
       </div>
-      <audio preload="metadata" src="{{ message.audio.url }}" data-audio-el></audio>
+      <audio preload="auto" src="{{ message.audio.url }}" data-audio-el></audio>
     </div>
   {% endif %}
 

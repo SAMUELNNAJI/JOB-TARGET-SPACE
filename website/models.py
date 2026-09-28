@@ -70,6 +70,29 @@ class Profile(models.Model):
         """Convenience method — creates a Notification for this profile."""
         self.notifications.create(title=title, message=message, kind=kind)
 
+    def current_subscription(self):
+        """The employer's live plan, or None.
+
+        A row only counts while it is both `is_active` and inside its
+        expiry window, so an expired Basic never keeps its employer
+        unlocked. Plans are ordered by expiry so the one that actually
+        covers today wins if stale rows linger.
+        """
+        return (
+            self.subscriptions.filter(is_active=True)
+            .exclude(expires_at__lte=timezone.now())
+            .order_by("-expires_at")
+            .first()
+        )
+
+    def has_active_plan(self):
+        return self.current_subscription() is not None
+
+    def current_match_limit(self):
+        """Candidates an admin may push per request; None = unlimited."""
+        sub = self.current_subscription()
+        return sub.match_limit if sub else 0
+
 
 class Specialization(models.Model):
     name = models.CharField(max_length=120, unique=True)
@@ -156,6 +179,19 @@ class Subscription(models.Model):
         BASIC = "basic", "Basic"
         PREMIUM = "premium", "Premium"
 
+    # How long each plan runs for once payment is approved.
+    DURATION_DAYS = {
+        Plan.BASIC: 30,
+        Plan.PREMIUM: 90,
+    }
+
+    # Candidates an admin may push per recruitment request.
+    # Basic is capped; Premium is unlimited (None).
+    MATCH_LIMIT = {
+        Plan.BASIC: 5,
+        Plan.PREMIUM: None,
+    }
+
     employer = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="subscriptions")
     plan = models.CharField(max_length=20, choices=Plan.choices)
     amount = models.PositiveIntegerField()
@@ -166,6 +202,48 @@ class Subscription(models.Model):
     @property
     def plan_label(self):
         return self.get_plan_display()
+
+    @property
+    def duration_days(self):
+        return self.DURATION_DAYS.get(self.plan, 30)
+
+    @property
+    def match_limit(self):
+        """Max candidates an admin may match to ONE request on this plan."""
+        return self.MATCH_LIMIT.get(self.plan)
+
+    @property
+    def is_expired(self):
+        return bool(self.expires_at and self.expires_at <= timezone.now())
+
+    @property
+    def is_current(self):
+        """Active AND not past its expiry date."""
+        return bool(self.is_active) and not self.is_expired
+
+    @property
+    def days_remaining(self):
+        """Whole days left before expiry; 0 once expired."""
+        if not self.expires_at:
+            return 0
+        delta = self.expires_at - timezone.now()
+        return max(delta.days, 0)
+
+    def renewal_window_open(self):
+        """True once a plan is close enough to expiry to warrant a renewal nudge.
+
+        Premium asks 14 days out, Basic 7 days out.
+        """
+        if not self.expires_at:
+            return False
+        remaining = (self.expires_at - timezone.now()).days
+        lead = 14 if self.plan == self.Plan.PREMIUM else 7
+        return 0 <= remaining <= lead
+
+    def expiry_from(self, start=None):
+        """`expires_at` for a plan starting at `start` (default: now)."""
+        start = start or timezone.now()
+        return start + timezone.timedelta(days=self.duration_days)
 
 
 class Payment(models.Model):

@@ -39,6 +39,25 @@
                 <span>{{ item.years_experience }} yr{{ item.years_experience|pluralize }}</span>
                 <span>₦{{ item.salary_min|floatformat:0 }} – ₦{{ item.salary_max|floatformat:0 }}</span>
               </div>
+              {# Employer plan badge — tells the admin their matching allowance #}
+              <div class="mt-request-plan">
+                {% with plan=item.employer.current_subscription %}
+                  {% if plan %}
+                    <span class="mt-plan-pill mt-plan-pill--{{ plan.plan }}">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        {% if plan.plan == 'premium' %}<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>{% else %}<rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>{% endif %}
+                      </svg>
+                      {{ plan.get_plan_display }}
+                    </span>
+                    <span class="mt-plan-cap">
+                      {% if plan.match_limit %}{{ plan.match_limit }} per request{% else %}Unlimited{% endif %}
+                    </span>
+                  {% else %}
+                    <span class="mt-plan-pill mt-plan-pill--none">No active plan</span>
+                    <span class="mt-plan-cap">Matching locked</span>
+                  {% endif %}
+                {% endwith %}
+              </div>
               <div class="mt-slots">
                 <div class="mt-slots-bar">
                   <span style="width:{% widthratio item.matched_total item.professionals_required 100 %}%"></span>
@@ -91,6 +110,49 @@
           <div><span>Salary</span><strong>₦{{ selected_request.salary_min|floatformat:0 }} – ₦{{ selected_request.salary_max|floatformat:0 }} / {{ selected_request.get_salary_period_display|lower }}</strong></div>
           <div class="mt-req-skills"><span>Required skills</span><strong>{{ selected_request.required_skills|linebreaksbr }}</strong></div>
         </div>
+
+        {# ── Plan allowance banner: warns before the admin hits the cap ── #}
+        {% if selected_sub and selected_match_limit is not None %}
+          <div class="mt-plan-banner mt-plan-banner--{{ selected_sub.plan }}{% if selected_matched_count >= selected_match_limit %} is-capped{% endif %}"
+               data-plan-banner
+               data-limit="{{ selected_match_limit }}"
+               data-matched="{{ selected_matched_count }}"
+               data-plan="{{ selected_sub.get_plan_display }}"
+               data-employer="{{ selected_request.employer.company_name|default:selected_request.employer.user.username }}">
+            <span class="mt-plan-banner-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </span>
+            <span class="mt-plan-banner-text">
+              <strong>{{ selected_sub.get_plan_display }} plan</strong> allows
+              {{ selected_match_limit }} candidate{{ selected_match_limit|pluralize }} per request —
+              <span data-plan-count>{{ selected_matched_count }} of {{ selected_match_limit }} used</span>.
+              {% if selected_matched_count >= selected_match_limit %}
+                Upgrade this employer to Premium for unlimited matching.
+              {% else %}
+                They can upgrade to Premium at any time for unlimited matching.
+              {% endif %}
+            </span>
+          </div>
+        {% elif selected_sub %}
+          <div class="mt-plan-banner mt-plan-banner--premium" data-plan-banner data-plan="{{ selected_sub.get_plan_display }}">
+            <span class="mt-plan-banner-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </span>
+            <span class="mt-plan-banner-text">
+              <strong>{{ selected_sub.get_plan_display }} plan</strong> — unlimited candidate matching per request.
+            </span>
+          </div>
+        {% else %}
+          <div class="mt-plan-banner mt-plan-banner--none" data-plan-banner>
+            <span class="mt-plan-banner-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </span>
+            <span class="mt-plan-banner-text">
+              This employer has <strong>no active plan</strong>, so candidates cannot be matched.
+              Ask them to subscribe or renew first.
+            </span>
+          </div>
+        {% endif %}
 
         {# ── candidates already matched to this request ── #}
         {% with matched_rows=selected_request.matches.all %}
@@ -160,7 +222,10 @@
                       {% csrf_token %}
                       <input type="hidden" name="request" value="{{ selected_request.pk }}">
                       <input type="hidden" name="candidate" value="{{ row.profile.pk }}">
-                      <button type="submit" class="adm-act adm-act--verify" {% if selected_request.remaining_slots == 0 %}disabled{% endif %}>Match</button>
+                      <button type="submit" class="adm-act adm-act--verify"
+                              {% if selected_request.remaining_slots == 0 %}disabled
+                              {% elif selected_match_limit is not None and selected_matched_count >= selected_match_limit %}data-plan-cap="1"
+                              {% endif %}>Match</button>
                     </form>
                   {% endif %}
                   <a class="adm-row-btn" href="/admin/website/profile/{{ row.profile.pk }}/change/">Full profile</a>
@@ -268,11 +333,96 @@
     </div>
   </div>
 </main>
+
+{# ── Basic plan match-cap modal ── #}
+<div class="mt-cap-overlay" id="planCapModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="planCapTitle">
+  <div class="mt-cap-modal">
+    <div class="mt-cap-badge">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h3 class="mt-cap-title" id="planCapTitle">Match limit reached</h3>
+    <p class="mt-cap-text" id="planCapBody"></p>
+    <dl class="mt-cap-facts" id="planCapFacts"></dl>
+    <div class="mt-cap-actions">
+      <button type="button" class="mt-cap-btn mt-cap-btn--ghost" id="planCapCancel">Close</button>
+      <a class="mt-cap-btn mt-cap-btn--primary" href="/dashboard/admin/subscriptions/">View subscriptions</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 window.MT_EMPLOYER_DETAIL_URL = "{% url 'website:admin_employer_detail' 0 %}";
+
+/* ── Basic plan match cap ────────────────────────────────────────
+   When a Basic employer has used all 5 matches on a request, the
+   Match buttons carry data-plan-cap. Intercept the click and explain
+   the limit instead of posting. create_match() re-checks server-side,
+   so this is a courtesy layer, not the enforcement point. */
+(function () {
+  const modal = document.getElementById('planCapModal');
+  if (!modal) return;
+
+  const title = document.getElementById('planCapTitle');
+  const body = document.getElementById('planCapBody');
+  const facts = document.getElementById('planCapFacts');
+  let lastFocus = null;
+
+  function open() {
+    const banner = document.querySelector('[data-plan-banner]');
+    const limit = banner ? banner.dataset.limit : null;
+    const matched = banner ? banner.dataset.matched : null;
+    const plan = banner ? banner.dataset.plan : 'Basic';
+    const employer = banner ? (banner.dataset.employer || 'This employer') : 'This employer';
+
+    title.textContent = 'Match limit reached';
+    body.textContent =
+      employer + ' is on the ' + plan + ' subscription, which allows ' + limit +
+      ' candidate matches per recruitment request. Upgrade them to the Premium plan ' +
+      'for unlimited matching, or withdraw an existing match to free up a slot.';
+
+    facts.innerHTML = '';
+    [
+      ['Plan', plan],
+      ['Matches used', matched + ' of ' + limit],
+      ['Premium', 'Unlimited per request'],
+    ].forEach(function (pair) {
+      const dt = document.createElement('dt');
+      dt.textContent = pair[0];
+      const dd = document.createElement('dd');
+      dd.textContent = pair[1];
+      facts.appendChild(dt);
+      facts.appendChild(dd);
+    });
+
+    lastFocus = document.activeElement;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    const ok = document.getElementById('planCapOk');
+    if (ok) ok.focus();
+  }
+
+  function close() {
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (lastFocus) { lastFocus.focus(); lastFocus = null; }
+  }
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-plan-cap]');
+    if (btn) { e.preventDefault(); open(); }
+  });
+
+  document.getElementById('planCapOk')?.addEventListener('click', close);
+  document.getElementById('planCapCancel')?.addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) close();
+  });
+})();
 
 /* ── Employer detail modal ── */
 (function () {

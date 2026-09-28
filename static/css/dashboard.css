@@ -1530,7 +1530,12 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   }
   .dashboard-sidebar {
     position: fixed;
-    z-index: 20;
+    /* CRITICAL: this must out-rank the sticky chat composer (z-index 45 in
+       chat.css) and the recording bar (65). At z-index 20 the open drawer was
+       painted UNDER the message input, so the input stayed visible and tappable
+       on top of the navigation. 300 clears the chat layer with room to spare
+       while staying below modals (1200). */
+    z-index: 300;
     left: 0;
     top: 0;
     /* Roomier than the 245px it started at — nav labels plus their badges
@@ -8794,6 +8799,335 @@ body { font-size: 15px !important; }
 .opp-card-company     { font-size: 17px !important; }
 .opp-card-note        { font-size: 15px !important; }
 .opp-card-meta-item   { font-size: 13px !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Subscription plans — employer request gate
+   ═══════════════════════════════════════════════════════════════ */
+
+/* The gate is absolutely positioned inside .emp-form, so that element
+   must establish a containing block for the overlay. */
+.emp-form { position: relative; }
+
+/* ── Employer: blurred request form + subscribe gate ────────── */
+.emp-form-body.is-locked {
+  filter: blur(5px);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+.emp-sub-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.emp-sub-gate[aria-hidden="false"] { display: grid; }
+
+.emp-sub-gate-card {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 30px 30px 26px;
+  box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.35);
+  text-align: center;
+}
+
+.emp-sub-gate-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.emp-sub-gate-title {
+  font: 800 21px/1.3 "Montserrat", sans-serif;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.emp-sub-gate-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0 0 20px;
+}
+
+.emp-sub-gate-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  text-align: left;
+}
+
+.emp-sub-gate-plan {
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 16px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-sub-gate-plan--premium {
+  border-color: #f0abfc;
+  background: linear-gradient(160deg, #fdf4ff, #faf5ff);
+}
+
+.emp-sub-gate-tag {
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  background: #a21caf;
+  color: #fff;
+  font: 700 10px "Montserrat", sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Subscription plans — admin matching page
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Plan pill on each request card ───────────────────────── */
+.mt-request-plan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mt-plan-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font: 700 10.5px "Montserrat", sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.mt-plan-pill--basic { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.mt-plan-pill--premium { background: #fdf4ff; color: #a21caf; border-color: #f5d0fe; }
+.mt-plan-pill--none { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+
+.mt-plan-cap {
+  font: 600 11px "Montserrat", sans-serif;
+  color: #94a3b8;
+}
+
+/* ── Plan allowance banner ─────────────────────────────────── */
+.mt-plan-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  margin: 0 0 18px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+}
+
+.mt-plan-banner--premium { border-color: #f5d0fe; background: #fdf4ff; }
+.mt-plan-banner--none { border-color: #fecaca; background: #fef2f2; }
+.mt-plan-banner.is-capped { border-color: #fdba74; background: #fff7ed; }
+
+.mt-plan-banner-icon { flex: none; margin-top: 1px; color: #1d4ed8; }
+.mt-plan-banner--premium .mt-plan-banner-icon { color: #a21caf; }
+.mt-plan-banner--none .mt-plan-banner-icon { color: #dc2626; }
+.mt-plan-banner.is-capped .mt-plan-banner-icon { color: #ea580c; }
+
+.mt-plan-banner-text { font-size: 12.5px; line-height: 1.6; color: #1e293b; }
+.mt-plan-banner-text strong { color: #0f172a; }
+
+/* ── Match-cap modal ───────────────────────────────────────── */
+.mt-cap-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.mt-cap-overlay.is-open { opacity: 1; visibility: visible; }
+
+.mt-cap-modal {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 26px 24px;
+  text-align: center;
+  box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.45);
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.2s ease;
+}
+
+.mt-cap-overlay.is-open .mt-cap-modal { transform: translateY(0) scale(1); }
+
+.mt-cap-badge {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.mt-cap-title {
+  font: 800 19px/1.3 "Montserrat", sans-serif;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.mt-cap-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0 0 18px;
+}
+
+.mt-cap-facts {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.mt-cap-facts dt { color: #64748b; font-weight: 600; }
+.mt-cap-facts dd { margin: 0; color: #0f172a; font-weight: 700; text-align: right; }
+
+.mt-cap-actions { display: flex; gap: 10px; }
+
+.mt-cap-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 18px;
+  border-radius: 11px;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #475569;
+  text-decoration: none;
+  cursor: pointer;
+  font: 700 13.5px "Montserrat", sans-serif;
+  transition: all 0.15s;
+}
+
+.mt-cap-btn--ghost:hover { background: #e2e8f0; color: #0f172a; }
+.mt-cap-btn--primary { background: #0f172a; color: #fff; border-color: #0f172a; }
+.mt-cap-btn--primary:hover { background: #1e293b; }
+
+@media (max-width: 480px) {
+  .mt-cap-facts { grid-template-columns: 1fr; }
+  .mt-cap-facts dd { text-align: left; margin-bottom: 6px; }
+  .mt-cap-actions { flex-direction: column-reverse; }
+}
+
+.emp-sub-gate-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.emp-sub-gate-name {
+  font: 800 15px "Montserrat", sans-serif;
+  color: #0f172a;
+}
+
+.emp-sub-gate-price {
+  font: 800 15px "Montserrat", sans-serif;
+  color: #d90429;
+}
+
+.emp-sub-gate-price small {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.emp-sub-gate-feats {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  flex: 1;
+}
+
+.emp-sub-gate-feats li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.emp-sub-gate-feats li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.emp-sub-gate-btn {
+  display: block;
+  text-align: center;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #fff;
+  text-decoration: none;
+  font: 700 13px "Montserrat", sans-serif;
+  transition: background 0.15s;
+}
+
+.emp-sub-gate-btn:hover { background: #1e293b; }
+.emp-sub-gate-btn--premium { background: #d90429; }
+.emp-sub-gate-btn--premium:hover { background: #b8001f; }
+
+.emp-sub-gate-foot { margin: 18px 0 0; font-size: 12.5px; }
+.emp-sub-gate-foot a { color: #d90429; text-decoration: none; font-weight: 600; }
+.emp-sub-gate-foot a:hover { text-decoration: underline; }
+
+@media (max-width: 520px) {
+  .emp-sub-gate-plans { grid-template-columns: 1fr; }
+}
+
 .opp-empty-desc       { font-size: 15px !important; }
 
 /* Search panel */
@@ -8809,17 +9143,25 @@ body { font-size: 15px !important; }
    ============================================================ */
 /* The topbar is a direct child of .dashboard-main, which is a plain
    block in the .dashboard-app grid, so position: sticky resolves against
-   the viewport and keeps working. z-index sits above the mobile sidebar
-   (20) but below the notification dropdown (9000). */
+   the viewport and keeps working. z-index sits below the mobile sidebar
+   drawer (300) but well below the notification dropdown (9000). */
 .dashboard-topbar {
   position: sticky;
   top: 0;
   z-index: 30;
 }
 /* The sidebar is a sibling in the grid and scrolls independently, so it
-   must not cover the pinned header. */
+   must not cover the pinned header on desktop.
+
+   CRITICAL: this rule is unmediated and sits AFTER the `max-width: 760px`
+   block, so at equal specificity it is the one that actually wins on
+   phones. It was z-index 40, which is BELOW the chat composer's sticky
+   z-index 45 (chat.css) and far below the recording bar's 65 — so opening
+   the drawer left the message input painted on top of the navigation.
+   300 puts the drawer above every chat surface layer while staying well
+   under the modals (1200) and the notification dropdown (9000). */
 .dashboard-sidebar {
-  z-index: 40;
+  z-index: 300;
 }
 
 /* ============================================================

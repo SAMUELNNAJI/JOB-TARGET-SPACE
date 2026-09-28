@@ -371,7 +371,8 @@ def employer_dashboard(request):
     return render(request, "dashboard/employer/index.html", {
         "employer":      employer,
         "unread_count":  _unread_count(employer),
-        "subscription":  employer.subscriptions.filter(is_active=True).first(),
+        # Expiry-aware so an expired plan never shows as "Active" here.
+        "subscription":  employer.current_subscription(),
         "requests":      employer.recruitment_requests.order_by("-created_at")[:5],
         "matches":       employer.candidate_matches.filter(is_active=True)[:5],
         "notifications": employer.notifications.all()[:5],
@@ -423,6 +424,19 @@ def employer_section(request, section):
         form = RecruitmentRequestForm(request.POST or None)
         submitted = None
 
+        # An employer may only open requests while a plan is live. An
+        # expired plan is treated exactly like having none, so the gate
+        # modal reappears and the POST below is refused server-side.
+        active_plan = employer.current_subscription()
+
+        if request.method == "POST" and active_plan is None:
+            messages.error(
+                request,
+                "An active subscription is required to submit a recruitment request. "
+                "Choose a plan to continue.",
+            )
+            return redirect("website:employer_section", section="requests")
+
         if request.method == "POST" and form.is_valid():
             req          = form.save(commit=False)
             req.employer = employer
@@ -454,6 +468,14 @@ def employer_section(request, section):
             "section_title":    "Recruitment Requests",
             "other_choice":     RecruitmentRequestForm.OTHER,
             "submitted_request": submitted,
+            # Drives the blur + subscribe modal. `expired_plan` lets the
+            # modal explain WHY access was lost instead of implying the
+            # employer never subscribed.
+            "active_plan":      active_plan,
+            "expired_plan":     (
+                employer.subscriptions.filter(is_active=True, expires_at__lte=timezone.now())
+                .order_by("-expires_at").first()
+            ),
         })
 
     # ── Candidates received ───────────────────────────────────
@@ -478,13 +500,21 @@ def employer_section(request, section):
 
     # ── Subscription ──────────────────────────────────────────
     if section == "subscription":
-        active = employer.subscriptions.filter(is_active=True).first()
+        # Expiry-aware: a lapsed plan is not presented as "Active".
+        active = employer.current_subscription()
+        lapsed = (
+            employer.subscriptions.filter(is_active=True, expires_at__lte=timezone.now())
+            .order_by("-expires_at").first()
+        )
         pending_payment = employer.payments.filter(status=Payment.Status.PENDING).order_by("-id").first()
         recent_payments = employer.payments.select_related("subscription").order_by("-id")[:10]
         return render(request, "dashboard/employer/subscription.html", {
             "employer":         employer,
             "unread_count":     unread,
             "subscription":     active,
+            "lapsed_plan":      lapsed,
+            # Drives the renewal / downgrade prompt near expiry.
+            "renewal_due":      bool(active and active.renewal_window_open()),
             "pending_payment":  pending_payment,
             "recent_payments":  recent_payments,
             "bank_accounts":    BANK_ACCOUNTS,
@@ -709,7 +739,7 @@ def submit_payment_proof(request):
         plan=plan,
         amount=amount,
         starts_at=now,
-        expires_at=now + timezone.timedelta(days=30),
+        expires_at=Subscription(plan=plan).expiry_from(now),
         is_active=False,
     )
 
@@ -724,10 +754,10 @@ def submit_payment_proof(request):
         proof=proof_file,
     )
 
-    AuditLog.log(
-        user=request.user,
-        action="payment_proof_uploaded",
-        target=f"Payment {tx_ref} (₦{amount:,}) for {subscription.get_plan_display()} plan",
+    AuditLog.objects.create(
+        actor=request.user,
+        action="Payment proof uploaded",
+        subject=f"Payment {tx_ref} (₦{amount:,}) for {subscription.get_plan_display()} plan",
     )
 
     messages.success(
@@ -763,7 +793,8 @@ def admin_payment_action(request, payment_id):
         if payment.subscription:
             sub = payment.subscription
             sub.starts_at = now
-            sub.expires_at = now + timezone.timedelta(days=30)
+            # Basic runs 30 days, Premium 90 — the plan the employer paid for.
+            sub.expires_at = sub.expiry_from(now)
             sub.is_active = True
             sub.save(update_fields=["starts_at", "expires_at", "is_active"])
 
@@ -776,10 +807,10 @@ def admin_payment_action(request, payment_id):
             kind=Notification.Kind.SYSTEM,
         )
 
-        AuditLog.log(
-            user=request.user,
-            action="payment_approved",
-            target=f"Payment {payment.reference} approved for {payment.employer}",
+        AuditLog.objects.create(
+            actor=request.user,
+            action="Payment approved",
+            subject=f"Payment {payment.reference} approved for {payment.employer}",
         )
         messages.success(request, f"Payment {payment.reference} approved. Subscription activated.")
 
@@ -798,10 +829,10 @@ def admin_payment_action(request, payment_id):
             kind=Notification.Kind.SYSTEM,
         )
 
-        AuditLog.log(
-            user=request.user,
-            action="payment_declined",
-            target=f"Payment {payment.reference} declined for {payment.employer}",
+        AuditLog.objects.create(
+            actor=request.user,
+            action="Payment declined",
+            subject=f"Payment {payment.reference} declined for {payment.employer}",
         )
         messages.warning(request, f"Payment {payment.reference} has been declined.")
 
@@ -842,7 +873,7 @@ def initiate_subscription(request):
         plan=plan,
         amount=amount,
         starts_at=now,
-        expires_at=now + timezone.timedelta(days=30),
+        expires_at=Subscription(plan=plan).expiry_from(now),
         is_active=False,
     )
     Payment.objects.create(
@@ -933,7 +964,7 @@ def subscription_callback(request):
     sub = payment.subscription
     sub.is_active  = True
     sub.starts_at  = now
-    sub.expires_at = now + timezone.timedelta(days=30)
+    sub.expires_at = sub.expiry_from(now)
     sub.save(update_fields=["is_active", "starts_at", "expires_at"])
 
     # Deactivate any older subscriptions for this employer
@@ -1005,7 +1036,7 @@ def subscription_webhook(request):
         if sub:
             sub.is_active  = True
             sub.starts_at  = now
-            sub.expires_at = now + timezone.timedelta(days=30)
+            sub.expires_at = sub.expiry_from(now)
             sub.save(update_fields=["is_active", "starts_at", "expires_at"])
             payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
 
@@ -1135,12 +1166,20 @@ def admin_section(request, section):
         # Rank candidates against the selected request so the best fit is first.
         ranked = []
         already_matched = set()
+        # The employer's plan gates how many candidates may be pushed, so the
+        # page can disable the button and explain the cap before an admin tries.
+        selected_sub = None
+        selected_match_limit = None
+        selected_matched_count = 0
         if selected_request:
             already_matched = set(
                 selected_request.matches
                 .filter(is_active=True)
                 .values_list("profile_id", flat=True)
             )
+            selected_sub = selected_request.employer.current_subscription()
+            selected_match_limit = selected_sub.match_limit if selected_sub else 0
+            selected_matched_count = len(already_matched)
             for cand in candidates_qs:
                 score, reasons = _match_score(cand, selected_request)
                 ranked.append({
@@ -1156,6 +1195,10 @@ def admin_section(request, section):
             "candidates":       candidates_qs,
             "ranked":           ranked,
             "selected_request": selected_request,
+            # Plan + matching cap for the focused request (drives the cap popup)
+            "selected_sub":          selected_sub,
+            "selected_match_limit":  selected_match_limit,
+            "selected_matched_count": selected_matched_count,
             "recent_matches":   (
                 CandidateMatch.objects
                 .filter(is_active=True, request__isnull=False)
@@ -1313,7 +1356,8 @@ def _match_score(candidate, req):
 
 def _employer_context(employer):
     """Counts + active plan used by the admin employer-detail modal."""
-    active_sub = employer.subscriptions.filter(is_active=True).first()
+    # Expiry-aware so an expired plan never reads as the live plan here.
+    active_sub = employer.current_subscription()
     open_requests = employer.recruitment_requests.exclude(
         status=RecruitmentRequest.Status.COMPLETED
     )
@@ -1402,7 +1446,31 @@ def create_match(request):
         )
         return _matching_redirect(request, req_obj, "")
 
+    # Basic employers are capped at 5 matches per request; Premium is
+    # unlimited. The cap counts only live matches, so a withdrawn match
+    # frees a slot again.
     employer_name = req_obj.employer.company_name or req_obj.employer.user.username
+    employer_sub = req_obj.employer.current_subscription()
+    if employer_sub is None:
+        messages.error(
+            request,
+            f"{employer_name} has no active plan, so candidates cannot be matched. "
+            "Ask them to renew or choose a plan first.",
+        )
+        return _matching_redirect(request, req_obj, "")
+
+    plan_limit = employer_sub.match_limit
+    active_matches = req_obj.matches.filter(is_active=True).count()
+    if plan_limit is not None and active_matches >= plan_limit:
+        messages.error(
+            request,
+            f"{employer_name} is on the {employer_sub.get_plan_display()} plan, which allows "
+            f"{plan_limit} candidate(s) per request. This request already has "
+            f"{active_matches} matched — upgrade them to Premium for unlimited matching, "
+            f"or withdraw a match first.",
+        )
+        return _matching_redirect(request, req_obj, "")
+
     match, created = CandidateMatch.objects.get_or_create(
         employer=req_obj.employer,
         profile=candidate,
@@ -2221,11 +2289,17 @@ def support_chat_messages(request):
     thread = _thread_for(_thread_profile(request.user))
     after = request.GET.get("after")
     if after is None or not after.isdigit():
-        return render(request, "dashboard/support/_new_messages.html", {"messages": []})
+        return HttpResponse(status=204)
 
     messages = list(
         thread.messages.select_related("sender").filter(id__gt=int(after))
     )
+    # Most polls find nothing. Returning 204 skips the template render entirely
+    # and lets the client skip parsing an empty document — with a 650ms poll
+    # that is the difference between a near-idle and a near-busy server.
+    if not messages:
+        return HttpResponse(status=204)
+
     return render(request, "dashboard/support/_new_messages.html", {
         "messages": _mark_mine(messages, mine_sender="user"),
     })
@@ -2392,11 +2466,15 @@ def admin_support_messages(request):
 
     after = request.GET.get("after")
     if after is None or not after.isdigit():
-        return render(request, "dashboard/support/_new_messages.html", {"messages": []})
+        return HttpResponse(status=204)
 
     messages = list(
         thread.messages.select_related("sender").filter(id__gt=int(after))
     )
+    # See support_chat_messages: 204 for the (overwhelmingly common) no-new-
+    # messages tick skips both the template render and the client-side parse.
+    if not messages:
+        return HttpResponse(status=204)
     # Bubbles only — see the note in support_chat_messages.
     return render(request, "dashboard/support/_new_messages.html", {
         "messages": _mark_mine(messages, mine_sender="staff"),

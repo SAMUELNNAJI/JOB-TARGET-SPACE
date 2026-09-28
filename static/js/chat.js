@@ -164,9 +164,27 @@
       });
   }
 
+  var pollVisibilityBound = false;
+
   function startRealtimePolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(runPoll, 650); // Ultra-fast 650ms polling for instant delivery
+
+    if (pollVisibilityBound) return;
+    pollVisibilityBound = true;
+
+    /* A backgrounded tab gains nothing from 650ms polling — browsers throttle
+       the timer anyway, so the requests just burn server capacity and land in
+       a burst on return. Pause while hidden, then poll once immediately on
+       regaining visibility so the transcript is current when it is looked at. */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      } else if (!pollTimer) {
+        runPoll();
+        startRealtimePolling();
+      }
+    });
   }
 
   /* ── Admin Sidebar Inbox Real-Time Updates ────────────────────────── */
@@ -398,7 +416,20 @@
   });
 
   /* ── Composer Form Interactions & Optimistic Send ─────────────────── */
-  var isSubmitting = false;
+  /* Counts sends that are still in flight. A single boolean used to block all
+     overlap; the counter lets a voice note go out while a text message is
+     still uploading instead of throwing the recording away. */
+  var sendInFlight = 0;
+  var lastErrorNote = null;
+
+  /* The File produced by the most recent recording, attached to the next
+     outgoing FormData. Declared here (rather than inside the recorder) so the
+     sender can reach it. */
+  var pendingAudioFile = null;
+
+  function markSendDone() {
+    sendInFlight = Math.max(0, sendInFlight - 1);
+  }
 
   function resizeChatInput(ta) {
     if (!ta) return;
@@ -432,14 +463,31 @@
 
   /* Optimistic Form Submitter */
   function sendFormMessage(form) {
-    if (isSubmitting) return;
+    // NOTE: this used to bail out with `if (isSubmitting) return;`, which
+    // silently DISCARDED a finished recording whenever a previous send was
+    // still in flight — the blob was already built and the UI had already
+    // reset, so the voice note vanished with no error. Sends are now allowed
+    // to overlap; each carries its own snapshot of the payload.
+    var pendingSend = sendInFlight + 1;
+    sendInFlight = pendingSend;
 
     var input = form.querySelector('[data-chat-input]');
     var audioInput = form.querySelector('[data-audio-input]');
     var text = input ? input.value.trim() : '';
-    var hasAudio = audioInput && audioInput.files && audioInput.files.length > 0;
 
-    if (!text && !hasAudio) return;
+    // A freshly recorded clip is held in `pendingAudioFile` and attached to
+    // the FormData directly. Going through the hidden <input type=file> needs
+    // the DataTransfer constructor, which iOS Safari does not support — on
+    // those devices the file silently never attached and the voice note was
+    // posted with an empty body, so the server dropped it.
+    var audioFile = pendingAudioFile;
+    var hasAudio = !!audioFile ||
+      (audioInput && audioInput.files && audioInput.files.length > 0);
+
+    if (!text && !hasAudio) {
+      markSendDone();
+      return;
+    }
 
     var targetUrl = form.getAttribute('action') || form.getAttribute('hx-post');
     if (!targetUrl) {
@@ -451,6 +499,10 @@
     var formData = new FormData(form);
     if (text) {
       formData.set('body', text);
+    }
+    // Attach the recording explicitly under the field name the view reads.
+    if (audioFile) {
+      formData.set('audio', audioFile, audioFile.name || 'voice.webm');
     }
     // Ensure thread ID is present for admin replies
     if (!formData.has('thread')) {
@@ -501,7 +553,6 @@
       input.classList.remove('is-scrolling');
     }
 
-    isSubmitting = true;
     var btn = form.querySelector('.chat-send');
     if (btn) btn.disabled = true;
 
@@ -518,9 +569,12 @@
         return res.text();
       })
       .then(function (html) {
-        isSubmitting = false;
-        if (btn) btn.disabled = false;
+        markSendDone();
+        // Only re-enable the button once the LAST overlapping send lands, so a
+        // fast typist isn't locked out by an earlier request finishing first.
+        if (sendInFlight === 0 && btn) btn.disabled = false;
         if (audioInput) audioInput.value = '';
+        if (audioFile) pendingAudioFile = null;
 
         if (!html || !html.trim()) {
           if (tempBubble) {
@@ -556,8 +610,9 @@
         setTimeout(runSidebarPoll, 150);
       })
       .catch(function () {
-        isSubmitting = false;
-        if (btn) btn.disabled = false;
+        markSendDone();
+        if (sendInFlight === 0 && btn) btn.disabled = false;
+        if (audioFile) pendingAudioFile = null;
         if (tempBubble) {
           tempBubble.classList.remove('is-pending');
           tempBubble.style.opacity = '0.5';
@@ -750,12 +805,24 @@
 
       var ext = type.indexOf('mp4') !== -1 ? 'm4a' : 'webm';
       var file = new File([blob], 'voice.' + ext, { type: type });
-      var audioInput = form.querySelector('[data-audio-input]');
-      if (!audioInput) return;
 
-      var dt = new DataTransfer();
-      dt.items.add(file);
-      audioInput.files = dt.files;
+      // Hand the clip to the sender, which attaches it to the FormData under
+      // the "audio" field the view reads. The previous approach assigned the
+      // file via `new DataTransfer()`, which throws on iOS Safari — so on
+      // iPhones the voice note was never sent at all.
+      pendingAudioFile = file;
+
+      // Best-effort mirror into the hidden input so a non-JS/no-FormData
+      // fallback path still sees a file. Wrapped because DataTransfer may be
+      // unavailable; the pendingAudioFile path above is the one that counts.
+      var audioInput = form.querySelector('[data-audio-input]');
+      if (audioInput && typeof DataTransfer === 'function') {
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          audioInput.files = dt.files;
+        } catch (e) { /* unsupported — pendingAudioFile carries it instead */ }
+      }
 
       sendFormMessage(form);
     };
@@ -793,7 +860,7 @@
     }
   });
 
-  /* ── AUDIO PLAYER WITH EXACT DURATION & COUNTDOWN PLAYBACK ──────── */
+  /* ── AUDIO PLAYER: WAVEFORM + SPEED + COUNTDOWN ──────────────────── */
   var audioCtx = null;
   function getAudioCtx() {
     try {
@@ -805,13 +872,116 @@
     return audioCtx;
   }
 
-  function fetchAudioDuration(audio, onReady) {
-    if (audio.__exactDur && isFinite(audio.__exactDur) && audio.__exactDur > 0) {
-      if (onReady) onReady(audio.__exactDur);
-      return;
+  /* Decoded results are cached by URL. initAllAudios re-runs after every poll
+     tick, so without this each tick would re-download and re-decode every
+     recording in the transcript. */
+  var peakCache = {};
+
+  /* Bar count for the waveform. ~40 fills the 230–320px player without
+     turning into a barcode, and matches WhatsApp's density. */
+  var WAVE_BARS = 40;
+
+  /* Speech-like placeholder so the player is never an empty grey box while
+     the real audio is still downloading/decoding. */
+  function placeholderPeaks() {
+    var out = [];
+    for (var i = 0; i < WAVE_BARS; i++) {
+      out.push(0.30 + 0.42 * Math.abs(Math.sin(i * 0.7) * Math.cos(i * 0.31)));
     }
+    return out;
+  }
+
+  /* Reduce the decoded PCM to WAVE_BARS normalised peak amplitudes. */
+  function computePeaks(decoded, bars) {
+    var channel = decoded.getChannelData(0);
+    var block = Math.floor(channel.length / bars) || 1;
+    var peaks = [];
+    var max = 0.0001;
+    for (var i = 0; i < bars; i++) {
+      var start = i * block;
+      var end = Math.min(channel.length, start + block);
+      var peak = 0;
+      for (var j = start; j < end; j++) {
+        var a = channel[j] < 0 ? -channel[j] : channel[j];
+        if (a > peak) peak = a;
+      }
+      peaks.push(peak);
+      if (peak > max) max = peak;
+    }
+    // Normalise against the loudest bar, then floor so silence still shows a
+    // visible stub instead of collapsing the row to nothing.
+    for (var k = 0; k < peaks.length; k++) {
+      peaks[k] = Math.max(0.12, Math.min(1, peaks[k] / max));
+    }
+    return peaks;
+  }
+
+  function waveColors(wrap) {
+    var mine = wrap.getAttribute('data-audio-is-mine') === '1';
+    return mine
+      ? { played: 'rgba(255,255,255,0.95)', rest: 'rgba(255,255,255,0.32)' }
+      : { played: '#d90429',             rest: 'rgba(15,23,42,0.20)'   };
+  }
+
+  /* Paint the bars, filling in the ones already played. */
+  function drawWaveform(audio, progress) {
+    var wrap = audio.closest('.chat-audio');
+    if (!wrap) return;
+    var canvas = wrap.querySelector('[data-waveform-canvas]');
+    if (!canvas) return;
+
+    var peaks = audio.__peaks || placeholderPeaks();
+    var cssW = canvas.clientWidth || wrap.clientWidth || 240;
+    var cssH = canvas.clientHeight || 32;
+    if (!cssW || !cssH) return;
+
+    // Back the canvas with device pixels so bars stay sharp on retina screens.
+    var dpr = window.devicePixelRatio || 1;
+    var wantW = Math.round(cssW * dpr);
+    var wantH = Math.round(cssH * dpr);
+    if (canvas.width !== wantW || canvas.height !== wantH) {
+      canvas.width = wantW;
+      canvas.height = wantH;
+    }
+
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    var n = peaks.length;
+    var gap = 1.5;
+    var barW = Math.max(1.5, (cssW - (n - 1) * gap) / n);
+    var mid = cssH / 2;
+    var maxH = cssH - 2;
+    var colors = waveColors(wrap);
+    var cut = progress * n;
+
+    for (var i = 0; i < n; i++) {
+      var h = Math.max(2, peaks[i] * maxH);
+      var x = i * (barW + gap);
+      var y = mid - h / 2;
+      ctx.fillStyle = i < cut ? colors.played : colors.rest;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, h, barW / 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(x, y, barW, h);
+      }
+    }
+  }
+
+  /* Decode a recording once; cache and reuse both duration and peaks. */
+  function loadAudioData(audio, onReady) {
     var src = audio.currentSrc || audio.src;
     if (!src) return;
+
+    var cached = peakCache[src];
+    if (cached) {
+      if (onReady) onReady(cached.duration, cached.peaks);
+      return;
+    }
 
     var ctx = getAudioCtx();
     if (!ctx) return;
@@ -821,14 +991,14 @@
         if (!res.ok) throw new Error('Fetch failed');
         return res.arrayBuffer();
       })
-      .then(function (buf) {
-        return ctx.decodeAudioData(buf);
-      })
+      .then(function (buf) { return ctx.decodeAudioData(buf); })
       .then(function (decoded) {
-        if (decoded && isFinite(decoded.duration) && decoded.duration > 0) {
-          audio.__exactDur = decoded.duration;
-          if (onReady) onReady(decoded.duration);
-        }
+        if (!decoded || !isFinite(decoded.duration) || decoded.duration <= 0) return;
+        var duration = decoded.duration;
+        var peaks = computePeaks(decoded, WAVE_BARS);
+        peakCache[src] = { duration: duration, peaks: peaks };
+        audio.__peaks = peaks;
+        if (onReady) onReady(duration, peaks);
       })
       .catch(function () {});
   }
@@ -842,6 +1012,12 @@
       return audio.duration;
     }
     return 0;
+  }
+
+  function audioProgress(audio) {
+    var dur = getAudioDuration(audio);
+    if (!dur || !isFinite(dur)) return 0;
+    return Math.max(0, Math.min(1, (audio.currentTime || 0) / dur));
   }
 
   function updateAudioDisplay(audio, cur, dur) {
@@ -863,6 +1039,11 @@
       var pct = Math.min(100, Math.max(0, (cur / dur) * 100));
       fillEl.style.width = pct + '%';
     }
+
+    // Fill in the waveform bars that have already played.
+    drawWaveform(audio, dur > 0 && isFinite(dur)
+      ? Math.max(0, Math.min(1, cur / dur))
+      : 0);
   }
 
   function initAudioItem(audio) {
@@ -871,23 +1052,30 @@
     if (!wrap) return;
     var timeEl = wrap.querySelector('[data-audio-time]');
 
-    var applyDur = function (d) {
+    var applyDur = function (d, peaks) {
+      if (peaks) audio.__peaks = peaks;
       if (timeEl && audio.paused && (!audio.currentTime || audio.currentTime === 0)) {
         timeEl.textContent = fmtTime(d);
       }
+      drawWaveform(audio, audioProgress(audio));
     };
+
+    // Draw the placeholder immediately so the player is never blank.
+    if (!audio.__peaks) drawWaveform(audio, 0);
 
     if (isFinite(audio.duration) && audio.duration > 0) {
       audio.__exactDur = audio.duration;
       applyDur(audio.duration);
     } else {
-      audio.addEventListener('loadedmetadata', function () {
+      // `once` matters here: initAllAudios re-runs on every poll tick, and a
+      // persistent listener would pile up one more listener per tick.
+      audio.addEventListener('loadedmetadata', function handler() {
         if (isFinite(audio.duration) && audio.duration > 0) {
           audio.__exactDur = audio.duration;
           applyDur(audio.duration);
         }
-      });
-      fetchAudioDuration(audio, applyDur);
+      }, { once: true });
+      loadAudioData(audio, applyDur);
     }
   }
 
@@ -897,20 +1085,73 @@
     Array.prototype.forEach.call(audios, initAudioItem);
   }
 
+  /* Bars are sized to the canvas width in CSS pixels, so they must be
+     repainted whenever that width changes (resize, orientation flip). */
+  var waveResizeTimer = null;
+  window.addEventListener('resize', function () {
+    if (waveResizeTimer) clearTimeout(waveResizeTimer);
+    waveResizeTimer = setTimeout(function () {
+      each('[data-audio-el]', function (a) { drawWaveform(a, audioProgress(a)); });
+    }, 150);
+  });
+
   document.addEventListener('click', function (evt) {
     var btn = evt.target.closest('[data-audio-toggle]');
-    if (!btn) return;
-    evt.preventDefault();
-    evt.stopPropagation();
-    var wrap = btn.closest('.chat-audio');
-    var audio = wrap && wrap.querySelector('[data-audio-el]');
-    if (!audio) return;
+    if (btn) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      var wrap = btn.closest('.chat-audio');
+      var audio = wrap && wrap.querySelector('[data-audio-el]');
+      if (!audio) return;
 
-    if (audio.paused) {
-      var p = audio.play();
-      if (p && p.catch) p.catch(function () {});
-    } else {
-      audio.pause();
+      if (audio.paused) {
+        var p = audio.play();
+        if (p && p.catch) p.catch(function () {});
+      } else {
+        audio.pause();
+      }
+      return;
+    }
+
+    /* Speed cycle: 1x -> 1.25x -> 1.5x -> 2x -> 1x (WhatsApp's ladder). */
+    var speedBtn = evt.target.closest('[data-audio-speed]');
+    if (speedBtn) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      var sWrap = speedBtn.closest('.chat-audio');
+      var sAudio = sWrap && sWrap.querySelector('[data-audio-el]');
+      if (!sAudio) return;
+
+      var rates = [1, 1.25, 1.5, 2];
+      var cur = sAudio.__rate || 1;
+      var next = rates[(rates.indexOf(cur) + 1) % rates.length];
+
+      sAudio.__rate = next;
+      sAudio.playbackRate = next;
+      // Keep the pitch natural at 1.5x/2x instead of the chipmunk default.
+      if ('preservesPitch' in sAudio) sAudio.preservesPitch = true;
+      if ('mozPreservesPitch' in sAudio) sAudio.mozPreservesPitch = true;
+
+      speedBtn.textContent = (next === 1 ? '1' : String(next)) + '×';
+      sWrap.classList.toggle('is-fast', next > 1);
+      return;
+    }
+
+    /* Tap anywhere on the waveform to seek to that point. */
+    var wave = evt.target.closest('.chat-audio-waveform');
+    if (wave) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      var wWrap = wave.closest('.chat-audio');
+      var wAudio = wWrap && wWrap.querySelector('[data-audio-el]');
+      if (!wAudio) return;
+      var dur = getAudioDuration(wAudio);
+      if (!dur || !isFinite(dur)) return;
+
+      var r = wave.getBoundingClientRect();
+      var ratio = Math.max(0, Math.min(1, (evt.clientX - r.left) / r.width));
+      wAudio.currentTime = ratio * dur;
+      updateAudioDisplay(wAudio, wAudio.currentTime || 0, dur);
     }
   });
 
@@ -919,6 +1160,11 @@
     if (!audio.matches || !audio.matches('[data-audio-el]')) return;
     var wrap = audio.closest('.chat-audio');
     if (wrap) wrap.classList.add('is-playing');
+
+    // Re-apply the speed chosen for this bubble. It lives on the element
+    // rather than in a module variable so it survives the poll re-rendering
+    // the transcript around it.
+    if (audio.__rate) audio.playbackRate = audio.__rate;
 
     each('[data-audio-el]', function (other) {
       if (other !== audio && !other.paused) other.pause();
@@ -959,25 +1205,8 @@
       timeEl.textContent = dur > 0 ? fmtTime(dur) : '0:00';
     }
     audio.currentTime = 0;
-  });
-
-  document.addEventListener('click', function (evt) {
-    var track = evt.target.closest('.chat-audio-track');
-    if (!track) return;
-    evt.preventDefault();
-    evt.stopPropagation();
-    var wrap = track.closest('.chat-audio');
-    var audio = wrap && wrap.querySelector('[data-audio-el]');
-    if (!audio) return;
-    var dur = getAudioDuration(audio);
-    if (!dur || !isFinite(dur)) return;
-
-    var r = track.getBoundingClientRect();
-    var ratio = Math.max(0, Math.min(1, (evt.clientX - r.left) / r.width));
-    audio.currentTime = ratio * dur;
-
-    var cur = audio.currentTime || 0;
-    updateAudioDisplay(audio, cur, dur);
+    // Reset the waveform so a replay starts filling from the left again.
+    drawWaveform(audio, 0);
   });
 
   /* ── Admin Support Inbox Filter, Search & Real-Time Switching ─────── */

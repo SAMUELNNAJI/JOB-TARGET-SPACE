@@ -411,8 +411,49 @@
         <div class="emp-plan-banner-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
         <div><h3>{{ subscription.get_plan_display }} Plan</h3><p>Started {{ subscription.starts_at|date:"d M Y" }} · Expires {{ subscription.expires_at|date:"d M Y" }}</p></div>
       </div>
-      <div class="emp-plan-banner-right"><span class="emp-plan-active-chip"><span class="emp-kicker-dot"></span>Active</span><strong>₦{{ subscription.amount|floatformat:0 }}/mo</strong></div>
+      <div class="emp-plan-banner-right"><span class="emp-plan-active-chip"><span class="emp-kicker-dot"></span>Active</span><strong>₦{{ subscription.amount|floatformat:0 }}{% if subscription.plan == 'premium' %}/3mo{% else %}/mo{% endif %}</strong></div>
     </div>
+  {% elif lapsed_plan %}
+    <div class="emp-plan-banner" style="background:linear-gradient(110deg,#fef2f2,#fff7ed);border-color:#fecaca;">
+      <div class="emp-plan-banner-left">
+        <div class="emp-plan-banner-icon" style="color:#dc2626;background:#fee2e2;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div><h3>Your {{ lapsed_plan.get_plan_display }} plan has expired</h3><p>It ended on {{ lapsed_plan.expires_at|date:"d M Y" }}. Renew to keep posting requests and receiving matches.</p></div>
+      </div>
+      <div class="emp-plan-banner-right"><span class="emp-plan-active-chip" style="background:#fee2e2;color:#b91c1c;">Expired</span></div>
+    </div>
+  {% endif %}
+
+  {# ── Renewal prompt: fires while a plan is inside its renewal window ──
+     Premium gets 14 days of notice, Basic 7. Offers "continue on the
+     same plan" or "switch to Basic" (Premium) / "renew" (Basic). #}
+  {% if renewal_due %}
+  <div class="emp-modal-overlay emp-modal-overlay--visible" id="renewalModal" role="dialog" aria-modal="true" aria-labelledby="renewalTitle">
+    <div class="emp-modal">
+      <div class="emp-modal-icon emp-modal-icon--warn">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h2 class="emp-modal-title" id="renewalTitle">Your {{ subscription.get_plan_display }} plan is expiring soon</h2>
+      <p class="emp-modal-text">
+        Your plan expires on <strong>{{ subscription.expires_at|date:"d M Y" }}</strong>
+        ({{ subscription.days_remaining }} day{{ subscription.days_remaining|pluralize }} left).
+        {% if subscription.plan == 'premium' %}
+          Renew to keep unlimited candidate matching for another 90 days, or downgrade to
+          Basic — which still covers 5 matches per request.
+        {% else %}
+          Renew for another 30 days to keep posting recruitment requests and receiving
+          up to 5 matched candidates per request.
+        {% endif %}
+      </p>
+      <div class="emp-modal-actions">
+        {% if subscription.plan == 'premium' %}
+          <button type="button" class="emp-modal-btn emp-modal-btn--ghost" data-open-bank-modal="basic" data-plan-title="Basic Plan" data-plan-price="50,000">Downgrade to Basic</button>
+        {% endif %}
+        <button type="button" class="emp-modal-btn emp-modal-btn--primary" data-open-bank-modal="{{ subscription.plan }}" data-plan-title="{{ subscription.get_plan_display }} Plan" data-plan-price="{{ subscription.amount|floatformat:0 }}">
+          {% if subscription.plan == 'premium' %}Continue Premium{% else %}Renew Basic{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
   <div class="emp-plans-heading">
@@ -427,9 +468,10 @@
       {% if subscription and subscription.plan == 'basic' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
       <div class="emp-plan-icon emp-plan-icon--basic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
       <h3 class="emp-plan-name">Basic</h3>
-      <div class="emp-plan-price"><strong>₦50,000</strong><span>/ month</span></div>
+      <div class="emp-plan-price"><strong>₦50,000</strong><span>/ 30 days</span></div>
       <ul class="emp-plan-features">
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Up to 5 vetted profiles per request</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Valid for 30 days, then renew</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>48–72 hour response window</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1 free replacement within 30 days</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Standard dashboard support</li>
@@ -446,9 +488,10 @@
       {% if subscription and subscription.plan == 'premium' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
       <div class="emp-plan-icon emp-plan-icon--premium"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
       <h3 class="emp-plan-name">Premium</h3>
-      <div class="emp-plan-price"><strong>₦100,000</strong><span>/ month</span></div>
+      <div class="emp-plan-price"><strong>₦100,000</strong><span>/ 90 days</span></div>
       <ul class="emp-plan-features">
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Unlimited matched profiles pushed</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Valid for 90 days, then renew</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority 24-hour dashboard delivery</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Uncapped replacements within 90 days</li>
         <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager support</li>
@@ -620,11 +663,44 @@
     }
   }
 
+  /* ── Renewal prompt: dismissible, and re-openable from the banner ── */
+  function closeRenewal() {
+    var r = document.getElementById('renewalModal');
+    if (!r) return;
+    r.classList.remove('emp-modal-overlay--visible');
+    r.setAttribute('aria-hidden', 'true');
+    try { sessionStorage.setItem('renewalDismissed', '1'); } catch (e) {}
+  }
+
+  (function () {
+    var r = document.getElementById('renewalModal');
+    if (!r) return;
+    var dismissed = false;
+    try { dismissed = sessionStorage.getItem('renewalDismissed') === '1'; } catch (e) {}
+    if (dismissed) {
+      r.classList.remove('emp-modal-overlay--visible');
+      r.setAttribute('aria-hidden', 'true');
+    }
+    r.addEventListener('click', function (e) {
+      // Clicking the backdrop dismisses; the action buttons bubble up to
+      // the bank-modal handler first, so only the backdrop reaches here.
+      if (e.target === r) closeRenewal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && r.classList.contains('emp-modal-overlay--visible')) {
+        closeRenewal();
+      }
+    });
+  })();
+
   document.querySelectorAll('[data-open-bank-modal]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var plan = btn.getAttribute('data-open-bank-modal') || 'basic';
       var title = btn.getAttribute('data-plan-title') || 'Basic Plan';
       var price = btn.getAttribute('data-plan-price') || '50,000';
+      // The renewal prompt can trigger this too — dismiss it so the
+      // payment instructions are the only thing on screen.
+      closeRenewal();
       openModal(plan, title, price);
     });
   });

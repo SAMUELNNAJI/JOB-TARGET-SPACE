@@ -216,7 +216,9 @@ def dashboard_badges(request):
                     "employer_notifications": on_page,
                 },
             )
-            active_sub = profile.subscriptions.filter(is_active=True).first()
+            # Expiry-aware: a lapsed plan is treated like having none, so the
+            # subscribe prompts reappear the moment a plan runs out.
+            active_sub = profile.current_subscription()
             ctx["employer_active_subscription"] = active_sub
             ctx["show_subscribe_modal"] = (
                 active_sub is None

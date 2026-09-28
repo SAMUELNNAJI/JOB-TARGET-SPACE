@@ -48,14 +48,29 @@
 .adm-btn-decline {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font: 700 12px "Montserrat", sans-serif;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font: 700 13.5px "Montserrat", sans-serif;
   cursor: pointer;
   border: none;
   transition: all 0.15s ease;
   white-space: nowrap;
+}
+
+.adm-btn-approve svg,
+.adm-btn-decline svg {
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.adm-btn-approve:hover svg { transform: scale(1.15); }
+.adm-btn-decline:hover svg { transform: scale(1.15); }
+
+.adm-btn-approve:focus-visible,
+.adm-btn-decline:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
 }
 
 .adm-btn-approve {
@@ -172,6 +187,215 @@
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
 }
+
+/* ── Approve / Decline Confirm Modal (replaces native confirm/prompt) ── */
+.adm-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 1300;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.adm-confirm-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.adm-confirm-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.45);
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.2s ease;
+}
+
+.adm-confirm-overlay.is-open .adm-confirm-modal {
+  transform: translateY(0) scale(1);
+}
+
+.adm-confirm-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 26px auto 0;
+  flex: none;
+}
+
+.adm-confirm-badge svg { width: 28px; height: 28px; }
+
+.adm-confirm-modal.is-approve .adm-confirm-badge {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.adm-confirm-modal.is-decline .adm-confirm-badge {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.adm-confirm-title {
+  margin: 14px 24px 0;
+  text-align: center;
+  font: 800 19px/1.3 "Montserrat", sans-serif;
+  color: #0f172a;
+}
+
+.adm-confirm-sub {
+  margin: 6px 24px 0;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.adm-confirm-facts {
+  margin: 18px 24px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  font-size: 13px;
+}
+
+.adm-confirm-facts dt {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.adm-confirm-facts dd {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.adm-confirm-field { padding: 0 24px; margin-top: 18px; }
+
+.adm-confirm-label {
+  display: block;
+  font: 700 12.5px "Montserrat", sans-serif;
+  color: #334155;
+  margin-bottom: 7px;
+}
+
+.adm-confirm-label .adm-confirm-optional {
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.adm-confirm-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 78px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font: 400 13.5px/1.5 "Montserrat", sans-serif;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-confirm-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.adm-confirm-hint {
+  margin: 7px 0 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.adm-confirm-actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px 24px 24px;
+}
+
+.adm-confirm-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  border-radius: 11px;
+  border: none;
+  cursor: pointer;
+  font: 700 14px "Montserrat", sans-serif;
+  transition: all 0.15s ease;
+}
+
+.adm-confirm-btn svg { flex: none; }
+
+.adm-confirm-btn--ghost {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.adm-confirm-btn--ghost:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.adm-confirm-btn--approve {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 6px 16px -4px rgba(16, 185, 129, 0.5);
+}
+
+.adm-confirm-btn--approve:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.adm-confirm-btn--decline {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 6px 16px -4px rgba(220, 38, 38, 0.5);
+}
+
+.adm-confirm-btn--decline:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.adm-confirm-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .adm-confirm-facts {
+    grid-template-columns: 1fr;
+    gap: 2px 0;
+  }
+  .adm-confirm-facts dd { text-align: left; margin-bottom: 6px; }
+  .adm-confirm-actions { flex-direction: column-reverse; }
+}
 </style>
 {% endblock %}
 
@@ -283,22 +507,37 @@
                 {% if p.status == 'pending' %}
                   <div class="adm-pay-actions-cell">
                     {# Approve Form #}
-                    <form action="{% url 'website:admin_payment_action' p.id %}" method="post" style="display:inline;" onsubmit="return confirm('Approve this payment of ₦{{ p.amount|floatformat:0 }} for {{ p.employer.company_name|default:p.employer.user.username }}? This will activate their subscription immediately.');">
+                    <form action="{% url 'website:admin_payment_action' p.id %}" method="post" style="display:inline;" data-pay-form>
                       {% csrf_token %}
                       <input type="hidden" name="action" value="approve">
-                      <button type="submit" class="adm-btn-approve" title="Approve and activate subscription">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <input type="hidden" name="admin_notes" value="">
+                      <button type="button"
+                              class="adm-btn-approve"
+                              title="Approve and activate subscription"
+                              data-confirm-action="approve"
+                              data-pay-emp="{{ p.employer.company_name|default:p.employer.user.username }}"
+                              data-pay-plan="{{ p.subscription.get_plan_display|default:'Subscription' }}"
+                              data-pay-amt="₦{{ p.amount|floatformat:0 }}"
+                              data-pay-ref="{{ p.reference }}">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>Approve</span>
                       </button>
                     </form>
 
                     {# Decline Form #}
-                    <form action="{% url 'website:admin_payment_action' p.id %}" method="post" style="display:inline;" onsubmit="var note = prompt('Optional: Reason for declining this payment proof:'); if(note === null) return false; this.admin_notes.value = note; return true;">
+                    <form action="{% url 'website:admin_payment_action' p.id %}" method="post" style="display:inline;" data-pay-form>
                       {% csrf_token %}
                       <input type="hidden" name="action" value="decline">
                       <input type="hidden" name="admin_notes" value="">
-                      <button type="submit" class="adm-btn-decline" title="Decline payment proof">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      <button type="button"
+                              class="adm-btn-decline"
+                              title="Decline payment proof"
+                              data-confirm-action="decline"
+                              data-pay-emp="{{ p.employer.company_name|default:p.employer.user.username }}"
+                              data-pay-plan="{{ p.subscription.get_plan_display|default:'Subscription' }}"
+                              data-pay-amt="₦{{ p.amount|floatformat:0 }}"
+                              data-pay-ref="{{ p.reference }}">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         <span>Decline</span>
                       </button>
                     </form>
@@ -355,6 +594,41 @@
     <div class="adm-proof-modal-actions" id="modalActionsRow">
       <a href="" id="fullViewBtn" target="_blank" class="adm-proof-link">Open Full Size ↗</a>
       <button type="button" class="adm-btn-decline" id="modalCloseActionBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+{# ── Approve / Decline Confirm Modal (replaces native confirm/prompt) ── #}
+<div class="adm-confirm-overlay" id="actionModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+  <div class="adm-confirm-modal" id="actionModalCard">
+    <div class="adm-confirm-badge" id="actionModalBadge">
+      <svg id="actionModalIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+    </div>
+
+    <h3 class="adm-confirm-title" id="actionModalTitle">Approve payment?</h3>
+    <p class="adm-confirm-sub" id="actionModalSub"></p>
+
+    <dl class="adm-confirm-facts">
+      <dt>Employer</dt><dd id="actionModalEmp">&mdash;</dd>
+      <dt>Plan</dt><dd id="actionModalPlan">&mdash;</dd>
+      <dt>Amount</dt><dd id="actionModalAmt">&mdash;</dd>
+      <dt>Reference</dt><dd id="actionModalRef">&mdash;</dd>
+    </dl>
+
+    <div class="adm-confirm-field">
+      <label class="adm-confirm-label" for="actionModalNote" id="actionModalLabel">
+        Internal note <span class="adm-confirm-optional">(optional)</span>
+      </label>
+      <textarea class="adm-confirm-textarea" id="actionModalNote" rows="3"></textarea>
+      <p class="adm-confirm-hint" id="actionModalHint">This note is emailed to the employer in their notification.</p>
+    </div>
+
+    <div class="adm-confirm-actions">
+      <button type="button" class="adm-confirm-btn adm-confirm-btn--ghost" id="actionModalCancel">Cancel</button>
+      <button type="button" class="adm-confirm-btn" id="actionModalOk">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="actionModalOkLabel">Approve</span>
+      </button>
     </div>
   </div>
 </div>
@@ -425,6 +699,117 @@ document.getElementById('modalCloseActionBtn')?.addEventListener('click', closeP
 if (proofModal) {
   proofModal.addEventListener('click', e => {
     if (e.target === proofModal) closeProofModal();
+  });
+}
+
+/* ── Approve / Decline Confirm Modal ──────────────────────────────
+   Replaces the native confirm()/prompt() dialogs. Holds the pending
+   form, writes the note into its hidden admin_notes input, then
+   submits it programmatically on confirm. */
+const actionModal = document.getElementById('actionModal');
+const actionModalCard = document.getElementById('actionModalCard');
+const actionModalIcon = document.getElementById('actionModalIcon');
+const actionModalTitle = document.getElementById('actionModalTitle');
+const actionModalSub = document.getElementById('actionModalSub');
+const actionModalLabel = document.getElementById('actionModalLabel');
+const actionModalHint = document.getElementById('actionModalHint');
+const actionModalNote = document.getElementById('actionModalNote');
+const actionModalOk = document.getElementById('actionModalOk');
+const actionModalOkLabel = document.getElementById('actionModalOkLabel');
+const actionModalCancel = document.getElementById('actionModalCancel');
+
+const ICON_APPROVE = '<polyline points="20 6 9 17 4 12"></polyline>';
+const ICON_DECLINE = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+
+const COPY = {
+  approve: {
+    title: 'Approve this payment?',
+    sub: 'The employer’s subscription will be activated immediately and they will be notified.',
+    okLabel: 'Approve &amp; Activate',
+    noteLabel: 'Internal note <span class="adm-confirm-optional">(optional)</span>',
+    hint: 'Stored with the record and included in the employer’s notification.',
+  },
+  decline: {
+    title: 'Decline this payment?',
+    sub: 'The employer will be notified that their proof could not be verified.',
+    okLabel: 'Decline Payment',
+    noteLabel: 'Reason for declining',
+    hint: 'Shown to the employer — explain what they need to correct.',
+  },
+};
+
+let actionModalForm = null;
+let actionModalMode = '';
+let actionModalOpener = null;
+
+function openActionModal(mode, opener) {
+  const copy = COPY[mode];
+  if (!copy || !actionModal) return;
+
+  actionModalMode = mode;
+  actionModalForm = opener.closest('form[data-pay-form]');
+  actionModalOpener = opener;
+
+  actionModalCard.classList.toggle('is-approve', mode === 'approve');
+  actionModalCard.classList.toggle('is-decline', mode === 'decline');
+
+  actionModalIcon.innerHTML = mode === 'approve' ? ICON_APPROVE : ICON_DECLINE;
+  actionModalTitle.textContent = copy.title;
+  actionModalSub.textContent = copy.sub;
+  actionModalLabel.innerHTML = copy.noteLabel;
+  actionModalHint.textContent = copy.hint;
+  actionModalNote.value = '';
+  actionModalNote.placeholder = mode === 'approve'
+    ? 'e.g. Transfer confirmed with the bank.'
+    : 'e.g. The amount on the receipt does not match the plan fee.';
+  actionModalOkLabel.textContent = copy.okLabel;
+  actionModalOk.className = 'adm-confirm-btn adm-confirm-btn--' + mode;
+
+  actionModal.classList.add('is-open');
+  actionModal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => actionModalNote.focus(), 60);
+}
+
+function closeActionModal() {
+  if (!actionModal) return;
+  actionModal.classList.remove('is-open');
+  actionModal.setAttribute('aria-hidden', 'true');
+  actionModalForm = null;
+  actionModalMode = '';
+  if (actionModalOpener) { actionModalOpener.focus(); actionModalOpener = null; }
+}
+
+function submitActionModal() {
+  if (!actionModalForm) { closeActionModal(); return; }
+  const field = actionModalForm.querySelector('input[name="admin_notes"]');
+  if (field) field.value = actionModalNote.value.trim();
+  const form = actionModalForm;
+  actionModalForm = null;
+  actionModal.classList.remove('is-open');
+  actionModal.setAttribute('aria-hidden', 'true');
+  form.submit();
+}
+
+document.querySelectorAll('[data-confirm-action]').forEach(btn => {
+  btn.addEventListener('click', () => openActionModal(btn.dataset.confirmAction, btn));
+});
+
+actionModalCancel?.addEventListener('click', closeActionModal);
+actionModalOk?.addEventListener('click', submitActionModal);
+
+if (actionModal) {
+  actionModal.addEventListener('click', e => {
+    if (e.target === actionModal) closeActionModal();
+  });
+  actionModal.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); closeActionModal(); }
+  });
+  // Ctrl/Cmd+Enter confirms from the textarea without reaching for the mouse.
+  actionModalNote?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      submitActionModal();
+    }
   });
 }
 </script>

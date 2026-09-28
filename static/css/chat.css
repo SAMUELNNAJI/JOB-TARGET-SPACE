@@ -516,34 +516,41 @@
 }
 
 /* ── Voice Notes (Counting Down Player) ── */
+/* ── WhatsApp-style Waveform Audio Player ── */
 .chat-audio {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 220px;
+  min-width: 230px;
+  max-width: 320px;
   margin: 2px 0;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .chat-audio-play {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.10);
   color: inherit;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, transform 0.12s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
 
 .chat-msg--out .chat-audio-play {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.28);
   color: #fff;
 }
 
 .chat-audio-play:hover {
-  transform: scale(1.05);
+  transform: scale(1.07);
+  background: rgba(0, 0, 0, 0.16);
+}
+.chat-msg--out .chat-audio-play:hover {
+  background: rgba(255, 255, 255, 0.38);
 }
 
 .chat-audio-icon--pause { display: none; }
@@ -553,54 +560,109 @@
 .chat-audio-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.chat-audio-track {
+/* ── Waveform Canvas Container ── */
+.chat-audio-waveform {
   position: relative;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
+  height: 32px;
   cursor: pointer;
+  border-radius: 4px;
   overflow: hidden;
+  /* Invisible scrub overlay is inside the canvas wrapper */
 }
 
-.chat-msg--out .chat-audio-track {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.chat-audio-fill {
+.chat-audio-waveform canvas {
+  display: block;
+  width: 100%;
   height: 100%;
-  width: 0%;
-  border-radius: 999px;
-  background: var(--chat-primary);
-  transition: width 0.1s linear;
+  /* Bars are drawn as real vector rects, so smooth upscaling is correct
+     here. `pixelated` (from the old layout-bar era) made the waveform look
+     blocky and aliased once the canvas was sized by DPR. */
+  image-rendering: auto;
 }
 
-.chat-msg--out .chat-audio-fill {
-  background: #ffffff;
+/* Scrub overlay (invisible, sits on top of canvas for click targeting) */
+.chat-audio-scrub {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .chat-audio-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .chat-audio-tag {
   font-size: 10px;
   font-weight: 600;
-  opacity: 0.75;
+  opacity: 0.65;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .chat-audio-time {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  opacity: 0.85;
+  font-weight: 700;
+  opacity: 0.80;
+  letter-spacing: 0.02em;
 }
+
+/* Playback shimmer pulse on the waveform while playing */
+.chat-audio.is-playing .chat-audio-waveform::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+  animation: waveformShimmer 1.4s linear infinite;
+}
+
+@keyframes waveformShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Playback-speed pill (1x / 1.25x / 1.5x / 2x), WhatsApp-style */
+.chat-audio-speed {
+  flex-shrink: 0;
+  min-width: 30px;
+  height: 18px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: inherit;
+  font: 700 10px/1 "DM Sans", sans-serif;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.chat-msg--out .chat-audio-speed {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.chat-audio-speed:hover { background: rgba(15, 23, 42, 0.16); }
+.chat-msg--out .chat-audio-speed:hover { background: rgba(255, 255, 255, 0.4); }
+.chat-audio-speed:active { transform: scale(0.94); }
+
+.chat-audio.is-fast .chat-audio-speed {
+  background: var(--chat-primary);
+  color: #fff;
+}
+
+/* Legacy flat track – hidden now (kept for fallback on older polled messages) */
+.chat-audio-track { display: none; }
+.chat-audio-fill  { display: none; }
 
 /* ── Voice Recording Bar with Pause, Delete, and Send ── */
 .chat-recording {

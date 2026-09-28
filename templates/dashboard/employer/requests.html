@@ -3,7 +3,7 @@
 {% block body_class %}employer-dashboard{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
 {% block content %}
-<main class="dashboard-content emp-profile-page">
+<main class="dashboard-content emp-profile-page{% if not active_plan %} emp-page-blurred{% endif %}">
   <section class="emp-form-hero">
     <div class="emp-form-hero-bg"><span class="emp-orb emp-orb--1"></span><span class="emp-orb emp-orb--2"></span><div class="emp-hero-grid"></div></div>
     <div class="emp-form-hero-content">
@@ -67,6 +67,10 @@
       </div>
       {% endif %}
 
+      {# Blurred when the employer has no live plan — pointer events and
+         keyboard focus are blocked so the locked state is real, not just
+         a visual overlay. #}
+      <div class="emp-form-body{% if not active_plan %} is-locked{% endif %}" {% if not active_plan %}inert aria-hidden="true"{% endif %}>
       <div class="emp-form-section">
         <h3 class="emp-form-section-title">Position Details</h3>
         {% if form.non_field_errors %}
@@ -99,7 +103,8 @@
         </div>
       </div>
       <div class="emp-form-actions">
-        <button type="submit" class="emp-submit-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>Submit staffing request</button>
+        <button type="submit" class="emp-submit-btn"{% if not active_plan %} disabled{% endif %}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>Submit staffing request</button>
+      </div>
       </div>
     </form>
   </div>
@@ -117,10 +122,81 @@
     <div style="padding:0 24px 20px">{% include "dashboard/pagination.html" %}</div>
   </div>
 </main>
+
+{% if not active_plan %}
+{# ── Subscription Gate Overlay: Full page blur with Subscribe & Choose a Plan pop-up ── #}
+<div class="emp-sub-gate-overlay" id="empSubGate" role="dialog" aria-modal="true" aria-labelledby="empSubGateTitle">
+  <div class="emp-sub-gate-card">
+    <div class="emp-sub-gate-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+
+    <h2 class="emp-sub-gate-title" id="empSubGateTitle">
+      {% if expired_plan %}Your Plan Has Expired{% else %}Subscribe &amp; Choose a Plan{% endif %}
+    </h2>
+    <p class="emp-sub-gate-text">
+      {% if expired_plan %}
+        Your <strong>{{ expired_plan.get_plan_display }} plan</strong> expired on
+        <strong>{{ expired_plan.expires_at|date:"d M Y" }}</strong>. Please renew or choose a plan below to
+        submit recruitment requests and receive matched candidates.
+      {% else %}
+        An active subscription is required to submit recruitment requests and receive
+        vetted professionals. Choose a plan below to activate your employer account.
+      {% endif %}
+    </p>
+
+    <div class="emp-sub-gate-plans">
+      <div class="emp-sub-gate-plan">
+        <div class="emp-sub-gate-head">
+          <span class="emp-sub-gate-name">Basic</span>
+          <span class="emp-sub-gate-price">₦50,000<small>/mo</small></span>
+        </div>
+        <ul class="emp-sub-gate-feats">
+          <li><strong>Up to 5 candidate matches</strong> per request</li>
+          <li>Valid for <strong>1 month (30 days)</strong></li>
+          <li>48–72 hour turnaround window</li>
+          <li>Standard verification &amp; vetting</li>
+        </ul>
+        <a class="emp-sub-gate-btn" href="/dashboard/employer/subscription/?plan=basic">Choose Basic</a>
+      </div>
+
+      <div class="emp-sub-gate-plan emp-sub-gate-plan--premium">
+        <span class="emp-sub-gate-tag">Recommended · Best Value</span>
+        <div class="emp-sub-gate-head">
+          <span class="emp-sub-gate-name">Premium</span>
+          <span class="emp-sub-gate-price">₦100,000<small>/3mo</small></span>
+        </div>
+        <ul class="emp-sub-gate-feats">
+          <li><strong>Unlimited candidate matches</strong> per request</li>
+          <li>Valid for <strong>3 months (90 days)</strong></li>
+          <li>Priority 24-hour delivery window</li>
+          <li>Dedicated HR matching specialist</li>
+        </ul>
+        <a class="emp-sub-gate-btn emp-sub-gate-btn--premium" href="/dashboard/employer/subscription/?plan=premium">Choose Premium</a>
+      </div>
+    </div>
+
+    <p class="emp-sub-gate-foot">
+      <a href="/dashboard/employer/subscription/">View bank details &amp; payment instructions →</a>
+    </p>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+/* ── Subscription gate: blur the form, explain, and offer plans ── */
+(function () {
+  const gate = document.getElementById('empSubGate');
+  if (!gate) return;
+  gate.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+})();
+
 /* ── Position field: reveal the free-text box when "Other" is chosen ── */
 (function () {
   const select = document.getElementById('id_position');
