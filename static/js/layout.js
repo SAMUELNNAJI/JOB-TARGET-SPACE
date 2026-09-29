@@ -11,6 +11,7 @@ function setMenu(open){
   document.body.style.overflow=open?'hidden':'';
 }
 menu?.addEventListener('click',()=>setMenu(!menuNav.classList.contains('open')));
+document.querySelector('[data-drawer-close]')?.addEventListener('click',()=>setMenu(false));
 navOverlay?.addEventListener('click',()=>setMenu(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false);});
 menuNav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setMenu(false)));

@@ -209,17 +209,53 @@
 }
 
 .adm-confirm-modal {
+  position: relative;
   background: #ffffff;
   border-radius: 20px;
   width: 100%;
   max-width: 460px;
-  max-height: 90vh;
+  /* The approval dialog now carries the receipt-amount + plan fields, so on
+     phones it is taller than the viewport: cap it and let the CARD scroll
+     internally (the overlay stays fixed). Buttons sit in a sticky footer so
+     Approve & Activate is always reachable. */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.45);
   transform: translateY(12px) scale(0.97);
   transition: transform 0.2s ease;
+}
+
+/* X close button, pinned to the card's top-right corner. Sticky (not absolute)
+   so it stays visible while the card scrolls on phones; the negative bottom
+   margin lets the badge slide underneath it instead of being pushed down. */
+.adm-confirm-x {
+  position: sticky;
+  top: 12px;
+  align-self: flex-end;
+  margin: 12px 12px -44px 0;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.adm-confirm-x:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 
 .adm-confirm-overlay.is-open .adm-confirm-modal {
@@ -380,6 +416,12 @@
   display: flex;
   gap: 10px;
   padding: 20px 24px 24px;
+  /* Sticky footer: with the card now scrollable on phones, the Cancel +
+     Approve buttons stay pinned to the bottom instead of scrolling away. */
+  position: sticky;
+  bottom: 0;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
 }
 
 .adm-confirm-btn {
@@ -442,7 +484,16 @@
     gap: 2px 0;
   }
   .adm-confirm-facts dd { text-align: left; margin-bottom: 6px; }
-  .adm-confirm-actions { flex-direction: column-reverse; }
+  .adm-confirm-actions { flex-direction: column-reverse; position: sticky; bottom: 0; }
+}
+
+/* ── Proof-preview modal: same treatment — cap the card and scroll inside ── */
+.adm-proof-modal {
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 </style>
 {% endblock %}
@@ -654,6 +705,9 @@
 {# ── Approve / Decline Confirm Modal (replaces native confirm/prompt) ── #}
 <div class="adm-confirm-overlay" id="actionModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
   <div class="adm-confirm-modal" id="actionModalCard">
+    <button type="button" class="adm-confirm-x" id="actionModalX" aria-label="Close dialog">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
     <div class="adm-confirm-badge" id="actionModalBadge">
       <svg id="actionModalIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
     </div>
@@ -957,6 +1011,7 @@ document.querySelectorAll('[data-confirm-action]').forEach(btn => {
 
 actionModalCancel?.addEventListener('click', closeActionModal);
 actionModalOk?.addEventListener('click', submitActionModal);
+document.getElementById('actionModalX')?.addEventListener('click', closeActionModal);
 
 if (actionModal) {
   actionModal.addEventListener('click', e => {

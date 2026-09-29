@@ -1530,13 +1530,8 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
   }
   .dashboard-sidebar {
     position: fixed;
-    /* CRITICAL: this must out-rank the sticky chat composer (z-index 45 in
-       chat.css) and the recording bar (65). At z-index 20 the open drawer was
-       painted UNDER the message input, so the input stayed visible and tappable
-       on top of the navigation. 300 clears the chat layer with room to spare
-       while staying under the pinned topbar (320) so the hamburger toggle is
-       never buried under the drawer. */
-    z-index: 300;
+    /* Sidebar floats ABOVE the sticky header, so it gets the giant z-index. */
+    z-index: 199988889;
     left: 0;
     top: 0;
     /* The drawer slides in below the 62px pinned topbar, so its own content
@@ -9169,13 +9164,11 @@ body { font-size: 15px !important; }
    block in the .dashboard-app grid, so position: sticky resolves against
    the viewport and keeps working.
 
-   z-index 320 sits ABOVE the mobile sidebar drawer (300). That ordering is
-   deliberate: the only control that opens/closes the drawer is the
-   `.dashboard-mobile-menu` hamburger inside this topbar, and the drawer used
-   to paint over it, leaving the open drawer impossible to dismiss by tapping
-   the toggle again. 320 still clears the chat composer (45) and the recording
-   bar (65), and stays well below the notification dropdown (9000) and the
-   modals (1200). */
+   The mobile sidebar drawer (z-index 199988889) floats ABOVE this header,
+   so the drawer carries its own X close button (see dashboard/base.html) and
+   the topbar hamburger stays a pure "open" control. This header keeps 320 so
+   it still clears the chat composer (45) and the recording bar (65), while
+   staying below the notification dropdown (9000) and the modals (1200). */
 .dashboard-topbar {
   position: sticky;
   top: 0;
@@ -9186,14 +9179,36 @@ body { font-size: 15px !important; }
 
    CRITICAL: this rule is unmediated and sits AFTER the `max-width: 760px`
    block, so at equal specificity it is the one that actually wins on
-   phones. It was z-index 40, which is BELOW the chat composer's sticky
-   z-index 45 (chat.css) and far below the recording bar's 65 — so opening
-   the drawer left the message input painted on top of the navigation.
-   300 puts the drawer above every chat surface layer while staying under
-   the pinned topbar (320), the modals (1200) and the notification
-   dropdown (9000). */
+   phones. On mobile the drawer floats above everything (199988889, set in
+   the media block) — the giant value is safe there because the drawer
+   carries its own X close button and the topbar hamburger is open-only.
+   Desktop keeps a modest 300: above every chat surface layer (composer 45,
+   recording bar 65), under the pinned topbar (320), the modals (1200) and
+   the notification dropdown (9000). */
 .dashboard-sidebar {
   z-index: 300;
+}
+
+/* In-drawer close (X) button — only visible on phones where the drawer
+   floats above the sticky header that holds the hamburger. */
+.dashboard-sidebar-close {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .dashboard-sidebar-close { display: inline-flex; }
 }
 
 /* ============================================================

@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
   {% block page_styles %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=15">
-  <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=15">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=17">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=17">
   {% endblock %}
 </head>
 <body>
@@ -18,6 +18,9 @@
     <a class="logo" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a>
     <button class="menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
     <nav id="primary-nav">
+      <button class="drawer-close" type="button" data-drawer-close aria-label="Close navigation">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
       <a class="{% if request.path == '/about/' %}active{% endif %}" href="/about/">About Us</a>
       <a class="{% if request.path == '/employers/' %}active{% endif %}" href="/employers/">For Employers</a>
       <a class="{% if request.path == '/candidates/' %}active{% endif %}" href="/candidates/">For Candidates</a>
@@ -113,6 +116,6 @@
     <div class="copyright"><span>&copy; 2025 JobSpace. All rights reserved.</span><div class="legal"><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms and Conditions</a><a class="up" href="#top" aria-label="Back to top">↑</a></div></div>
   </footer>
 
-  {% block scripts %}<script src="{% static 'js/layout.js' %}?v=15"></script>{% endblock %}
+  {% block scripts %}<script src="{% static 'js/layout.js' %}?v=16"></script>{% endblock %}
 </body>
 </html>

@@ -1178,7 +1178,30 @@
     setAudioLoading(a, false);
     a.__hasPeaks = true;   // stop the waveform shimmer as well
     setAudioLoading(a, false);
+    // 404 / decode failure = the file is gone from media storage.
+    a.__missing = true;
+    var missingWrap = a.closest && a.closest('.chat-audio');
+    if (missingWrap) markAudioMissing(missingWrap, a);
   }), true);
+
+  /* Flag a bubble whose clip no longer exists on the server: grey out the
+     play button, hide the timer, and show the "file missing" note. */
+  function markAudioMissing(wrap, audio) {
+    if (!wrap || wrap.classList.contains('is-missing')) return;
+    wrap.classList.add('is-missing');
+    wrap.classList.remove('is-loading', 'is-playing');
+    try { audio.pause(); } catch (e) {}
+    var play = wrap.querySelector('[data-audio-toggle]');
+    if (play) {
+      play.disabled = true;
+      play.setAttribute('aria-disabled', 'true');
+      play.style.opacity = '0.45';
+    }
+    var missing = wrap.querySelector('[data-audio-missing]');
+    if (missing) missing.hidden = false;
+    var timeEl = wrap.querySelector('[data-audio-time]');
+    if (timeEl) timeEl.style.display = 'none';
+  }
 
   document.addEventListener('click', function (evt) {
     var btn = evt.target.closest('[data-audio-toggle]');
@@ -1189,9 +1212,19 @@
       var audio = wrap && wrap.querySelector('[data-audio-el]');
       if (!audio) return;
 
+      /* A clip whose file is gone from storage (old pre-disk recordings)
+         will 404 — mark the bubble once instead of spinning forever. */
+      if (wrap.classList.contains('is-missing')) return;
+      if (audio.__missing) {
+        markAudioMissing(wrap, audio);
+        return;
+      }
+
       if (audio.paused) {
         var p = audio.play();
-        if (p && p.catch) p.catch(function () {});
+        if (p && p.catch) p.catch(function () {
+          if (audio.__missing) markAudioMissing(wrap, audio);
+        });
       } else {
         audio.pause();
       }

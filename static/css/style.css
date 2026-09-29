@@ -1754,13 +1754,15 @@ footer#contact {
     background: linear-gradient(135deg, var(--red), var(--red-deep));
     box-shadow: 0 10px 28px rgba(138,3,3,.32);
   }
-  /* logged-in: single dashboard button pinned to drawer bottom */
-  .nav nav .drawer-cta:only-of-type { margin-top: auto; }
+  /* logged-in: single Dashboard button pinned to drawer bottom (plain class
+     selector — :only-of-type never matches among many <a> elements). */
+  .nav nav .drawer-cta.dashboard-link { margin-top: auto; }
   .nav nav .drawer-foot {
     display: block;
     margin-top: 28px;
     padding-top: 22px;
     border-top: 1px solid rgba(15,15,15,.12);
+    flex-shrink: 0;
   }
   .nav nav .drawer-foot small {
     display: block;
@@ -1967,18 +1969,24 @@ footer#contact {
     max-width: 360px;
     height: 100vh;
     height: 100svh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
     gap: 0;
     padding: 16px 24px 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     background: #ededed;
     border-radius: 28px 0 0 28px;
     border: none;
     box-shadow: -20px 0 60px rgba(0,0,0,.18);
-    overflow: hidden;
+    /* Links scroll if the viewport is short; the CTA + GET IN TOUCH footer
+       below are pushed to the bottom via margin-top:auto and always reachable
+       by scrolling. */
+    overflow-y: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     /* closed: off-screen to the right */
     transform: translateX(110%);
     visibility: hidden;
@@ -1992,7 +2000,29 @@ footer#contact {
     visibility: visible;
   }
 
-  /* spacer that clears the logo / X button row */
+  /* In-drawer X close button: fixed at the drawer's own top-right so it is
+     always visible and tappable, matching the design. It sits above the
+     drawer (z-index 1001 > drawer 990) but below the hamburger-turned-X
+     (1002) — only one of them shows at a time anyway. */
+  .nav nav .drawer-close {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 1001;
+    width: 42px;
+    height: 42px;
+    display: none;
+    place-items: center;
+    border: none;
+    border-radius: 14px;
+    background: var(--red);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(138, 3, 3, 0.38);
+  }
+  .nav nav.open .drawer-close { display: grid; }
+
+  /* Spacer clears the X close button row at the drawer's top */
   .nav nav::before {
     content: '';
     display: block;
@@ -2065,19 +2095,26 @@ footer#contact {
     background: linear-gradient(135deg, var(--red), var(--red-deep));
     box-shadow: 0 10px 28px rgba(138,3,3,.32);
   }
-  /* logged-in: single dashboard button pinned to drawer bottom */
-  .nav nav .drawer-cta:only-of-type { margin-top: auto; }
+  /* logged-in: single Dashboard button pinned to drawer bottom.
+     NOTE: must be a plain class selector — :only-of-type never matches here
+     because the drawer holds many <a> elements (links + CTA + mail links),
+     so that selector silently did nothing and the button sat under Contact. */
+  .nav nav .drawer-cta.dashboard-link { margin-top: auto; }
 
   .nav nav.open .drawer-cta            { opacity: 1; transform: translateX(0); }
   .nav nav.open .drawer-cta:nth-child(7) { transition-delay: 0.32s; }
   .nav nav.open .drawer-cta:nth-child(8) { transition-delay: 0.37s; }
 
-  /* GET IN TOUCH footer */
+  /* GET IN TOUCH footer — sits right under the CTA with a normal gap. The CTA
+     above carries margin-top:auto, which is what pushes the whole bottom
+     group (CTA + footer) down; this must NOT also be auto or the footer
+     detaches from the CTA and slides to the very bottom alone. */
   .nav nav .drawer-foot {
     display: block;
     margin-top: 28px;
     padding-top: 22px;
     border-top: 1px solid rgba(15,15,15,.12);
+    flex-shrink: 0;
   }
   .nav nav .drawer-foot small {
     display: block;

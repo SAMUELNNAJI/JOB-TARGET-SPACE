@@ -40,10 +40,10 @@ at it) so both the user and admin sides render from this one file.
           <div class="chat-audio-scrub" data-audio-scrub></div>
         </div>
         <div class="chat-audio-info">
-          <span class="chat-audio-tag">Voice Note</span>
           <button class="chat-audio-speed" type="button" data-audio-speed
                   aria-label="Change playback speed" title="Playback speed">1×</button>
           <span class="chat-audio-time" data-audio-time>0:00</span>
+          <span class="chat-audio-missing" data-audio-missing hidden>Voice note file missing</span>
         </div>
       </div>
       {# preload="metadata" (not "auto") so a transcript with many voice notes does

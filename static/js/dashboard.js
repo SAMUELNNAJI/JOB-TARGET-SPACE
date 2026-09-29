@@ -5,6 +5,17 @@ dashboardMenu?.addEventListener('click', () => {
   dashboardSidebar?.classList.toggle('open');
 });
 
+/* In-drawer X (phones): the open drawer covers the topbar hamburger, so the
+   drawer carries its own close control. Hidden on desktop via CSS. */
+(function () {
+  var closeBtn = document.querySelector('[data-dashboard-close]');
+  if (closeBtn && dashboardSidebar) {
+    closeBtn.addEventListener('click', function () {
+      dashboardSidebar.classList.remove('open');
+    });
+  }
+})();
+
 document.addEventListener('click', event => {
   if (!dashboardSidebar?.classList.contains('open')) return;
   if (!dashboardSidebar.contains(event.target) && !dashboardMenu?.contains(event.target)) {
