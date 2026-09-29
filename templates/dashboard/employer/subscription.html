@@ -423,9 +423,6 @@
     </div>
   {% endif %}
 
-  {# ── Renewal prompt: fires while a plan is inside its renewal window ──
-     Premium gets 14 days of notice, Basic 7. Offers "continue on the
-     same plan" or "switch to Basic" (Premium) / "renew" (Basic). #}
   {% if renewal_due %}
   <div class="emp-modal-overlay emp-modal-overlay--visible" id="renewalModal" role="dialog" aria-modal="true" aria-labelledby="renewalTitle">
     <div class="emp-modal">
@@ -528,7 +525,7 @@
               <tr>
                 <td>{{ p.created_at|default:p.paid_at|date:"d M Y" }}</td>
                 <td><strong>{{ p.subscription.get_plan_display|default:"Subscription" }}</strong></td>
-                <td>₦{{ p.amount|floatformat:0 }}</td>
+                <td>₦{{ p.display_amount|floatformat:0 }}</td>
                 <td>{{ p.bank_name|default:"Bank Transfer" }}</td>
                 <td>
                   <span class="status-badge {% if p.status == 'success' %}status-badge--green{% elif p.status == 'failed' %}status-badge--red{% else %}status-badge--yellow{% endif %}">

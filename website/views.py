@@ -361,6 +361,37 @@ def _employer_profile(request):
     return get_object_or_404(Profile, user=request.user, role=Profile.Role.EMPLOYER)
 
 
+def _sweep_expired_plans(employer):
+    """Notify the employer once per plan the moment it lapses.
+
+    Runs lazily on page views (no cron needed): the first view after a plan's
+    `expires_at` flips its `is_active` off and sends a single "plan expired"
+    notification telling the employer to renew or upgrade. Returns the
+    freshly-lapsed subscription, or None when nothing just expired.
+    """
+    now = timezone.now()
+    lapsed = (
+        employer.subscriptions.filter(is_active=True, expires_at__lte=now)
+        .order_by("-expires_at").first()
+    )
+    if lapsed is None or lapsed.expiry_notified_at is not None:
+        return None
+    lapsed.is_active = False
+    lapsed.expiry_notified_at = now
+    lapsed.save(update_fields=["is_active", "expiry_notified_at"])
+    employer.notify(
+        title="Your subscription plan has expired",
+        message=(
+            f"Your {lapsed.get_plan_display()} plan expired on "
+            f"{lapsed.expires_at.strftime('%d %b %Y')}. You can no longer submit "
+            "recruitment requests until you renew or upgrade your plan. "
+            "Visit the Subscription page to choose a plan and upload your payment proof."
+        ),
+        kind=Notification.Kind.PAYMENT,
+    )
+    return lapsed
+
+
 # ─────────────────────────────────────────────────────────────
 # Employer views
 # ─────────────────────────────────────────────────────────────
@@ -368,6 +399,7 @@ def _employer_profile(request):
 @login_required
 def employer_dashboard(request):
     employer = _employer_profile(request)
+    _sweep_expired_plans(employer)
     return render(request, "dashboard/employer/index.html", {
         "employer":      employer,
         "unread_count":  _unread_count(employer),
@@ -382,6 +414,9 @@ def employer_dashboard(request):
 @login_required
 def employer_section(request, section):
     employer = _employer_profile(request)
+    # Lazy expiry sweep: the first page view after a plan lapses flips it
+    # off and notifies the employer exactly once (no cron required).
+    _sweep_expired_plans(employer)
     unread   = _unread_count(employer)
 
     # ── Profile ──────────────────────────────────────────────
@@ -470,10 +505,13 @@ def employer_section(request, section):
             "submitted_request": submitted,
             # Drives the blur + subscribe modal. `expired_plan` lets the
             # modal explain WHY access was lost instead of implying the
-            # employer never subscribed.
+            # employer never subscribed. It ignores `is_active` because the
+            # expiry sweep flips lapsed rows off once they are notified — but
+            # never shows it while a newer plan is live (renewed/upgraded).
             "active_plan":      active_plan,
             "expired_plan":     (
-                employer.subscriptions.filter(is_active=True, expires_at__lte=timezone.now())
+                None if active_plan else
+                employer.subscriptions.filter(expires_at__lte=timezone.now())
                 .order_by("-expires_at").first()
             ),
         })
@@ -501,9 +539,13 @@ def employer_section(request, section):
     # ── Subscription ──────────────────────────────────────────
     if section == "subscription":
         # Expiry-aware: a lapsed plan is not presented as "Active".
+        # `lapsed` ignores `is_active` because the expiry sweep flips lapsed
+        # rows off once the employer has been notified — but it is hidden
+        # while a newer plan is live (renewed/upgraded).
         active = employer.current_subscription()
         lapsed = (
-            employer.subscriptions.filter(is_active=True, expires_at__lte=timezone.now())
+            None if active else
+            employer.subscriptions.filter(expires_at__lte=timezone.now())
             .order_by("-expires_at").first()
         )
         pending_payment = employer.payments.filter(status=Payment.Status.PENDING).order_by("-id").first()
@@ -768,10 +810,36 @@ def submit_payment_proof(request):
     return redirect("website:employer_section", section="subscription")
 
 
+def _parse_naira(raw):
+    """Parse an admin-typed amount like '50000', '50,000' or '₦50,000' into int naira.
+
+    Returns None when the value has no usable digits (missing/invalid input).
+    """
+    import re
+    if raw is None:
+        return None
+    digits = re.sub(r"[^\d]", "", str(raw))
+    if not digits:
+        return None
+    try:
+        value = int(digits)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def admin_payment_action(request, payment_id):
-    """Staff approves or declines an uploaded payment proof."""
+    """Staff approves or declines an uploaded payment proof.
+
+    Approval records the amount the admin actually verified on the receipt
+    (``verified_amount``) plus the plan being activated (``final_plan``).
+    The plan fee must be covered by the verified amount — so a ₦50,000
+    receipt uploaded against Premium can only ever activate Basic.
+    Activating a different plan than claimed restarts that plan's full
+    term from today (Basic 30 days, Premium 90 days).
+    """
     if request.method != "POST":
         return redirect("website:admin_section", section="payments")
 
@@ -781,38 +849,94 @@ def admin_payment_action(request, payment_id):
     )
     action = request.POST.get("action", "").strip().lower()
     admin_notes = request.POST.get("admin_notes", "").strip()
+    verified_amount = _parse_naira(request.POST.get("verified_amount", ""))
+    final_plan = request.POST.get("final_plan", "").strip().lower()
+
+    # A processed payment must never be approved/declined twice.
+    if payment.status != Payment.Status.PENDING:
+        messages.warning(
+            request,
+            f"Payment {payment.reference} was already processed ({payment.get_status_display()}).",
+        )
+        return redirect("website:admin_section", section="payments")
 
     now = timezone.now()
 
     if action == "approve":
+        if payment.subscription is None:
+            messages.error(request, f"Payment {payment.reference} has no linked subscription.")
+            return redirect("website:admin_section", section="payments")
+        if not final_plan:
+            final_plan = payment.subscription.plan
+        if final_plan not in PLAN_AMOUNTS:
+            messages.error(request, "Select a valid plan to activate.")
+            return redirect("website:admin_section", section="payments")
+        if verified_amount is None:
+            messages.error(request, "Enter the amount verified on the receipt before approving.")
+            return redirect("website:admin_section", section="payments")
+
+        plan_fee = PLAN_AMOUNTS[final_plan]
+        plan_labels = dict(Subscription.Plan.choices)
+        if verified_amount < plan_fee:
+            messages.error(
+                request,
+                f"Cannot activate {plan_labels.get(final_plan, final_plan)} (₦{plan_fee:,}) — "
+                f"the receipt shows only ₦{verified_amount:,}. "
+                "Pick the plan the receipt covers, or decline the payment.",
+            )
+            return redirect("website:admin_section", section="payments")
+
+        sub = payment.subscription
+        claimed_plan = sub.plan
+        sub.plan = final_plan
+        sub.amount = plan_fee
+        sub.starts_at = now
+        # Fresh full term for the plan being activated — expiry restarts today.
+        sub.expires_at = sub.expiry_from(now)
+        sub.is_active = True
+        sub.save(update_fields=["plan", "amount", "starts_at", "expires_at", "is_active"])
+
+        if final_plan == claimed_plan:
+            plan_change = "matched the requested plan"
+        elif PLAN_AMOUNTS[final_plan] > PLAN_AMOUNTS.get(claimed_plan, 0):
+            plan_change = f"upgraded from {plan_labels.get(claimed_plan, claimed_plan)}"
+        else:
+            plan_change = f"downgraded from {plan_labels.get(claimed_plan, claimed_plan)}"
+
         payment.status = Payment.Status.SUCCESS
         payment.paid_at = now
+        payment.verified_amount = verified_amount
         payment.admin_notes = admin_notes
-        payment.save(update_fields=["status", "paid_at", "admin_notes"])
+        payment.save(update_fields=["status", "paid_at", "verified_amount", "admin_notes"])
 
-        if payment.subscription:
-            sub = payment.subscription
-            sub.starts_at = now
-            # Basic runs 30 days, Premium 90 — the plan the employer paid for.
-            sub.expires_at = sub.expiry_from(now)
-            sub.is_active = True
-            sub.save(update_fields=["starts_at", "expires_at", "is_active"])
-
-            # Deactivate older subscriptions for this employer
-            payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
+        # Deactivate older subscriptions for this employer
+        payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
 
         payment.employer.notify(
             title="Subscription Activated!",
-            message=f"Your payment of ₦{payment.amount:,} for the {payment.subscription.get_plan_display() if payment.subscription else 'subscription'} plan was approved. Your account is fully active!",
+            message=(
+                f"Your payment of ₦{verified_amount:,} for the {sub.get_plan_display()} plan was approved "
+                f"({plan_change}). Your {sub.get_plan_display()} plan is active until "
+                f"{sub.expires_at.strftime('%d %b %Y')}."
+            ),
             kind=Notification.Kind.SYSTEM,
         )
 
         AuditLog.objects.create(
             actor=request.user,
             action="Payment approved",
-            subject=f"Payment {payment.reference} approved for {payment.employer}",
+            subject=(
+                f"Payment {payment.reference} approved for {payment.employer}: "
+                f"verified ₦{verified_amount:,} (claimed ₦{payment.amount:,}), "
+                f"activated {sub.get_plan_display()} ({plan_change}), "
+                f"expires {sub.expires_at.strftime('%d %b %Y')}."
+            ),
         )
-        messages.success(request, f"Payment {payment.reference} approved. Subscription activated.")
+        messages.success(
+            request,
+            f"Payment {payment.reference} approved. {sub.get_plan_display()} plan activated "
+            f"until {sub.expires_at.strftime('%d %b %Y')}.",
+        )
 
     elif action == "decline":
         payment.status = Payment.Status.FAILED

@@ -861,15 +861,23 @@
   });
 
   /* ── AUDIO PLAYER: WAVEFORM + SPEED + COUNTDOWN ──────────────────── */
-  var audioCtx = null;
-  function getAudioCtx() {
+  /* CRITICAL: this uses an OfflineAudioContext, deliberately.
+     An OfflineAudioContext runs the identical decodeAudioData() algorithm but
+     has NO output device and NO real-time render thread. Using a live
+     AudioContext here made the browser re-open the system audio output and
+     start a second render thread; that contention starved the <audio>
+     element's own output and produced audible crackling/stuttering, worst
+     on phones. Decoding peaks is an offline job, so it should not touch the
+     audio hardware at all. */
+  var decodeCtx = null;
+  function getDecodeCtx() {
     try {
-      if (!audioCtx) {
-        var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtxClass) audioCtx = new AudioCtxClass();
+      if (!decodeCtx) {
+        var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (Ctx) decodeCtx = new Ctx(1, 1, 44100);
       }
     } catch (_) {}
-    return audioCtx;
+    return decodeCtx;
   }
 
   /* Decoded results are cached by URL. initAllAudios re-runs after every poll
@@ -919,8 +927,8 @@
   function waveColors(wrap) {
     var mine = wrap.getAttribute('data-audio-is-mine') === '1';
     return mine
-      ? { played: 'rgba(255,255,255,0.95)', rest: 'rgba(255,255,255,0.32)' }
-      : { played: '#d90429',             rest: 'rgba(15,23,42,0.20)'   };
+      ? { played: 'rgba(255,255,255,0.98)', rest: 'rgba(255,255,255,0.34)', head: '#ffffff' }
+      : { played: '#d90429',              rest: 'rgba(15,23,42,0.18)',   head: '#0f172a' };
   }
 
   /* Paint the bars, filling in the ones already played. */
@@ -970,6 +978,15 @@
         ctx.fillRect(x, y, barW, h);
       }
     }
+
+    /* A 1px playhead at the exact play position. Without it the boundary
+       between filled and unfilled bars falls between two bars, so it is hard
+       to see precisely where playback has reached. */
+    if (progress > 0 && progress < 1) {
+      var px = Math.round(progress * cssW) + 0.5;
+      ctx.fillStyle = colors.head;
+      ctx.fillRect(px - 0.5, 1, 1, cssH - 2);
+    }
   }
 
   /* Decode a recording once; cache and reuse both duration and peaks. */
@@ -979,11 +996,13 @@
 
     var cached = peakCache[src];
     if (cached) {
+      audio.__peaks = cached.peaks;
+      audio.__hasPeaks = true;
       if (onReady) onReady(cached.duration, cached.peaks);
       return;
     }
 
-    var ctx = getAudioCtx();
+    var ctx = getDecodeCtx();
     if (!ctx) return;
 
     fetch(src)
@@ -998,6 +1017,7 @@
         var peaks = computePeaks(decoded, WAVE_BARS);
         peakCache[src] = { duration: duration, peaks: peaks };
         audio.__peaks = peaks;
+        audio.__hasPeaks = true;
         if (onReady) onReady(duration, peaks);
       })
       .catch(function () {});
@@ -1053,12 +1073,22 @@
     var timeEl = wrap.querySelector('[data-audio-time]');
 
     var applyDur = function (d, peaks) {
-      if (peaks) audio.__peaks = peaks;
+      if (peaks) {
+        audio.__peaks = peaks;
+        audio.__hasPeaks = true;
+      }
       if (timeEl && audio.paused && (!audio.currentTime || audio.currentTime === 0)) {
         timeEl.textContent = fmtTime(d);
       }
       drawWaveform(audio, audioProgress(audio));
+      // Peaks are in, so drop the decoding shimmer and any ring.
+      setAudioLoading(audio, false);
     };
+
+    /* Show the ring only if the clip genuinely cannot play yet. Checking
+       readyState avoids spinning on an already-buffered/cached clip, where
+       `canplay` may well have fired before this initialisation ran. */
+    if (!audio.__hasPeaks) setAudioLoading(audio, audio.readyState < 3);
 
     // Draw the placeholder immediately so the player is never blank.
     if (!audio.__peaks) drawWaveform(audio, 0);
@@ -1094,6 +1124,61 @@
       each('[data-audio-el]', function (a) { drawWaveform(a, audioProgress(a)); });
     }, 150);
   });
+
+  /* ── Loading / buffering state ────────────────────────────────────── */
+  /* Two INDEPENDENT states, deliberately kept separate:
+       is-loading  — the media cannot play yet (bytes still arriving).
+                     Drives the busy ring in the play button.
+       is-decoding — the waveform peaks have not been decoded yet.
+                     Drives the dimmed/sweeping waveform.
+     They were previously conflated, which left the ring spinning for the
+     whole decode of a long clip even though the audio was already playing
+     audibly. The ring must track playability only. */
+  function setAudioLoading(audio, isLoading) {
+    var wrap = audio && audio.closest('.chat-audio');
+    if (!wrap) return;
+    wrap.classList.toggle('is-loading', !!isLoading);
+    wrap.classList.toggle('is-decoding', !audio.__hasPeaks);
+  }
+
+  function audioEvents(fn) {
+    return function (e) {
+      if (e.target && e.target.matches && e.target.matches('[data-audio-el]')) {
+        fn(e.target);
+      }
+    };
+  }
+
+  // Buffering begins: show the ring.
+  document.addEventListener('loadstart', audioEvents(function (a) {
+    setAudioLoading(a, true);
+  }), true);
+  document.addEventListener('waiting', audioEvents(function (a) {
+    setAudioLoading(a, true);
+  }), true);
+  document.addEventListener('stalled', audioEvents(function (a) {
+    setAudioLoading(a, true);
+  }), true);
+
+  // Playable again: hide the ring.
+  document.addEventListener('canplay', audioEvents(function (a) {
+    setAudioLoading(a, false);
+  }), true);
+  document.addEventListener('canplaythrough', audioEvents(function (a) {
+    setAudioLoading(a, false);
+  }), true);
+  document.addEventListener('playing', audioEvents(function (a) {
+    setAudioLoading(a, false);
+  }), true);
+  document.addEventListener('suspend', audioEvents(function (a) {
+    setAudioLoading(a, false);
+  }), true);
+  // A media error must clear the ring, or the bubble spins forever.
+  document.addEventListener('error', audioEvents(function (a) {
+    setAudioLoading(a, false);
+    a.__hasPeaks = true;   // stop the waveform shimmer as well
+    setAudioLoading(a, false);
+  }), true);
 
   document.addEventListener('click', function (evt) {
     var btn = evt.target.closest('[data-audio-toggle]');
@@ -1182,14 +1267,21 @@
     if (wrap) wrap.classList.remove('is-playing');
   }, true);
 
-  // COUNTS DOWN SECONDS & MINUTES AS AUDIO PLAYS
+  // COUNTS DOWN SECONDS & MINUTES AS AUDIO PLAYS, AND FILLS THE WAVEFORM.
+  //
+  // CRITICAL: media events do NOT bubble. The `play`/`pause` listeners above
+  // register with `true` (capture) so the event is caught on the way down to
+  // the <audio> element. These two were registered WITHOUT capture, so the
+  // bubble phase never reached `document` and the handler never ran at all —
+  // which is why the waveform stayed empty while the clip was audibly playing
+  // and the timer never counted down. Keep the `true` on all four.
   document.addEventListener('timeupdate', function (evt) {
     var audio = evt.target;
     if (!audio.matches || !audio.matches('[data-audio-el]')) return;
     var cur = audio.currentTime || 0;
     var dur = getAudioDuration(audio);
     updateAudioDisplay(audio, cur, dur);
-  });
+  }, true);
 
   document.addEventListener('ended', function (evt) {
     var audio = evt.target;
@@ -1207,7 +1299,8 @@
     audio.currentTime = 0;
     // Reset the waveform so a replay starts filling from the left again.
     drawWaveform(audio, 0);
-  });
+    setAudioLoading(audio, false);
+  }, true);
 
   /* ── Admin Support Inbox Filter, Search & Real-Time Switching ─────── */
   function updateActiveInboxRow(threadId) {

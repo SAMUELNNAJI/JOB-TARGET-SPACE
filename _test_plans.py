@@ -133,7 +133,8 @@ from website.models import Payment
 p = Payment.objects.filter(employer=e3).latest("id")
 no_5xx("basic payment approval", ac.post(
     reverse("website:admin_payment_action", args=[p.pk]),
-    {"action": "approve", "admin_notes": "ok"}, follow=True))
+    {"action": "approve", "verified_amount": "50,000",
+     "final_plan": "basic", "admin_notes": "ok"}, follow=True))
 p.refresh_from_db()
 sub = p.subscription
 check("Basic approved -> 30 day term", (sub.expires_at - sub.starts_at).days == 30,
@@ -150,7 +151,8 @@ r = c4.post(reverse("website:submit_payment_proof"),
 p2 = Payment.objects.filter(employer=e4).latest("id")
 no_5xx("premium payment approval", ac.post(
     reverse("website:admin_payment_action", args=[p2.pk]),
-    {"action": "approve", "admin_notes": "ok"}, follow=True))
+    {"action": "approve", "verified_amount": "100,000",
+     "final_plan": "premium", "admin_notes": "ok"}, follow=True))
 p2.refresh_from_db()
 sub2 = p2.subscription
 check("Premium approved -> 90 day term", (sub2.expires_at - sub2.starts_at).days == 90,

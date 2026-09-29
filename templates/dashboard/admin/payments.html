@@ -328,6 +328,54 @@
   color: #94a3b8;
 }
 
+.adm-confirm-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font: 700 14px/1.4 "Montserrat", sans-serif;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-confirm-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.adm-confirm-warn {
+  display: none;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.adm-confirm-warn.is-visible { display: block; }
+
+.adm-confirm-ok-note {
+  display: none;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.adm-confirm-ok-note.is-visible { display: block; }
+
 .adm-confirm-actions {
   display: flex;
   gap: 10px;
@@ -475,6 +523,9 @@
               </td>
               <td style="white-space:nowrap;font-weight:700;color:#0f172a;">
                 ₦{{ p.amount|floatformat:0 }}
+                {% if p.verified_amount %}
+                  <div style="font-size:11px;font-weight:600;color:#059669;">Verified: ₦{{ p.verified_amount|floatformat:0 }}</div>
+                {% endif %}
               </td>
               <td>
                 <div style="font-size:12.5px;font-weight:600;color:#1e293b;">{{ p.bank_name|default:"Direct Transfer" }}</div>
@@ -522,6 +573,8 @@
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>Approve</span>
                       </button>
+                      <input type="hidden" name="verified_amount" value="">
+                      <input type="hidden" name="final_plan" value="">
                     </form>
 
                     {# Decline Form #}
@@ -614,6 +667,23 @@
       <dt>Amount</dt><dd id="actionModalAmt">&mdash;</dd>
       <dt>Reference</dt><dd id="actionModalRef">&mdash;</dd>
     </dl>
+
+    <div class="adm-confirm-field" id="actionModalVerifyWrap" hidden>
+      <label class="adm-confirm-label" for="actionModalVerified">
+        Amount on the receipt (₦) <span class="adm-confirm-optional">(required)</span>
+      </label>
+      <input class="adm-confirm-input" id="actionModalVerified" inputmode="numeric" autocomplete="off"
+             placeholder="e.g. 50,000 — read it off the receipt">
+      <label class="adm-confirm-label" for="actionModalPlanSelect" style="margin-top:14px;">
+        Plan to activate <span class="adm-confirm-optional">(Basic ₦50,000 · Premium ₦100,000)</span>
+      </label>
+      <select class="adm-confirm-input" id="actionModalPlanSelect">
+        <option value="basic">Basic — ₦50,000 / 30 days</option>
+        <option value="premium">Premium — ₦100,000 / 90 days</option>
+      </select>
+      <p class="adm-confirm-warn" id="actionModalMismatch"></p>
+      <p class="adm-confirm-ok-note" id="actionModalPlanNote"></p>
+    </div>
 
     <div class="adm-confirm-field">
       <label class="adm-confirm-label" for="actionModalNote" id="actionModalLabel">
@@ -717,6 +787,66 @@ const actionModalNote = document.getElementById('actionModalNote');
 const actionModalOk = document.getElementById('actionModalOk');
 const actionModalOkLabel = document.getElementById('actionModalOkLabel');
 const actionModalCancel = document.getElementById('actionModalCancel');
+const actionModalVerifyWrap = document.getElementById('actionModalVerifyWrap');
+const actionModalVerified = document.getElementById('actionModalVerified');
+const actionModalPlanSelect = document.getElementById('actionModalPlanSelect');
+const actionModalMismatch = document.getElementById('actionModalMismatch');
+const actionModalPlanNote = document.getElementById('actionModalPlanNote');
+const actionModalEmp = document.getElementById('actionModalEmp');
+const actionModalPlan = document.getElementById('actionModalPlan');
+const actionModalAmt = document.getElementById('actionModalAmt');
+const actionModalRef = document.getElementById('actionModalRef');
+
+const PLAN_FEES = { basic: 50000, premium: 100000 };
+const PLAN_TERMS = { basic: '30 days', premium: '90 days' };
+const PLAN_LABELS = { basic: 'Basic', premium: 'Premium' };
+
+function parseNaira(raw) {
+  const digits = String(raw == null ? '' : raw).replace(/[^\d]/g, '');
+  if (!digits) return null;
+  const value = parseInt(digits, 10);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function refreshVerifyState() {
+  if (!actionModalVerifyWrap || actionModalVerifyWrap.hidden) return true;
+  const verified = parseNaira(actionModalVerified ? actionModalVerified.value : '');
+  const plan = actionModalPlanSelect ? actionModalPlanSelect.value : 'basic';
+  const fee = PLAN_FEES[plan] || 0;
+
+  if (actionModalMismatch) {
+    if (verified == null) {
+      actionModalMismatch.textContent = 'Enter the amount shown on the receipt — the server will refuse approval without it.';
+      actionModalMismatch.classList.add('is-visible');
+    } else if (verified < fee) {
+      actionModalMismatch.textContent = '₦' + verified.toLocaleString() + ' does not cover '
+        + PLAN_LABELS[plan] + ' (₦' + fee.toLocaleString() + '). Switch to the plan the receipt covers, or Decline instead.';
+      actionModalMismatch.classList.add('is-visible');
+    } else {
+      actionModalMismatch.textContent = '';
+      actionModalMismatch.classList.remove('is-visible');
+    }
+  }
+
+  if (actionModalPlanNote) {
+    const claimed = String(actionModalPlanNote.dataset.claimed || '').toLowerCase();
+    const claimedLabel = PLAN_LABELS[claimed] || claimed;
+    if (plan === claimed) {
+      actionModalPlanNote.textContent = 'Activating ' + PLAN_LABELS[plan] + ' — fresh ' + PLAN_TERMS[plan] + ' term starting today.';
+    } else if ((PLAN_FEES[plan] || 0) > (PLAN_FEES[claimed] || 0)) {
+      actionModalPlanNote.textContent = 'This will UPGRADE the employer from ' + claimedLabel + ' to ' + PLAN_LABELS[plan]
+        + ' — a fresh ' + PLAN_TERMS[plan] + ' term starting today.';
+    } else {
+      actionModalPlanNote.textContent = 'This will DOWNGRADE the employer from ' + claimedLabel + ' to ' + PLAN_LABELS[plan]
+        + ' — a fresh ' + PLAN_TERMS[plan] + ' term starting today.';
+    }
+    actionModalPlanNote.classList.add('is-visible');
+  }
+  return verified != null && verified >= fee;
+}
+
+actionModalVerified?.addEventListener('input', refreshVerifyState);
+actionModalPlanSelect?.addEventListener('change', refreshVerifyState);
 
 const ICON_APPROVE = '<polyline points="20 6 9 17 4 12"></polyline>';
 const ICON_DECLINE = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
@@ -725,7 +855,7 @@ const COPY = {
   approve: {
     title: 'Approve this payment?',
     sub: 'The employer’s subscription will be activated immediately and they will be notified.',
-    okLabel: 'Approve &amp; Activate',
+    okLabel: 'Approve & Activate',
     noteLabel: 'Internal note <span class="adm-confirm-optional">(optional)</span>',
     hint: 'Stored with the record and included in the employer’s notification.',
   },
@@ -765,9 +895,29 @@ function openActionModal(mode, opener) {
   actionModalOkLabel.textContent = copy.okLabel;
   actionModalOk.className = 'adm-confirm-btn adm-confirm-btn--' + mode;
 
+  // Fill the Employer / Plan / Amount / Reference facts from the row button.
+  if (actionModalEmp) actionModalEmp.textContent = opener.dataset.payEmp || '—';
+  if (actionModalRef) actionModalRef.textContent = opener.dataset.payRef || '—';
+  if (actionModalAmt) actionModalAmt.textContent = opener.dataset.payAmt || '—';
+  const claimedPlan = String(opener.dataset.payPlan || 'basic').toLowerCase();
+  if (actionModalPlan) actionModalPlan.textContent = PLAN_LABELS[claimedPlan] || opener.dataset.payPlan || '—';
+  if (actionModalPlanNote) actionModalPlanNote.dataset.claimed = claimedPlan;
+
+  // Approval additionally requires the amount read off the receipt plus the
+  // plan that money should activate (defaults to the claimed plan).
+  if (actionModalVerifyWrap) actionModalVerifyWrap.hidden = mode !== 'approve';
+  if (mode === 'approve') {
+    if (actionModalVerified) actionModalVerified.value = '';
+    if (actionModalPlanSelect) actionModalPlanSelect.value = PLAN_FEES[claimedPlan] ? claimedPlan : 'basic';
+    refreshVerifyState();
+  } else {
+    if (actionModalMismatch) { actionModalMismatch.textContent = ''; actionModalMismatch.classList.remove('is-visible'); }
+    if (actionModalPlanNote) { actionModalPlanNote.textContent = ''; actionModalPlanNote.classList.remove('is-visible'); }
+  }
+
   actionModal.classList.add('is-open');
   actionModal.setAttribute('aria-hidden', 'false');
-  setTimeout(() => actionModalNote.focus(), 60);
+  setTimeout(() => (mode === 'approve' && actionModalVerified ? actionModalVerified : actionModalNote).focus(), 60);
 }
 
 function closeActionModal() {
@@ -781,6 +931,17 @@ function closeActionModal() {
 
 function submitActionModal() {
   if (!actionModalForm) { closeActionModal(); return; }
+  if (actionModalMode === 'approve') {
+    // Client-side guard only — the server re-checks verified ≥ plan fee.
+    if (!refreshVerifyState()) {
+      if (actionModalVerified) actionModalVerified.focus();
+      return;
+    }
+    const verifiedField = actionModalForm.querySelector('input[name="verified_amount"]');
+    if (verifiedField && actionModalVerified) verifiedField.value = actionModalVerified.value.trim();
+    const planField = actionModalForm.querySelector('input[name="final_plan"]');
+    if (planField && actionModalPlanSelect) planField.value = actionModalPlanSelect.value;
+  }
   const field = actionModalForm.querySelector('input[name="admin_notes"]');
   if (field) field.value = actionModalNote.value.trim();
   const form = actionModalForm;

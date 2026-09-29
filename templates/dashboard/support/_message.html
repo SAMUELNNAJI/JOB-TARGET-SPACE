@@ -31,6 +31,8 @@ at it) so both the user and admin sides render from this one file.
           <rect x="6" y="4" width="4" height="16" rx="1"></rect>
           <rect x="14" y="4" width="4" height="16" rx="1"></rect>
         </svg>
+        {# WhatsApp-style busy ring, shown while the clip is still buffering. #}
+        <span class="chat-audio-spinner" data-audio-spinner aria-hidden="true"></span>
       </button>
       <div class="chat-audio-body">
         <div class="chat-audio-waveform" data-waveform-wrap>
@@ -44,7 +46,11 @@ at it) so both the user and admin sides render from this one file.
           <span class="chat-audio-time" data-audio-time>0:00</span>
         </div>
       </div>
-      <audio preload="auto" src="{{ message.audio.url }}" data-audio-el></audio>
+      {# preload="metadata" (not "auto") so a transcript with many voice notes does
+         not start dozens of full-file downloads in parallel at once — that
+         contention is a common cause of stutter/crackle on mobile. The busy
+         ring now covers the small wait when a clip is first played. #}
+      <audio preload="metadata" src="{{ message.audio.url }}" data-audio-el></audio>
     </div>
   {% endif %}
 

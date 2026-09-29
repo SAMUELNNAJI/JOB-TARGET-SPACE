@@ -1534,10 +1534,14 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
        chat.css) and the recording bar (65). At z-index 20 the open drawer was
        painted UNDER the message input, so the input stayed visible and tappable
        on top of the navigation. 300 clears the chat layer with room to spare
-       while staying below modals (1200). */
+       while staying under the pinned topbar (320) so the hamburger toggle is
+       never buried under the drawer. */
     z-index: 300;
     left: 0;
     top: 0;
+    /* The drawer slides in below the 62px pinned topbar, so its own content
+       must start under that header instead of behind it. */
+    padding-top: 74px;
     /* Roomier than the 245px it started at — nav labels plus their badges
        were cramping on narrow phones. */
     width: 288px;
@@ -6940,8 +6944,9 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-empty-btn:hover{background:var(--emp-red-dk,#a8001c);transform:translateY(-1px)}
 
 /* subscription plan grid */
-.emp-plan-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 26px;border-radius:16px;background:linear-gradient(110deg,#e8faf1,#f0fdf7);border:1px solid #c3f0d4;margin-bottom:24px}
-.emp-plan-banner-left{display:flex;align-items:center;gap:14px}
+.emp-plan-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 16px;padding:20px 26px;border-radius:16px;background:linear-gradient(110deg,#e8faf1,#f0fdf7);border:1px solid #c3f0d4;margin-bottom:24px;overflow:hidden}
+.emp-plan-banner-left{display:flex;align-items:center;gap:14px;flex:1 1 auto;min-width:0}
+.emp-plan-banner-left > div{min-width:0}
 .emp-plan-banner-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:#d1fae5;color:#065f46;flex-shrink:0}
 
 /* ════════════════════════════════════════════════════════════
@@ -7432,11 +7437,11 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 }
 
 
-.emp-plan-banner-left h3{font:700 15px 'Montserrat',sans-serif;color:#065f46;margin-bottom:3px}
-.emp-plan-banner-left p{font-size:11px;color:#6b7280}
-.emp-plan-banner-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
-.emp-plan-active-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:#d1fae5;color:#065f46;font-size:10px;font-weight:700}
-.emp-plan-banner-right strong{font:700 17px 'Montserrat',sans-serif;color:#065f46}
+.emp-plan-banner-left h3{font:700 15px 'Montserrat',sans-serif;color:#065f46;margin-bottom:3px;overflow-wrap:anywhere}
+.emp-plan-banner-left p{font-size:11px;color:#6b7280;overflow-wrap:anywhere}
+.emp-plan-banner-right{display:flex;align-items:center;gap:14px;flex-shrink:0;margin-left:auto}
+.emp-plan-active-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;white-space:nowrap}
+.emp-plan-banner-right strong{font:700 17px 'Montserrat',sans-serif;color:#065f46;white-space:nowrap}
 .emp-plans-heading{margin-bottom:18px}
 .emp-plans-heading h2{font:700 20px 'Montserrat',sans-serif;color:var(--emp-ink,#0e1420);margin-bottom:5px}
 .emp-plans-heading p{font-size:12px;color:var(--emp-muted,#7a8599)}
@@ -7479,9 +7484,28 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-sub-active-badge span{display:block;font-size:10px;opacity:.65;margin-top:2px}
 
 /* responsive */
-@media(max-width:1050px){.emp-body{grid-template-columns:1fr}.emp-body-right{display:grid;grid-template-columns:repeat(2,1fr)}.emp-company-card{grid-column:span 2}.emp-shortlist-grid{grid-template-columns:repeat(2,1fr)}.emp-plan-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:900px){.emp-stats{grid-template-columns:repeat(2,1fr)}.emp-hero{grid-template-columns:1fr;padding:30px 28px;min-height:auto}.emp-hero-aside{display:none}.emp-form-hero{grid-template-columns:1fr;padding:28px 28px 32px;min-height:auto}.emp-form-hero-stat{display:none}.emp-hero-title{font-size:34px}}
-@media(max-width:760px){.emp-home,.emp-profile-page,.emp-shortlist-page,.emp-sub-page,.emp-section-page{padding:14px 12px 40px}.emp-stats{gap:10px}.emp-body-right{grid-template-columns:1fr}.emp-company-card{grid-column:auto}.emp-shortlist-grid{grid-template-columns:1fr;padding:16px;gap:12px}.emp-plan-grid{grid-template-columns:1fr}.emp-form-card-head,.emp-form{padding-left:16px;padding-right:16px}.emp-form-grid{grid-template-columns:1fr}.emp-field--full{grid-column:auto}.emp-hero-title{font-size:28px}.emp-section-card{padding:32px 20px}}
+@media(max-width:1050px){.emp-body{grid-template-columns:minmax(0,1fr)}.emp-body-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.emp-company-card{grid-column:span 2}.emp-shortlist-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.emp-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.emp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.emp-hero{grid-template-columns:minmax(0,1fr);padding:30px 28px;min-height:auto}.emp-hero-aside{display:none}.emp-form-hero{grid-template-columns:minmax(0,1fr);padding:28px 28px 32px;min-height:auto}.emp-form-hero-stat{display:none}.emp-hero-title{font-size:34px}}
+@media(max-width:760px){.emp-home,.emp-profile-page,.emp-shortlist-page,.emp-sub-page,.emp-section-page{padding:14px 12px 40px}.emp-stats{gap:10px}.emp-body-right{grid-template-columns:minmax(0,1fr)}.emp-company-card{grid-column:auto}.emp-shortlist-grid{grid-template-columns:minmax(0,1fr);padding:16px;gap:12px}.emp-plan-grid{grid-template-columns:minmax(0,1fr)}.emp-form-card-head,.emp-form{padding-left:16px;padding-right:16px}.emp-form-grid{grid-template-columns:minmax(0,1fr)}.emp-field--full{grid-column:auto}.emp-hero-title{font-size:28px}.emp-section-card{padding:32px 20px}}
+/* Phones: these rows/panels used to be locked to their content width, which
+   pushed the whole column wider than the screen and scrolled the dashboard
+   sideways. Every flex/grid child gets a zero floor and the long status pills
+   move onto their own row instead of stretching the card. */
+@media(max-width:560px){
+  .emp-body,.emp-body-left,.emp-body-right,.emp-panel,.emp-quick-actions,.emp-tip-card,.emp-company-card,.emp-payment-history,.emp-plan-grid,.emp-plan-card{min-width:0}
+  .emp-req-row,.emp-candidate-row{grid-template-columns:36px minmax(0,1fr)}
+  .emp-req-info,.emp-candidate-info{min-width:0}
+  .emp-req-right,.emp-candidate-right{grid-column:2;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 10px}
+  .emp-notif-body strong{overflow-wrap:anywhere}
+  .emp-stat{min-width:0}
+  .emp-stat-top{flex-wrap:wrap;gap:6px}
+  .emp-stat-link{white-space:normal}
+  .emp-stat-val,.emp-stat-label{overflow-wrap:anywhere}
+  .emp-empty-inline{flex-wrap:wrap}
+  .emp-empty-inline span{min-width:0;overflow-wrap:anywhere}
+  .emp-plan-banner{padding:16px 18px}
+  .emp-plan-banner-right{width:100%;margin-left:0;justify-content:space-between}
+}
 @media(max-width:480px){.emp-hero-title{font-size:24px}.emp-stat{padding:14px}.emp-stat-val{font-size:20px}}
 
 /* ============================================================
@@ -9143,12 +9167,19 @@ body { font-size: 15px !important; }
    ============================================================ */
 /* The topbar is a direct child of .dashboard-main, which is a plain
    block in the .dashboard-app grid, so position: sticky resolves against
-   the viewport and keeps working. z-index sits below the mobile sidebar
-   drawer (300) but well below the notification dropdown (9000). */
+   the viewport and keeps working.
+
+   z-index 320 sits ABOVE the mobile sidebar drawer (300). That ordering is
+   deliberate: the only control that opens/closes the drawer is the
+   `.dashboard-mobile-menu` hamburger inside this topbar, and the drawer used
+   to paint over it, leaving the open drawer impossible to dismiss by tapping
+   the toggle again. 320 still clears the chat composer (45) and the recording
+   bar (65), and stays well below the notification dropdown (9000) and the
+   modals (1200). */
 .dashboard-topbar {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 320;
 }
 /* The sidebar is a sibling in the grid and scrolls independently, so it
    must not cover the pinned header on desktop.
@@ -9158,8 +9189,9 @@ body { font-size: 15px !important; }
    phones. It was z-index 40, which is BELOW the chat composer's sticky
    z-index 45 (chat.css) and far below the recording bar's 65 — so opening
    the drawer left the message input painted on top of the navigation.
-   300 puts the drawer above every chat surface layer while staying well
-   under the modals (1200) and the notification dropdown (9000). */
+   300 puts the drawer above every chat surface layer while staying under
+   the pinned topbar (320), the modals (1200) and the notification
+   dropdown (9000). */
 .dashboard-sidebar {
   z-index: 300;
 }

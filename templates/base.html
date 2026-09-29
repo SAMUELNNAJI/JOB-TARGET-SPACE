@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
   {% block page_styles %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=15">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=15">
   {% endblock %}
 </head>
 <body>
@@ -113,6 +113,6 @@
     <div class="copyright"><span>&copy; 2025 JobSpace. All rights reserved.</span><div class="legal"><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms and Conditions</a><a class="up" href="#top" aria-label="Back to top">↑</a></div></div>
   </footer>
 
-  {% block scripts %}<script src="{% static 'js/layout.js' %}"></script>{% endblock %}
+  {% block scripts %}<script src="{% static 'js/layout.js' %}?v=15"></script>{% endblock %}
 </body>
 </html>

@@ -198,6 +198,9 @@ class Subscription(models.Model):
     starts_at = models.DateTimeField()
     expires_at = models.DateTimeField()
     is_active = models.BooleanField(default=False)
+    # Set the first time the expiry sweep notifies the employer, so the
+    # "plan expired" notice is sent exactly once per subscription row.
+    expiry_notified_at = models.DateTimeField(null=True, blank=True)
 
     @property
     def plan_label(self):
@@ -256,6 +259,7 @@ class Payment(models.Model):
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments")
     reference = models.CharField(max_length=120, unique=True)
     amount = models.PositiveIntegerField()
+    verified_amount = models.PositiveIntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     bank_name = models.CharField(max_length=100, blank=True, default="")
     sender_name = models.CharField(max_length=150, blank=True, default="")
@@ -266,6 +270,11 @@ class Payment(models.Model):
 
     class Meta:
         ordering = ("-created_at", "-id")
+
+    @property
+    def display_amount(self):
+        """Amount actually verified on the receipt; falls back to claimed amount."""
+        return self.verified_amount if self.verified_amount is not None else self.amount
 
 
 class RecruitmentRequest(models.Model):

@@ -528,6 +528,7 @@
 }
 
 .chat-audio-play {
+  position: relative; /* anchors .chat-audio-spinner */
   display: grid;
   place-items: center;
   width: 38px;
@@ -630,6 +631,48 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
 }
+
+/* ── Loading state (buffering / decoding) ──────────────────────────────
+   WhatsApp shows a busy ring inside the play button and greys the waveform
+   while the clip is still arriving. `is-loading` is toggled by chat.js from
+   the media element's loadstart/waiting/canplay/playing events. */
+.chat-audio-spinner {
+  display: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: chatAudioSpin 0.7s linear infinite;
+}
+
+@keyframes chatAudioSpin {
+  to { transform: rotate(360deg); }
+}
+
+.chat-audio.is-loading .chat-audio-spinner { display: block; }
+.chat-audio.is-loading .chat-audio-icon { display: none !important; }
+
+/* Dim + sweep the waveform while its peaks are still decoding. This is tied
+   to `is-decoding` (waveform only), NOT `is-loading` (the ring) — the two
+   states are independent so a clip that is already playing does not keep
+   showing a spinner while a long recording finishes decoding. */
+.chat-audio.is-decoding .chat-audio-waveform { opacity: 0.45; }
+
+.chat-audio.is-decoding .chat-audio-waveform::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(127,127,127,0.22) 50%, transparent 100%);
+  animation: waveformShimmer 1.1s linear infinite;
+}
+
+.chat-audio.is-loading .chat-audio-time { opacity: 0.5; }
 
 /* Playback-speed pill (1x / 1.25x / 1.5x / 2x), WhatsApp-style */
 .chat-audio-speed {
