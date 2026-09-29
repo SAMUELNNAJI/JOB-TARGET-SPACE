@@ -1544,9 +1544,9 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
     z-index: 199988889;
     left: 0;
     top: 0;
-    /* The drawer slides in below the 62px pinned topbar, so its own content
-       must start under that header instead of behind it. */
-    padding-top: 74px;
+    /* No extra top padding here: the drawer paints over the topbar and owns
+       its own logo + X row, so content starts at the natural 18px top inset
+       instead of being shoved down below the header. */
     /* Roomier than the 245px it started at — nav labels plus their badges
        were cramping on narrow phones. */
     width: 288px;
