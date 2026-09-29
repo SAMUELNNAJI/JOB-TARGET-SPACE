@@ -607,6 +607,11 @@
   color: #fca5a5;
 }
 
+/* The clip is on the server but this browser cannot decode it (every
+   recording is .webm/Opus, which iOS Safari refuses). Unlike .is-missing the
+   play button stays enabled, because a retry can still succeed. */
+.chat-audio.is-unsupported .chat-audio-missing { color: #fdba74; }
+
 .chat-audio-tag {
   font-size: 10px;
   font-weight: 600;

@@ -46,11 +46,12 @@ at it) so both the user and admin sides render from this one file.
           <span class="chat-audio-missing" data-audio-missing hidden>Voice note file missing</span>
         </div>
       </div>
-      {# preload="metadata" (not "auto") so a transcript with many voice notes does
-         not start dozens of full-file downloads in parallel at once — that
-         contention is a common cause of stutter/crackle on mobile. The busy
-         ring now covers the small wait when a clip is first played. #}
-      <audio preload="metadata" src="{{ message.audio.url }}" data-audio-el></audio>
+      {# preload="auto": these clips are only a few tens of KB, and eagerly
+         loading them is what makes older recordings actually start. With
+         preload="metadata" a browser that never fetched the body left the
+         element at readyState 0 forever, and the playback-rate could be reset
+         when metadata finally arrived mid-playback. #}
+      <audio preload="auto" src="{{ message.audio.url }}" data-audio-el></audio>
     </div>
   {% endif %}
 

@@ -1173,16 +1173,63 @@
   document.addEventListener('suspend', audioEvents(function (a) {
     setAudioLoading(a, false);
   }), true);
-  // A media error must clear the ring, or the bubble spins forever.
+  /* A media error must clear the ring, or the bubble spins forever.
+     But an `error` event does NOT prove the file is gone. It also fires when
+     this particular browser cannot decode the container (every clip is
+     .webm/Opus, which Safari on iOS cannot decode at all) and when a preload
+     gets aborted. Treating any of those as "file missing" and disabling the
+     play button is exactly what made older voice notes look permanently
+     dead. The file is only declared gone once a HEAD request confirms 404. */
+  var srcGoneCache = {};
+
+  function audioSourceGone(src) {
+    if (Object.prototype.hasOwnProperty.call(srcGoneCache, src)) {
+      return Promise.resolve(srcGoneCache[src]);
+    }
+    return fetch(src, { method: 'HEAD', cache: 'no-store' })
+      .then(function (res) {
+        var gone = res.status === 404 || res.status === 410;
+        srcGoneCache[src] = gone;
+        return gone;
+      })
+      // Offline, blocked, or HEAD unsupported: never blame the file.
+      .catch(function () { return false; });
+  }
+
   document.addEventListener('error', audioEvents(function (a) {
-    setAudioLoading(a, false);
     a.__hasPeaks = true;   // stop the waveform shimmer as well
     setAudioLoading(a, false);
-    // 404 / decode failure = the file is gone from media storage.
-    a.__missing = true;
-    var missingWrap = a.closest && a.closest('.chat-audio');
-    if (missingWrap) markAudioMissing(missingWrap, a);
+
+    var wrap = a.closest && a.closest('.chat-audio');
+    if (!wrap || wrap.classList.contains('is-missing')) return;
+    var src = a.currentSrc || a.src;
+    if (!src) return;
+
+    audioSourceGone(src).then(function (gone) {
+      if (gone) {
+        a.__missing = true;
+        markAudioMissing(wrap, a);
+      } else {
+        /* The bytes are there; this browser just choked. Keep the control
+           live so the next tap can retry (or a different browser can play
+           the clip). */
+        markAudioUnsupported(wrap, a);
+      }
+    });
   }), true);
+
+  /* The clip exists but could not be decoded here. Unlike the missing state
+     this stays clickable — the toggle retries with a fresh load(). */
+  function markAudioUnsupported(wrap, audio) {
+    if (!wrap || wrap.classList.contains('is-missing')) return;
+    wrap.classList.add('is-unsupported');
+    wrap.classList.remove('is-loading', 'is-playing');
+    var note = wrap.querySelector('[data-audio-missing]');
+    if (note) {
+      note.hidden = false;
+      note.textContent = 'Format not supported on this device';
+    }
+  }
 
   /* Flag a bubble whose clip no longer exists on the server: grey out the
      play button, hide the timer, and show the "file missing" note. */
@@ -1220,6 +1267,21 @@
         return;
       }
 
+      /* After a decode error the element will not restart from the same src
+         on its own — every later tap is a silent no-op until load() is
+         called. That retry is what brings an older clip back to life instead
+         of leaving it dead for the rest of the session. */
+      if (wrap.classList.contains('is-unsupported') && audio.error) {
+        wrap.classList.remove('is-unsupported');
+        var note = wrap.querySelector('[data-audio-missing]');
+        if (note) {
+          note.hidden = true;
+          note.textContent = 'Voice note file missing';
+        }
+        audio.__missing = false;
+        try { audio.load(); } catch (e) {}
+      }
+
       if (audio.paused) {
         var p = audio.play();
         if (p && p.catch) p.catch(function () {
@@ -1242,16 +1304,34 @@
 
       var rates = [1, 1.25, 1.5, 2];
       var cur = sAudio.__rate || 1;
-      var next = rates[(rates.indexOf(cur) + 1) % rates.length];
+      var idx = rates.indexOf(cur);
+      var next = rates[(idx === -1 ? 0 : idx + 1) % rates.length];
 
       sAudio.__rate = next;
-      sAudio.playbackRate = next;
-      // Keep the pitch natural at 1.5x/2x instead of the chipmunk default.
-      if ('preservesPitch' in sAudio) sAudio.preservesPitch = true;
-      if ('mozPreservesPitch' in sAudio) sAudio.mozPreservesPitch = true;
 
+      /* Label FIRST. The pitch-preserving properties below are not
+         writable in every engine, and this file runs in strict mode — an
+         assignment to a getter-only property throws, which used to abort the
+         handler before the pill ever repainted. It looked like the control
+         was dead. */
       speedBtn.textContent = (next === 1 ? '1' : String(next)) + '×';
       sWrap.classList.toggle('is-fast', next > 1);
+
+      /* Set defaultPlaybackRate as well as playbackRate. Re-pointing src or
+         finishing a late metadata load resets playbackRate back to
+         defaultPlaybackRate — with preload="metadata" that reset landed AFTER
+         the tap, silently snapping the clip back to 1×. */
+      try {
+        if ('defaultPlaybackRate' in sAudio) sAudio.defaultPlaybackRate = next;
+        sAudio.playbackRate = next;
+      } catch (e) {}
+
+      // Keep the pitch natural at 1.25x/1.5x/2x instead of the chipmunk default.
+      try {
+        if ('preservesPitch' in sAudio) sAudio.preservesPitch = true;
+        if ('webkitPreservesPitch' in sAudio) sAudio.webkitPreservesPitch = true;
+        if ('mozPreservesPitch' in sAudio) sAudio.mozPreservesPitch = true;
+      } catch (e) {}
       return;
     }
 
@@ -1273,16 +1353,33 @@
     }
   });
 
+  /* Re-apply the speed chosen for this bubble. It lives on the element
+     rather than in a module variable so it survives the poll re-rendering
+     the transcript around it. Must run on play AND once metadata lands:
+     loading a resource resets playbackRate back to defaultPlaybackRate, so
+     a rate picked before the clip finished loading used to be silently
+     thrown away. */
+  function applyRate(audio) {
+    if (!audio || !audio.__rate) return;
+    try {
+      if ('defaultPlaybackRate' in audio) audio.defaultPlaybackRate = audio.__rate;
+      audio.playbackRate = audio.__rate;
+    } catch (e) {}
+  }
+
+  /* Metadata landing is the exact moment the browser resets playbackRate, so
+     the chosen speed has to be restored there too, not only on play. */
+  document.addEventListener('loadedmetadata', audioEvents(function (a) {
+    applyRate(a);
+  }), true);
+
   document.addEventListener('play', function (evt) {
     var audio = evt.target;
     if (!audio.matches || !audio.matches('[data-audio-el]')) return;
     var wrap = audio.closest('.chat-audio');
     if (wrap) wrap.classList.add('is-playing');
 
-    // Re-apply the speed chosen for this bubble. It lives on the element
-    // rather than in a module variable so it survives the poll re-rendering
-    // the transcript around it.
-    if (audio.__rate) audio.playbackRate = audio.__rate;
+    applyRate(audio);
 
     each('[data-audio-el]', function (other) {
       if (other !== audio && !other.paused) other.pause();
