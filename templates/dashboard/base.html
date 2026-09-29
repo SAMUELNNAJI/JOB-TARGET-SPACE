@@ -32,10 +32,12 @@
 <body class="{% block body_class %}dashboard-page{% endblock %}">
   <div class="dashboard-app">
     <aside class="dashboard-sidebar">
-      <button type="button" class="dashboard-sidebar-close" data-dashboard-close aria-label="Close dashboard navigation">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-      <a class="dashboard-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a>
+      <div class="dashboard-sidebar-head">
+        <a class="dashboard-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="JobSpace"></a>
+        <button type="button" class="dashboard-sidebar-close" data-dashboard-close aria-label="Close dashboard navigation">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
       <nav class="dashboard-nav" aria-label="Dashboard navigation">
         {% if request.user.is_staff or request.user.is_superuser %}
           <a class="{% if request.path == '/dashboard/admin/' %}active{% endif %}" href="/dashboard/admin/"><span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Dashboard</a>

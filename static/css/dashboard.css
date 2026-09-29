@@ -75,12 +75,22 @@ ul {
   display: flex;
   align-items: center;
   height: 38px;
-  margin: 0 16px 30px;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
 }
 .dashboard-brand img {
   width: 145px;
   height: auto;
   filter: brightness(0) invert(1);
+}
+/* Logo + X share one top row: logo left, close right, nav directly below.
+   The X stays hidden on desktop (sidebar never covers the header there). */
+.dashboard-sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 30px;
 }
 .dashboard-nav {
   position: relative;
@@ -9188,15 +9198,15 @@ body { font-size: 15px !important; }
   z-index: 199988889;
 }
 
-/* In-drawer close (X) button — only visible on phones where the drawer
-   floats above the sticky header that holds the hamburger. */
+/* In-drawer close (X) button: sits inline at the right of the logo row
+   (see .dashboard-sidebar-head), so the logo stays at the very top and the
+   nav follows directly underneath. Visible on phones only. */
 .dashboard-sidebar-close {
   display: none;
-  position: absolute;
-  top: 14px;
-  right: 14px;
+  position: static;
   width: 34px;
   height: 34px;
+  flex: none;
   border-radius: 9px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.10);
