@@ -9179,14 +9179,13 @@ body { font-size: 15px !important; }
 
    CRITICAL: this rule is unmediated and sits AFTER the `max-width: 760px`
    block, so at equal specificity it is the one that actually wins on
-   phones. On mobile the drawer floats above everything (199988889, set in
-   the media block) — the giant value is safe there because the drawer
+   phones. It therefore carries the giant 199988889 value directly: the
+   drawer floats above the sticky header (320) on every screen. The drawer
    carries its own X close button and the topbar hamburger is open-only.
-   Desktop keeps a modest 300: above every chat surface layer (composer 45,
-   recording bar 65), under the pinned topbar (320), the modals (1200) and
-   the notification dropdown (9000). */
+   (Modals at 1200 and the notification dropdown at 9000 still sit above
+   the drawer, as they should.) */
 .dashboard-sidebar {
-  z-index: 300;
+  z-index: 199988889;
 }
 
 /* In-drawer close (X) button — only visible on phones where the drawer

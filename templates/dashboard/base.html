@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dashboard - JobSpace{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=17">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=18">
   <style>
     /* Sidebar badges — white circle, red number (inline so it applies even with it  stale cached CSS) */
     .dashboard-nav a .nav-badge {
@@ -32,9 +32,6 @@
 <body class="{% block body_class %}dashboard-page{% endblock %}">
   <div class="dashboard-app">
     <aside class="dashboard-sidebar">
-      {# Phones: the drawer floats above the sticky header, so it needs its
-         own X close button — the topbar hamburger underneath can't be tapped
-         while the drawer covers it. Hidden on desktop via CSS. #}
       <button type="button" class="dashboard-sidebar-close" data-dashboard-close aria-label="Close dashboard navigation">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
