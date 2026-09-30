@@ -71,7 +71,7 @@
                         </svg>
                         <span>{{ item.candidate.primary_degree|truncatechars:40 }}</span>
                       </div>
-                      {% block title %}0
+                      {% endif %}
                       <div class="emp-sl-detail-row">
                         <svg
                           width="12"
@@ -86,14 +86,14 @@
                           <line x1="8" y1="2" x2="8" y2="6" />
                           <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <span>Shortlisted {% block title %}1</span>
+                        <span>Shortlisted {{ item.created_at|date:"d M Y" }}</span>
                       </div>
                     </div>
                     <div class="emp-sl-footer">
-                      <span class="emp-avail-badge">{% block title %}2</span>
-                      {% block title %}3
-                      <span class="emp-sl-salary">₦{% block title %}4/mo</span>
-                      {% block title %}5
+                      <span class="emp-avail-badge">{{ item.candidate.get_availability_display|default:"Available" }}</span>
+                      {% if item.candidate.expected_salary %}
+                      <span class="emp-sl-salary">₦{{ item.candidate.expected_salary|floatformat:0 }}/mo</span>
+                      {% endif %}
                     </div>
                   </article>
                 {% endfor %}

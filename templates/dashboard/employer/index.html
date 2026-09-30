@@ -154,7 +154,7 @@
                 View all →
               </a>
             </div>
-            <strong class="emp-stat-val">{% block title %}0</strong>
+            <strong class="emp-stat-val">{{ employer.recruitment_requests.count }}</strong>
             <small class="emp-stat-label">Recruitment Requests</small>
             <div class="emp-stat-glow"></div>
           </article>
@@ -180,7 +180,7 @@
                 View all →
               </a>
             </div>
-            <strong class="emp-stat-val">{% block title %}1</strong>
+            <strong class="emp-stat-val">{{ employer.candidate_matches.filter.count|default:employer.candidate_matches.count }}</strong>
             <small class="emp-stat-label">Candidates Received</small>
             <div class="emp-stat-glow"></div>
           </article>
@@ -205,7 +205,7 @@
                 View all →
               </a>
             </div>
-            <strong class="emp-stat-val">{% block title %}2</strong>
+            <strong class="emp-stat-val">{{ employer.shortlists.count }}</strong>
             <small class="emp-stat-label">Shortlisted Candidates</small>
             <div class="emp-stat-glow"></div>
           </article>
@@ -229,7 +229,7 @@
                 View all →
               </a>
             </div>
-            <strong class="emp-stat-val">{% block title %}3</strong>
+            <strong class="emp-stat-val">{{ employer.payments.count }}</strong>
             <small class="emp-stat-label">Total Payments</small>
             <div class="emp-stat-glow"></div>
           </article>
@@ -270,17 +270,17 @@
                         </svg>
                       </div>
                       <div class="emp-req-info">
-                        <strong>{% block title %}8</strong>
+                        <strong>{{ req.position }}</strong>
                         <span>
-                          {% block title %}9 professional{% endblock %}0s{% endblock %}1 ·
-                          ₦{% endblock %}2–₦{% endblock %}3/{% endblock %}4
+                          {{ req.professionals_required }} professional{% if req.professionals_required != 1 %}s{% endif %} ·
+                          ₦{{ req.salary_min|floatformat:0 }}–₦{{ req.salary_max|floatformat:0 }}/{{ req.salary_period }}
                         </span>
                       </div>
                       <div class="emp-req-right">
-                        <span class="emp-status-badge emp-status-badge--{% endblock %}5">
-                          {% endblock %}6
+                        <span class="emp-status-badge emp-status-badge--{{ req.status }}">
+                          {{ req.get_status_display }}
                         </span>
-                        <time class="emp-req-date">{% endblock %}7</time>
+                        <time class="emp-req-date">{{ req.created_at|date:"d M Y" }}</time>
                       </div>
                     </div>
                   {% endfor %}
@@ -332,13 +332,13 @@
                         {{ match.profile.user.first_name|default:"?"|slice:":2"|upper }}
                       </div>
                       <div class="emp-candidate-info">
-                        <strong>{% block body_class %}5</strong>
+                        <strong>{{ match.profile.legal_name|default:match.profile.user.first_name|default:"Candidate" }}</strong>
                         <span>
-                          {% block body_class %}6{% block body_class %}7 · {% block body_class %}8{% block body_class %}9
+                          {{ match.profile.specializations.first|default:"Professional" }}{% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:30 }}{% endif %}
                         </span>
                       </div>
                       <div class="emp-candidate-right">
-                        <span class="emp-avail-badge">{% endblock %}0</span>
+                        <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
                         <a
                           class="emp-candidate-btn"
                           href="/dashboard/employer/candidates/"
@@ -385,9 +385,9 @@
                 <div class="emp-notif-list">
                   {% for n in notifications %}
                     <div
-                      class="emp-notif-row {% endblock %}7emp-notif-row--unread{% endblock %}8"
+                      class="emp-notif-row {% if not n.is_read %}emp-notif-row--unread{% endif %}"
                     >
-                      <div class="emp-notif-dot emp-notif-dot--{% endblock %}9"></div>
+                      <div class="emp-notif-dot emp-notif-dot--{{ n.kind }}"></div>
                       <div class="emp-notif-body">
                         <strong>{{ n.title }}</strong>
                         <span>{{ n.message|truncatechars:80 }}</span>

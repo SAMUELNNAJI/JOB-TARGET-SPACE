@@ -36,7 +36,7 @@
             <div><h2 class="emp-panel-title">Candidates received</h2></div>
             <div style="display: flex; align-items: center; gap: 10px">
               <span class="emp-avail-badge">● Vetted by JobSPACE</span>
-              <span class="emp-section-count">{% block title %}0 total</span>
+              <span class="emp-section-count">{{ page_obj.paginator.count }} total</span>
             </div>
           </div>
 
@@ -45,20 +45,20 @@
               {% for match in page_obj %}
                 <div
                   class="emp-candidate-row emp-candidate-row--clickable emp-candidate-row--pad"
-                  data-match-id="{% block title %}3"
-                  data-detail-url="{% block title %}4"
-                  data-accept-url="{% block title %}5"
+                  data-match-id="{{ match.id }}"
+                  data-detail-url="{% url 'website:employer_candidate_detail' match.id %}"
+                  data-accept-url="{% url 'website:accept_candidate' match.id %}"
                   tabindex="0"
                   role="button"
-                  aria-label="View profile of {% block title %}6"
+                  aria-label="View profile of {{ match.profile.legal_name|default:match.profile.user.first_name|default:'Candidate' }}"
                 >
-                  <div class="emp-candidate-avatar">{% block title %}7</div>
+                  <div class="emp-candidate-avatar">{{ match.profile.user.first_name|default:"?"|slice:":2"|upper }}</div>
 
                   <div class="emp-candidate-info">
-                    <strong>{% block title %}8</strong>
+                    <strong>{{ match.profile.legal_name|default:match.profile.user.first_name|default:"Candidate" }}</strong>
                     <span>
                       {{ match.profile.specializations.first|default:"Professional" }}
-                      {% endblock %}0 · {% endblock %}1{% endblock %}2
+                      {% if match.profile.primary_degree %} · {{ match.profile.primary_degree|truncatechars:32 }}{% endif %}
                     </span>
                   </div>
 
@@ -80,16 +80,16 @@
                         Rejected
                       </span>
                     {% endif %}
-                    <span class="emp-avail-badge">{% endblock %}5</span>
+                    <span class="emp-avail-badge">{{ match.profile.get_availability_display|default:"Available" }}</span>
                     {% if match.profile.expected_salary %}
                       <span style="font-size: 10px; font-weight: 700; color: #3d4a63">
-                        ₦{% endblock %}7/mo
+                        ₦{{ match.profile.expected_salary|floatformat:0 }}/mo
                       </span>
                     {% endif %}
                     {# Stop click so it doesn't bubble to the row and open the modal #}
                     <a
                       class="emp-candidate-btn"
-                      href="/dashboard/employer/candidates/{% block body_class %}0/shortlist/"
+                      href="/dashboard/employer/candidates/{{ match.id }}/shortlist/"
                       onclick="event.stopPropagation()"
                     >
                       <svg
@@ -111,7 +111,7 @@
                       type="button"
                       class="emp-candidate-btn emp-view-profile-btn"
                       data-view-profile
-                      aria-label="View profile of {% block body_class %}1"
+                      aria-label="View profile of {{ match.profile.legal_name|default:match.profile.user.first_name|default:'Candidate' }}"
                     >
                       <svg
                         width="11"
@@ -144,14 +144,14 @@
                       </svg>
                       <span>
                         <strong>Rejected during JobSPACE verification.</strong>
-                        Reason: {% block body_class %}3
+                        Reason: {{ match.profile.verification_notes|default:"No reason recorded." }}
                       </span>
                     </div>
                   {% endif %}
                 </div>
               {% endfor %}
             </div>
-            <div style="padding: 0 24px 20px">{% block body_class %}6</div>
+            <div style="padding: 0 24px 20px">{% include "dashboard/pagination.html" %}</div>
 
           {% else %}
             <div class="emp-empty-state">

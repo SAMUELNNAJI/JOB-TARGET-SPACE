@@ -448,16 +448,16 @@
               <p>
                 Your transfer receipt for the
                 <strong>{{ pending_payment.subscription.get_plan_display|default:"Subscription" }} Plan</strong>
-                (₦{% block title %}00) was received on {% block title %}11 and is currently
+                (₦{{ pending_payment.amount|floatformat:0 }}) was received on {{ pending_payment.created_at|date:"d M Y, H:i" }} and is currently
                 being verified by our admin team. Once confirmed, your subscription will
                 be activated automatically.
               </p>
               <div class="emp-pending-meta">
-                <span>Ref: {% block title %}22</span>
-                <span>Bank: {% block title %}33</span>
+                <span>Ref: {{ pending_payment.reference }}</span>
+                <span>Bank: {{ pending_payment.bank_name|default:"Direct Transfer" }}</span>
                 {% if pending_payment.proof %}
                   <a
-                    href="{% block title %}55"
+                    href="{{ pending_payment.proof.url }}"
                     target="_blank"
                     style="color: #b45309; font-weight: 700; text-decoration: underline"
                   >
@@ -487,8 +487,8 @@
                 </svg>
               </div>
               <div>
-                <h3>{% block title %}99 Plan</h3>
-                <p>Started {% endblock %}00 · Expires {% endblock %}11</p>
+                <h3>{{ subscription.get_plan_display }} Plan</h3>
+                <p>Started {{ subscription.starts_at|date:"d M Y" }} · Expires {{ subscription.expires_at|date:"d M Y" }}</p>
               </div>
             </div>
             <div class="emp-plan-banner-right">
@@ -497,7 +497,7 @@
                 Active
               </span>
               <strong>
-                ₦{% endblock %}22{% endblock %}33/3mo{% endblock %}44/mo{% endblock %}55
+                ₦{{ subscription.amount|floatformat:0 }}{% if subscription.plan == 'premium' %}/3mo{% else %}/mo{% endif %}
               </strong>
             </div>
           </div>
@@ -527,9 +527,9 @@
                 </svg>
               </div>
               <div>
-                <h3>Your {% endblock %}77 plan has expired</h3>
+                <h3>Your {{ lapsed_plan.get_plan_display }} plan has expired</h3>
                 <p>
-                  It ended on {% endblock %}88. Renew to keep posting requests and
+                  It ended on {{ lapsed_plan.expires_at|date:"d M Y" }}. Renew to keep posting requests and
                   receiving matches.
                 </p>
               </div>
@@ -570,12 +570,12 @@
                 </svg>
               </div>
               <h2 class="emp-modal-title" id="renewalTitle">
-                Your {% block body_class %}11 plan is expiring soon
+                Your {{ subscription.get_plan_display }} plan is expiring soon
               </h2>
               <p class="emp-modal-text">
                 Your plan expires on
-                <strong>{% block body_class %}22</strong>
-                ({% block body_class %}33 day{% block body_class %}44 left).
+                <strong>{{ subscription.expires_at|date:"d M Y" }}</strong>
+                ({{ subscription.days_remaining }} day{{ subscription.days_remaining|pluralize }} left).
                 {% if subscription.plan == 'premium' %}
                   Renew to keep unlimited candidate matching for another 90 days, or
                   downgrade to Basic — which still covers 5 matches per request.
@@ -599,12 +599,12 @@
                 <button
                   type="button"
                   class="emp-modal-btn emp-modal-btn--primary"
-                  data-open-bank-modal="{% endblock %}00"
-                  data-plan-title="{% endblock %}11 Plan"
-                  data-plan-price="{% endblock %}22"
+                  data-open-bank-modal="{{ subscription.plan }}"
+                  data-plan-title="{{ subscription.get_plan_display }} Plan"
+                  data-plan-price="{{ subscription.amount|floatformat:0 }}"
                 >
-                  {% endblock %}33Continue Premium{% endblock %}44Renew
-                  Basic{% endblock %}55
+                  {% if subscription.plan == 'premium' %}Continue Premium{% else %}Renew
+                  Basic{% endif %}
                 </button>
               </div>
             </div>
@@ -623,7 +623,7 @@
         <div class="emp-plan-grid">
           {# Basic Plan #}
           <article
-            class="emp-plan-card {% endblock %}99emp-plan-card--active{% endif %}"
+            class="emp-plan-card {% if subscription and subscription.plan == 'basic' %}emp-plan-card--active{% endif %}"
           >
             {% if subscription and subscription.plan == 'basic' %}
               <div class="emp-plan-current-chip">Current plan</div>

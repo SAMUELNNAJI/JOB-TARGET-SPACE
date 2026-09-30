@@ -6,7 +6,7 @@
     {% endblock %}
     {% block content %}
       <main
-        class="dashboard-content emp-profile-page{% if not active_plan %} emp-page-blurred{% block title %}0"
+        class="dashboard-content emp-profile-page{% if not active_plan %} emp-page-blurred{% endif %}"
       >
         <section class="emp-form-hero">
           <div class="emp-form-hero-bg">
@@ -27,7 +27,7 @@
             </p>
           </div>
           <div class="emp-form-hero-stat">
-            <strong>{% block title %}1</strong>
+            <strong>{{ employer.recruitment_requests.count }}</strong>
             <span>Total Requests</span>
           </div>
         </section>
@@ -92,22 +92,22 @@
                   <div class="emp-modal-summary">
                     <div class="emp-modal-summary-row">
                       <span>Position</span>
-                      <strong>{% block title %}5</strong>
+                      <strong>{{ submitted_request.position }}</strong>
                     </div>
                     <div class="emp-modal-summary-row">
                       <span>Number required</span>
-                      <strong>{% block title %}6</strong>
+                      <strong>{{ submitted_request.professionals_required }}</strong>
                     </div>
                     <div class="emp-modal-summary-row">
                       <span>Salary range</span>
                       <strong>
-                        ₦{% block title %}7 – ₦{% block title %}8 / {% block title %}9
+                        ₦{{ submitted_request.salary_min|floatformat:0 }} – ₦{{ submitted_request.salary_max|floatformat:0 }} / {{ submitted_request.get_salary_period_display|lower }}
                       </strong>
                     </div>
                     <div class="emp-modal-summary-row">
                       <span>Status</span>
                       <strong>
-                        <span class="emp-modal-status">{% endblock %}0</span>
+                        <span class="emp-modal-status">{{ submitted_request.get_status_display }}</span>
                       </strong>
                     </div>
                   </div>
@@ -151,39 +151,39 @@
             {% endif %}
 
             <div
-              class="emp-form-body{% endblock %}2 is-locked{% endblock %}3"
-              {% endblock %}4inert
+              class="emp-form-body{% if not active_plan %} is-locked{% endif %}"
+              {% if not active_plan %}inert
               aria-hidden="true"
-              {% endblock %}5
+              {% endif %}
             >
               <div class="emp-form-section">
                 <h3 class="emp-form-section-title">Position Details</h3>
                 {% if form.non_field_errors %}
                   <div class="emp-alert" role="alert">
-                    {% endblock %}7
-                    <span>{% endblock %}8</span>
-                    {% endblock %}9
+                    {% for error in form.non_field_errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
                   </div>
                 {% endif %}
                 <div class="emp-form-grid">
                   <div class="emp-field">
-                    <label class="emp-label" for="{% block body_class %}1">
+                    <label class="emp-label" for="{{ form.position.id_for_label }}">
                       Professional position
                     </label>
                     {{ form.position }}
-                    {% block body_class %}3
-                    <span class="emp-error">{% block body_class %}4</span>
-                    {% block body_class %}5
+                    {% if form.position.errors %}
+                    <span class="emp-error">{{ form.position.errors|join:", " }}</span>
+                    {% endif %}
 
                     {# ── Free-text fallback: revealed when "Other" is selected ── #}
                     <div class="emp-field-other" data-position-custom hidden>
-                      <label class="emp-label" for="{% block body_class %}7">
+                      <label class="emp-label" for="{{ form.custom_position.id_for_label }}">
                         Enter the position you need
                       </label>
                       {{ form.custom_position }}
-                      {% block body_class %}9
-                      <span class="emp-error">{% endblock %}0</span>
-                      {% endblock %}1
+                      {% if form.custom_position.errors %}
+                      <span class="emp-error">{{ form.custom_position.errors|join:", " }}</span>
+                      {% endif %}
                       <small class="emp-hint">
                         Not on the list? Type the exact profession and we will match
                         it to the right talent.
@@ -192,15 +192,15 @@
                   </div>
                   <div class="emp-field">
                     <label class="emp-label">Number required</label>
-                    {% endblock %}2{% endblock %}3
-                    <span class="emp-error">{% endblock %}4</span>
-                    {% endblock %}5
+                    {{ form.professionals_required }}{% if form.professionals_required.errors %}
+                    <span class="emp-error">{{ form.professionals_required.errors|join:", " }}</span>
+                    {% endif %}
                   </div>
                   <div class="emp-field">
                     <label class="emp-label">Minimum qualification</label>
-                    {% endblock %}6{% endblock %}7
-                    <span class="emp-error">{% endblock %}8</span>
-                    {% endblock %}9
+                    {{ form.minimum_qualification }}{% if form.minimum_qualification.errors %}
+                    <span class="emp-error">{{ form.minimum_qualification.errors|join:", " }}</span>
+                    {% endif %}
                   </div>
                   <div class="emp-field">
                     <label class="emp-label">Years of experience</label>
@@ -441,7 +441,7 @@
       if (!select || !other) return;
 
       const custom = other.querySelector("input");
-      const OTHER = "{% if not active_plan %}4";
+      const OTHER = "{{ other_choice|default:'__other__' }}";
 
       function sync() {
         const isOther = select.value === OTHER;

@@ -15,11 +15,11 @@
           <div class="emp-form-hero-content">
             <span class="emp-hero-kicker">EMPLOYER WORKSPACE</span>
             <h1 class="emp-hero-title">
-              {% block title %}0
+              {{ section_title }}
               <br />
               <em>with JobSPACE.</em>
             </h1>
-            <p class="emp-hero-sub">{% block title %}1</p>
+            <p class="emp-hero-sub">{{ section_detail }}</p>
           </div>
         </section>
         <div class="emp-section-card">
@@ -53,8 +53,8 @@
               </svg>
             {% endif %}
           </div>
-          <h3 class="emp-section-card-title">{% block title %}5</h3>
-          <p class="emp-section-card-desc">{% block title %}6</p>
+          <h3 class="emp-section-card-title">{{ section_title }}</h3>
+          <p class="emp-section-card-desc">{{ section_detail }}</p>
           <div class="emp-section-card-actions">
             {% if section_title == "Support" %}
               <a class="emp-btn emp-btn--primary" href="mailto:info@targetjobspace.com">
