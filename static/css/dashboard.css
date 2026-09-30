@@ -9528,3 +9528,114 @@ body { font-size: 15px !important; }
   -webkit-overflow-scrolling: touch;
   background-color: #efeae2;
 }
+
+
+/* ============================================================
+   6. Admin dashboard — kill the mobile overflow
+   ============================================================ */
+/* Measured with Playwright across 320–414px: at 375px the page scrolled
+   sideways by 243px (documentElement.scrollWidth 618 against a 375px
+   viewport). The panels were rendering 606px wide inside a 351px column.
+
+   The chain, innermost first:
+
+     .dashboard-table-scroll .portal-table { min-width: 560px }
+
+   that floor is deliberate — wide tables should scroll, not squash — and the
+   scroller does clip its own painting. But clipping is not sizing: a scroll
+   container's intrinsic min-content width is still that 560px, and every
+   ancestor above it was free to grow to it.
+
+     .adm-panel     (block)           → min-content 606px (560 + 2×22 padding + borders)
+     .adm-body-left (flex column)     → min-content 606px
+     .adm-body      (grid, `1fr`)     → 1fr is minmax(auto,1fr), and an `auto`
+                                        minimum resolves to min-content, so the
+                                        track became 606px and took the page
+                                        with it.
+
+   So the fix is to stop the propagation rather than shrink the table: every
+   wrapper on the path gets `min-width: 0`, and every track on it becomes
+   `minmax(0, 1fr)`. The scroll container can then genuinely be narrower than
+   its content — which is what makes it scroll — and the 560px floor stays
+   where it belongs, inside the scroller. */
+.adm-body,
+.adm-body-left,
+.adm-body-right,
+.adm-panel,
+.adm-quick,
+.adm-hero,
+.adm-hero-content,
+.dashboard-table-scroll {
+  min-width: 0;
+}
+.adm-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.adm-body {
+  grid-template-columns: minmax(0, 1fr) 295px;
+}
+/* The action row's middle track holds a candidate's legal name. Without the
+   zero floor it pushes the badge + "Review" track out of the panel. */
+.adm-action-row {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+.adm-action-info {
+  min-width: 0;
+}
+.adm-action-info strong,
+.adm-action-info span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Long company names in the quick-link and panel headers behaved the same
+   way — ellipsize them instead of widening the card. */
+.adm-quick .adm-panel-title,
+.adm-quick-btn {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1050px) {
+  .adm-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .adm-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .adm-body-right {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .adm-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .adm-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .adm-body-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .adm-panel {
+    padding: 18px 16px;
+  }
+  .adm-quick {
+    padding: 16px 14px;
+  }
+  .adm-action-row {
+    padding: 10px 4px;
+  }
+}
+@media (max-width: 480px) {
+  .adm-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+

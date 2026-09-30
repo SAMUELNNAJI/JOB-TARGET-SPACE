@@ -16,7 +16,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 SCRATCH_DB = BASE / "_adm_probe.sqlite3"
 PORT = 8791
-WIDTHS = [320, 360, 375, 390, 414, 768]
+WIDTHS = [320, 360, 375, 390, 414, 768, 1024, 1280, 1440]
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "jobspace.settings"
 os.environ["DEBUG"] = "true"
@@ -31,9 +31,13 @@ def seed():
     import django
 
     django.setup()
-    from django.contrib.auth import get_user_model
+    from django.contrib.auth import (
+        BACKEND_SESSION_KEY,
+        HASH_SESSION_KEY,
+        SESSION_KEY,
+        get_user_model,
+    )
     from django.contrib.sessions.backends.db import SessionStore
-    from django.contrib.sessions.models import Session
     from django.core.management import call_command
     from django.utils import timezone
 
@@ -102,7 +106,7 @@ def seed():
     if not Payment.objects.exists():
         Payment.objects.create(
             employer=emp, reference="PRB-1", amount=100000,
-            status=Payment.Status.VERIFIED, paid_at=timezone.now(),
+            status=Payment.Status.SUCCESS, paid_at=timezone.now(),
         )
     if not AuditLog.objects.exists():
         AuditLog.objects.create(
@@ -112,10 +116,9 @@ def seed():
         )
 
     store = SessionStore()
-    store[Session.SESSION_KEY] = str(admin.pk)
-    store["_auth_user_id"] = str(admin.pk)
-    store["_auth_user_backend"] = "django.contrib.auth.backends.ModelBackend"
-    store["_auth_user_hash"] = admin.get_session_auth_hash()
+    store[SESSION_KEY] = str(admin.pk)
+    store[BACKEND_SESSION_KEY] = "django.contrib.auth.backends.ModelBackend"
+    store[HASH_SESSION_KEY] = admin.get_session_auth_hash()
     store.save()
     return store.session_key
 
