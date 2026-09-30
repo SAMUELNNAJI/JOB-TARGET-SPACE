@@ -1,756 +1,1260 @@
 {% extends "dashboard/base.html" %}
 {% load static %}
 {% block title %}Subscription & Billing - JobSpace{% endblock %}
-{% block body_class %}employer-dashboard{% endblock %}
-{% block notification_count %}{{ unread_count }}{% endblock %}
+  {% block body_class %}employer-dashboard{% endblock %}
+    {% block notification_count %}
+      {{ unread_count }}
+    {% endblock %}
 
-{% block extra_head %}
-<style>
-/* ── Manual Bank Transfer & Proof Upload Styles ── */
-.emp-bank-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(6px);
-  display: grid;
-  place-items: center;
-  z-index: 1200;
-  padding: 16px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-}
+    {% block extra_head %}
+      <style>
+        /* ── Manual Bank Transfer & Proof Upload Styles ── */
+        .emp-bank-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.72);
+          backdrop-filter: blur(6px);
+          display: grid;
+          place-items: center;
+          z-index: 1200;
+          padding: 16px;
+          opacity: 0;
+          visibility: hidden;
+          transition:
+            opacity 0.2s ease,
+            visibility 0.2s ease;
+        }
 
-.emp-bank-modal-overlay.is-open {
-  opacity: 1;
-  visibility: visible;
-}
+        .emp-bank-modal-overlay.is-open {
+          opacity: 1;
+          visibility: visible;
+        }
 
-.emp-bank-modal {
-  background: #ffffff;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 580px;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-  position: relative;
-  padding: 28px;
-  animation: modalPopIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-}
+        .emp-bank-modal {
+          background: #ffffff;
+          border-radius: 20px;
+          width: 100%;
+          max-width: 580px;
+          max-height: 92vh;
+          overflow-y: auto;
+          box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+          position: relative;
+          padding: 28px;
+          animation: modalPopIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+        }
 
-@keyframes modalPopIn {
-  0% { transform: scale(0.95) translateY(8px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
+        @keyframes modalPopIn {
+          0% {
+            transform: scale(0.95) translateY(8px);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
 
-.emp-bank-modal-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  display: grid;
-  place-items: center;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
+        .emp-bank-modal-close {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          display: grid;
+          place-items: center;
+          color: #64748b;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
 
-.emp-bank-modal-close:hover {
-  background: #fee2e2;
-  color: #dc2626;
-  border-color: #fca5a5;
-}
+        .emp-bank-modal-close:hover {
+          background: #fee2e2;
+          color: #dc2626;
+          border-color: #fca5a5;
+        }
 
-.emp-bank-modal-head {
-  margin-bottom: 20px;
-  padding-right: 40px;
-}
+        .emp-bank-modal-head {
+          margin-bottom: 20px;
+          padding-right: 40px;
+        }
 
-.emp-bank-modal-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #ecfdf5;
-  color: #059669;
-  font: 700 11px/1.2 "Montserrat", sans-serif;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
+        .emp-bank-modal-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 10px;
+          border-radius: 999px;
+          background: #ecfdf5;
+          color: #059669;
+          font:
+            700 11px/1.2 "Montserrat",
+            sans-serif;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
 
-.emp-bank-modal-title {
-  font: 800 22px/1.25 "Montserrat", sans-serif;
-  color: #0f172a;
-  margin: 0 0 6px;
-}
+        .emp-bank-modal-title {
+          font:
+            800 22px/1.25 "Montserrat",
+            sans-serif;
+          color: #0f172a;
+          margin: 0 0 6px;
+        }
 
-.emp-bank-modal-sub {
-  font-size: 13.5px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.5;
-}
+        .emp-bank-modal-sub {
+          font-size: 13.5px;
+          color: #64748b;
+          margin: 0;
+          line-height: 1.5;
+        }
 
-/* Bank Account Cards */
-.emp-bank-cards-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 22px;
-}
+        /* Bank Account Cards */
+        .emp-bank-cards-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 22px;
+        }
 
-@media (max-width: 540px) {
-  .emp-bank-cards-grid {
-    grid-template-columns: 1fr;
-  }
-}
+        @media (max-width: 540px) {
+          .emp-bank-cards-grid {
+            grid-template-columns: 1fr;
+          }
+        }
 
-.emp-bank-card {
-  background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
-  border-radius: 14px;
-  padding: 16px;
-  color: #ffffff;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
-}
+        .emp-bank-card {
+          background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+          border-radius: 14px;
+          padding: 16px;
+          color: #ffffff;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+        }
 
-.emp-bank-card::after {
-  content: "";
-  position: absolute;
-  right: -20px;
-  bottom: -20px;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-}
+        .emp-bank-card::after {
+          content: "";
+          position: absolute;
+          right: -20px;
+          bottom: -20px;
+          width: 90px;
+          height: 90px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.05);
+        }
 
-.emp-bank-card--zenith {
-  background: linear-gradient(145deg, #881337 0%, #4c0519 100%);
-}
+        .emp-bank-card--zenith {
+          background: linear-gradient(145deg, #881337 0%, #4c0519 100%);
+        }
 
-.emp-bank-name-badge {
-  font: 800 12px/1 "Montserrat", sans-serif;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #f8fafc;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
+        .emp-bank-name-badge {
+          font:
+            800 12px/1 "Montserrat",
+            sans-serif;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #f8fafc;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
 
-.emp-bank-acct-num {
-  font: 700 20px/1.2 "DM Sans", monospace;
-  letter-spacing: 0.06em;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
+        .emp-bank-acct-num {
+          font:
+            700 20px/1.2 "DM Sans",
+            monospace;
+          letter-spacing: 0.06em;
+          color: #ffffff;
+          margin-bottom: 4px;
+        }
 
-.emp-bank-acct-name {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 12px;
-}
+        .emp-bank-acct-name {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.75);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 12px;
+        }
 
-.emp-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
+        .emp-copy-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(255, 255, 255, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.28);
+          color: #ffffff;
+          font-size: 11.5px;
+          font-weight: 600;
+          padding: 5px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
 
-.emp-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
+        .emp-copy-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateY(-1px);
+        }
 
-.emp-copy-btn.is-copied {
-  background: #10b981;
-  border-color: #059669;
-}
+        .emp-copy-btn.is-copied {
+          background: #10b981;
+          border-color: #059669;
+        }
 
-/* Proof Upload Form */
-.emp-proof-form {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 18px 20px;
-}
+        /* Proof Upload Form */
+        .emp-proof-form {
+          background: #f8fafc;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 14px;
+          padding: 18px 20px;
+        }
 
-.emp-form-row {
-  margin-bottom: 14px;
-}
+        .emp-form-row {
+          margin-bottom: 14px;
+        }
 
-.emp-form-row label {
-  display: block;
-  font: 700 12.5px/1.4 "Montserrat", sans-serif;
-  color: #1e293b;
-  margin-bottom: 6px;
-}
+        .emp-form-row label {
+          display: block;
+          font:
+            700 12.5px/1.4 "Montserrat",
+            sans-serif;
+          color: #1e293b;
+          margin-bottom: 6px;
+        }
 
-.emp-form-row input[type="text"],
-.emp-form-row select {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 10px;
-  font: 400 14px "DM Sans", sans-serif;
-  background: #ffffff;
-  color: #0f172a;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  box-sizing: border-box;
-}
+        .emp-form-row input[type="text"],
+        .emp-form-row select {
+          width: 100%;
+          padding: 10px 14px;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 10px;
+          font:
+            400 14px "DM Sans",
+            sans-serif;
+          background: #ffffff;
+          color: #0f172a;
+          outline: none;
+          transition:
+            border-color 0.15s,
+            box-shadow 0.15s;
+          box-sizing: border-box;
+        }
 
-.emp-form-row input[type="text"]:focus,
-.emp-form-row select:focus {
-  border-color: #d90429;
-  box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.12);
-}
+        .emp-form-row input[type="text"]:focus,
+        .emp-form-row select:focus {
+          border-color: #d90429;
+          box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.12);
+        }
 
-.emp-file-drop {
-  border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 18px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  position: relative;
-}
+        .emp-file-drop {
+          border: 2px dashed #cbd5e1;
+          border-radius: 12px;
+          background: #ffffff;
+          padding: 18px 16px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          position: relative;
+        }
 
-.emp-file-drop:hover {
-  border-color: #d90429;
-  background: #fff5f6;
-}
+        .emp-file-drop:hover {
+          border-color: #d90429;
+          background: #fff5f6;
+        }
 
-.emp-file-drop input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
+        .emp-file-drop input[type="file"] {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          cursor: pointer;
+          width: 100%;
+          height: 100%;
+        }
 
-.emp-file-drop-icon {
-  width: 36px;
-  height: 36px;
-  margin: 0 auto 8px;
-  border-radius: 50%;
-  background: #fee2e2;
-  color: #d90429;
-  display: grid;
-  place-items: center;
-}
+        .emp-file-drop-icon {
+          width: 36px;
+          height: 36px;
+          margin: 0 auto 8px;
+          border-radius: 50%;
+          background: #fee2e2;
+          color: #d90429;
+          display: grid;
+          place-items: center;
+        }
 
-.emp-file-name-preview {
-  font-size: 12px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-top: 6px;
-  word-break: break-all;
-}
+        .emp-file-name-preview {
+          font-size: 12px;
+          font-weight: 700;
+          color: #0f172a;
+          margin-top: 6px;
+          word-break: break-all;
+        }
 
-.emp-proof-submit-btn {
-  width: 100%;
-  padding: 13px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #d90429 0%, #b8001f 100%);
-  color: #ffffff;
-  font: 700 14px/1 "Montserrat", sans-serif;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 14px rgba(217, 4, 41, 0.35);
-  transition: all 0.16s ease;
-  margin-top: 16px;
-}
+        .emp-proof-submit-btn {
+          width: 100%;
+          padding: 13px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #d90429 0%, #b8001f 100%);
+          color: #ffffff;
+          font:
+            700 14px/1 "Montserrat",
+            sans-serif;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          box-shadow: 0 4px 14px rgba(217, 4, 41, 0.35);
+          transition: all 0.16s ease;
+          margin-top: 16px;
+        }
 
-.emp-proof-submit-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(217, 4, 41, 0.45);
-}
+        .emp-proof-submit-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(217, 4, 41, 0.45);
+        }
 
-/* Pending Banner */
-.emp-pending-banner {
-  background: #fffbeb;
-  border: 1.5px solid #fef3c7;
-  border-left: 5px solid #f59e0b;
-  border-radius: 14px;
-  padding: 18px 22px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
-}
+        /* Pending Banner */
+        .emp-pending-banner {
+          background: #fffbeb;
+          border: 1.5px solid #fef3c7;
+          border-left: 5px solid #f59e0b;
+          border-radius: 14px;
+          padding: 18px 22px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+        }
 
-.emp-pending-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #fde68a;
-  color: #b45309;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
+        .emp-pending-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #fde68a;
+          color: #b45309;
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+        }
 
-.emp-pending-content h3 {
-  font: 700 16px/1.3 "Montserrat", sans-serif;
-  color: #92400e;
-  margin: 0 0 4px;
-}
+        .emp-pending-content h3 {
+          font:
+            700 16px/1.3 "Montserrat",
+            sans-serif;
+          color: #92400e;
+          margin: 0 0 4px;
+        }
 
-.emp-pending-content p {
-  font-size: 13.5px;
-  color: #78350f;
-  margin: 0 0 10px;
-  line-height: 1.5;
-}
+        .emp-pending-content p {
+          font-size: 13.5px;
+          color: #78350f;
+          margin: 0 0 10px;
+          line-height: 1.5;
+        }
 
-.emp-pending-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  color: #92400e;
-}
+        .emp-pending-meta {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
+          font-size: 12px;
+          color: #92400e;
+        }
 
-.emp-pending-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(254, 243, 199, 0.8);
-  padding: 3px 9px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-</style>
-{% endblock %}
+        .emp-pending-meta span {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: rgba(254, 243, 199, 0.8);
+          padding: 3px 9px;
+          border-radius: 6px;
+          font-weight: 600;
+        }
+      </style>
+    {% endblock %}
 
-{% block content %}
-<main class="dashboard-content emp-sub-page">
-  {# Hero Section #}
-  <section class="emp-form-hero">
-    <div class="emp-form-hero-bg">
-      <span class="emp-orb emp-orb--1" style="--orb-color:#12b76a"></span>
-      <span class="emp-orb emp-orb--2"></span>
-      <div class="emp-hero-grid"></div>
-    </div>
-    <div class="emp-form-hero-content">
-      <span class="emp-hero-kicker">SUBSCRIPTION &amp; BILLING</span>
-      <h1 class="emp-hero-title">Plans built for<br><em>better hiring.</em></h1>
-      <p class="emp-hero-sub">Unlock vetted talent matching, fast response times, and dedicated support with a JobSPACE plan.</p>
-    </div>
-    {% if subscription %}
-      <div class="emp-sub-active-badge">
-        <div class="emp-sub-active-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
-        </div>
-        <div>
-          <strong>{{ subscription.get_plan_display }} Plan — Active</strong>
-          <span>Expires {{ subscription.expires_at|date:"d M Y" }}</span>
-        </div>
-      </div>
-    {% endif %}
-  </section>
-
-  {# Pending Proof Under Review Alert Banner #}
-  {% if pending_payment %}
-    <div class="emp-pending-banner">
-      <div class="emp-pending-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-      </div>
-      <div class="emp-pending-content">
-        <h3>Payment Proof Under Review</h3>
-        <p>
-          Your transfer receipt for the <strong>{{ pending_payment.subscription.get_plan_display|default:"Subscription" }} Plan</strong> (₦{{ pending_payment.amount|floatformat:0 }}) was received on {{ pending_payment.created_at|date:"d M Y, H:i" }} and is currently being verified by our admin team. Once confirmed, your subscription will be activated automatically.
-        </p>
-        <div class="emp-pending-meta">
-          <span>Ref: {{ pending_payment.reference }}</span>
-          <span>Bank: {{ pending_payment.bank_name|default:"Direct Transfer" }}</span>
-          {% if pending_payment.proof %}
-            <a href="{{ pending_payment.proof.url }}" target="_blank" style="color:#b45309;font-weight:700;text-decoration:underline;">View Uploaded Receipt ↗</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  {% endif %}
-
-  {% if subscription %}
-    <div class="emp-plan-banner">
-      <div class="emp-plan-banner-left">
-        <div class="emp-plan-banner-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-        <div><h3>{{ subscription.get_plan_display }} Plan</h3><p>Started {{ subscription.starts_at|date:"d M Y" }} · Expires {{ subscription.expires_at|date:"d M Y" }}</p></div>
-      </div>
-      <div class="emp-plan-banner-right"><span class="emp-plan-active-chip"><span class="emp-kicker-dot"></span>Active</span><strong>₦{{ subscription.amount|floatformat:0 }}{% if subscription.plan == 'premium' %}/3mo{% else %}/mo{% endif %}</strong></div>
-    </div>
-  {% elif lapsed_plan %}
-    <div class="emp-plan-banner" style="background:linear-gradient(110deg,#fef2f2,#fff7ed);border-color:#fecaca;">
-      <div class="emp-plan-banner-left">
-        <div class="emp-plan-banner-icon" style="color:#dc2626;background:#fee2e2;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-        <div><h3>Your {{ lapsed_plan.get_plan_display }} plan has expired</h3><p>It ended on {{ lapsed_plan.expires_at|date:"d M Y" }}. Renew to keep posting requests and receiving matches.</p></div>
-      </div>
-      <div class="emp-plan-banner-right"><span class="emp-plan-active-chip" style="background:#fee2e2;color:#b91c1c;">Expired</span></div>
-    </div>
-  {% endif %}
-
-  {% if renewal_due %}
-  <div class="emp-modal-overlay emp-modal-overlay--visible" id="renewalModal" role="dialog" aria-modal="true" aria-labelledby="renewalTitle">
-    <div class="emp-modal">
-      <div class="emp-modal-icon emp-modal-icon--warn">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <h2 class="emp-modal-title" id="renewalTitle">Your {{ subscription.get_plan_display }} plan is expiring soon</h2>
-      <p class="emp-modal-text">
-        Your plan expires on <strong>{{ subscription.expires_at|date:"d M Y" }}</strong>
-        ({{ subscription.days_remaining }} day{{ subscription.days_remaining|pluralize }} left).
-        {% if subscription.plan == 'premium' %}
-          Renew to keep unlimited candidate matching for another 90 days, or downgrade to
-          Basic — which still covers 5 matches per request.
-        {% else %}
-          Renew for another 30 days to keep posting recruitment requests and receiving
-          up to 5 matched candidates per request.
-        {% endif %}
-      </p>
-      <div class="emp-modal-actions">
-        {% if subscription.plan == 'premium' %}
-          <button type="button" class="emp-modal-btn emp-modal-btn--ghost" data-open-bank-modal="basic" data-plan-title="Basic Plan" data-plan-price="50,000">Downgrade to Basic</button>
-        {% endif %}
-        <button type="button" class="emp-modal-btn emp-modal-btn--primary" data-open-bank-modal="{{ subscription.plan }}" data-plan-title="{{ subscription.get_plan_display }} Plan" data-plan-price="{{ subscription.amount|floatformat:0 }}">
-          {% if subscription.plan == 'premium' %}Continue Premium{% else %}Renew Basic{% endif %}
-        </button>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="emp-plans-heading">
-    <h2>Choose a plan</h2>
-    <p>Select a plan, transfer to our corporate account, and upload your proof of payment for immediate review.</p>
-  </div>
-
-  {# Plan Selection Grid #}
-  <div class="emp-plan-grid">
-    {# Basic Plan #}
-    <article class="emp-plan-card {% if subscription and subscription.plan == 'basic' %}emp-plan-card--active{% endif %}">
-      {% if subscription and subscription.plan == 'basic' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
-      <div class="emp-plan-icon emp-plan-icon--basic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-      <h3 class="emp-plan-name">Basic</h3>
-      <div class="emp-plan-price"><strong>₦50,000</strong><span>/ 30 days</span></div>
-      <ul class="emp-plan-features">
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Up to 5 vetted profiles per request</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Valid for 30 days, then renew</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>48–72 hour response window</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1 free replacement within 30 days</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Standard dashboard support</li>
-      </ul>
-      <button type="button" data-open-bank-modal="basic" data-plan-title="Basic Plan" data-plan-price="50,000" class="emp-plan-btn {% if subscription and subscription.plan == 'basic' %}emp-plan-btn--current{% endif %}">
-        {% if subscription and subscription.plan == 'basic' %}Renew Basic Plan{% else %}Choose Basic Plan{% endif %}
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </article>
-
-    {# Premium Plan #}
-    <article class="emp-plan-card emp-plan-card--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-card--active{% endif %}">
-      <div class="emp-plan-recommended"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Most Popular</div>
-      {% if subscription and subscription.plan == 'premium' %}<div class="emp-plan-current-chip">Current plan</div>{% endif %}
-      <div class="emp-plan-icon emp-plan-icon--premium"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-      <h3 class="emp-plan-name">Premium</h3>
-      <div class="emp-plan-price"><strong>₦100,000</strong><span>/ 90 days</span></div>
-      <ul class="emp-plan-features">
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Unlimited matched profiles pushed</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Valid for 90 days, then renew</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority 24-hour dashboard delivery</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Uncapped replacements within 90 days</li>
-        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account manager support</li>
-      </ul>
-      <button type="button" data-open-bank-modal="premium" data-plan-title="Premium Plan" data-plan-price="100,000" class="emp-plan-btn emp-plan-btn--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-btn--current{% endif %}">
-        {% if subscription and subscription.plan == 'premium' %}Renew Premium Plan{% else %}Choose Premium Plan{% endif %}
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </article>
-  </div>
-
-  {# Recent Payments History #}
-  {% if recent_payments %}
-    <div class="emp-payment-history" style="margin-top:36px;">
-      <div class="emp-section-head" style="padding:20px 24px 16px">
-        <h2 class="emp-panel-title">Payment &amp; Transfer Records</h2>
-        <a class="emp-link" href="/dashboard/employer/payments/">View all →</a>
-      </div>
-      <div class="dashboard-table-scroll" style="margin:0 24px 20px" tabindex="0" role="region" aria-label="Recent payment history table">
-        <table class="portal-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Plan</th>
-              <th>Amount</th>
-              <th>Bank / Channel</th>
-              <th>Status</th>
-              <th>Receipt</th>
-              <th>Reference</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in recent_payments %}
-              <tr>
-                <td>{{ p.created_at|default:p.paid_at|date:"d M Y" }}</td>
-                <td><strong>{{ p.subscription.get_plan_display|default:"Subscription" }}</strong></td>
-                <td>₦{{ p.display_amount|floatformat:0 }}</td>
-                <td>{{ p.bank_name|default:"Bank Transfer" }}</td>
-                <td>
-                  <span class="status-badge {% if p.status == 'success' %}status-badge--green{% elif p.status == 'failed' %}status-badge--red{% else %}status-badge--yellow{% endif %}">
-                    {{ p.get_status_display }}
-                  </span>
-                </td>
-                <td>
-                  {% if p.proof %}
-                    <a href="{{ p.proof.url }}" target="_blank" style="color:#d90429;font-weight:600;font-size:12px;">View Proof ↗</a>
-                  {% else %}
-                    <span style="color:#94a3b8;font-size:12px;">—</span>
-                  {% endif %}
-                </td>
-                <td style="font-size:11px;color:#94a3b8">{{ p.reference }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {% endif %}
-
-  {# ── Bank Transfer & Receipt Upload Modal ── #}
-  <div class="emp-bank-modal-overlay" id="bankTransferModal" aria-hidden="true">
-    <div class="emp-bank-modal">
-      <button type="button" class="emp-bank-modal-close" data-close-bank-modal aria-label="Close dialog">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-
-      <div class="emp-bank-modal-head">
-        <span class="emp-bank-modal-tag" id="modalPlanTag">Direct Bank Transfer</span>
-        <h2 class="emp-bank-modal-title" id="modalPlanTitle">Pay for Subscription</h2>
-        <p class="emp-bank-modal-sub">
-          Please make a transfer of <strong id="modalPlanPriceText" style="color:#d90429">₦50,000</strong> to either of the accounts below, then upload your proof of payment.
-        </p>
-      </div>
-
-      {# Bank Account Details Grid #}
-      <div class="emp-bank-cards-grid">
-        {# WEMA BANK #}
-        <div class="emp-bank-card">
-          <div class="emp-bank-name-badge">
-            <span>WEMA BANK</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    {% block content %}
+      <main class="dashboard-content emp-sub-page">
+        {# Hero Section #}
+        <section class="emp-form-hero">
+          <div class="emp-form-hero-bg">
+            <span class="emp-orb emp-orb--1" style="--orb-color: #12b76a"></span>
+            <span class="emp-orb emp-orb--2"></span>
+            <div class="emp-hero-grid"></div>
           </div>
-          <div class="emp-bank-acct-num">012 388 3405</div>
-          <div class="emp-bank-acct-name">TARGET JOBSPACE LIMITED</div>
-          <button type="button" class="emp-copy-btn" data-copy-num="0123883405">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>Copy Number</span>
-          </button>
-        </div>
-
-        {# ZENITH BANK #}
-        <div class="emp-bank-card emp-bank-card--zenith">
-          <div class="emp-bank-name-badge">
-            <span>ZENITH BANK</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div class="emp-form-hero-content">
+            <span class="emp-hero-kicker">SUBSCRIPTION &amp; BILLING</span>
+            <h1 class="emp-hero-title">
+              Plans built for
+              <br />
+              <em>better hiring.</em>
+            </h1>
+            <p class="emp-hero-sub">
+              Unlock vetted talent matching, fast response times, and dedicated
+              support with a JobSPACE plan.
+            </p>
           </div>
-          <div class="emp-bank-acct-num">131 084 2261</div>
-          <div class="emp-bank-acct-name">TARGET JOBSPACE LIMITED</div>
-          <button type="button" class="emp-copy-btn" data-copy-num="1310842261">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>Copy Number</span>
-          </button>
-        </div>
-      </div>
-
-      {# Upload Proof Form #}
-      <form class="emp-proof-form" action="{% url 'website:submit_payment_proof' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="plan" id="modalPlanInput" value="basic">
-
-        <div class="emp-form-row">
-          <label for="bankPaidSelect">Bank Paid Into *</label>
-          <select name="bank_name" id="bankPaidSelect" required>
-            <option value="WEMA BANK (0123883405)">Wema Bank — 012 388 3405</option>
-            <option value="ZENITH BANK (1310842261)">Zenith Bank — 131 084 2261</option>
-          </select>
-        </div>
-
-        <div class="emp-form-row">
-          <label for="senderNameInput">Sender Account / Company Name *</label>
-          <input type="text" name="sender_name" id="senderNameInput" required placeholder="e.g. Acme Tech Ltd or Samuel Nnaji" value="{{ employer.company_name|default:request.user.get_full_name|default:'' }}">
-        </div>
-
-        <div class="emp-form-row">
-          <label>Upload Payment Receipt / Proof *</label>
-          <div class="emp-file-drop" id="proofDropZone">
-            <input type="file" name="proof" id="proofFileInput" accept="image/*,.pdf" required>
-            <div class="emp-file-drop-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          {% if subscription %}
+            <div class="emp-sub-active-badge">
+              <div class="emp-sub-active-icon">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path d="M9 12l2 2 4-4" />
+                  <path
+                    d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <strong>{{ subscription.get_plan_display }} Plan — Active</strong>
+                <span>Expires {{ subscription.expires_at|date:"d M Y" }}</span>
+              </div>
             </div>
-            <strong style="font-size:13px;color:#0f172a">Click or drag receipt here</strong>
-            <p style="font-size:11.5px;color:#64748b;margin:3px 0 0">PNG, JPG, or PDF (max 10MB)</p>
-            <div class="emp-file-name-preview" id="fileNamePreview" style="display:none;"></div>
+          {% endif %}
+        </section>
+
+        {# Pending Proof Under Review Alert Banner #}
+        {% if pending_payment %}
+          <div class="emp-pending-banner">
+            <div class="emp-pending-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="emp-pending-content">
+              <h3>Payment Proof Under Review</h3>
+              <p>
+                Your transfer receipt for the
+                <strong>{{ pending_payment.subscription.get_plan_display|default:"Subscription" }} Plan</strong>
+                (₦{% block title %}00) was received on {% block title %}11 and is currently
+                being verified by our admin team. Once confirmed, your subscription will
+                be activated automatically.
+              </p>
+              <div class="emp-pending-meta">
+                <span>Ref: {% block title %}22</span>
+                <span>Bank: {% block title %}33</span>
+                {% if pending_payment.proof %}
+                  <a
+                    href="{% block title %}55"
+                    target="_blank"
+                    style="color: #b45309; font-weight: 700; text-decoration: underline"
+                  >
+                    View Uploaded Receipt ↗
+                  </a>
+                {% endif %}
+              </div>
+            </div>
           </div>
+        {% endif %}
+
+        {% if subscription %}
+          <div class="emp-plan-banner">
+            <div class="emp-plan-banner-left">
+              <div class="emp-plan-banner-icon">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3>{% block title %}99 Plan</h3>
+                <p>Started {% endblock %}00 · Expires {% endblock %}11</p>
+              </div>
+            </div>
+            <div class="emp-plan-banner-right">
+              <span class="emp-plan-active-chip">
+                <span class="emp-kicker-dot"></span>
+                Active
+              </span>
+              <strong>
+                ₦{% endblock %}22{% endblock %}33/3mo{% endblock %}44/mo{% endblock %}55
+              </strong>
+            </div>
+          </div>
+        {% elif lapsed_plan %}
+          <div
+            class="emp-plan-banner"
+            style="
+              background: linear-gradient(110deg, #fef2f2, #fff7ed);
+              border-color: #fecaca;
+            "
+          >
+            <div class="emp-plan-banner-left">
+              <div
+                class="emp-plan-banner-icon"
+                style="color: #dc2626; background: #fee2e2"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <h3>Your {% endblock %}77 plan has expired</h3>
+                <p>
+                  It ended on {% endblock %}88. Renew to keep posting requests and
+                  receiving matches.
+                </p>
+              </div>
+            </div>
+            <div class="emp-plan-banner-right">
+              <span
+                class="emp-plan-active-chip"
+                style="background: #fee2e2; color: #b91c1c"
+              >
+                Expired
+              </span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if renewal_due %}
+          <div
+            class="emp-modal-overlay emp-modal-overlay--visible"
+            id="renewalModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="renewalTitle"
+          >
+            <div class="emp-modal">
+              <div class="emp-modal-icon emp-modal-icon--warn">
+                <svg
+                  width="26"
+                  height="26"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <h2 class="emp-modal-title" id="renewalTitle">
+                Your {% block body_class %}11 plan is expiring soon
+              </h2>
+              <p class="emp-modal-text">
+                Your plan expires on
+                <strong>{% block body_class %}22</strong>
+                ({% block body_class %}33 day{% block body_class %}44 left).
+                {% if subscription.plan == 'premium' %}
+                  Renew to keep unlimited candidate matching for another 90 days, or
+                  downgrade to Basic — which still covers 5 matches per request.
+                {% else %}
+                  Renew for another 30 days to keep posting recruitment requests and
+                  receiving up to 5 matched candidates per request.
+                {% endif %}
+              </p>
+              <div class="emp-modal-actions">
+                {% if subscription.plan == 'premium' %}
+                  <button
+                    type="button"
+                    class="emp-modal-btn emp-modal-btn--ghost"
+                    data-open-bank-modal="basic"
+                    data-plan-title="Basic Plan"
+                    data-plan-price="50,000"
+                  >
+                    Downgrade to Basic
+                  </button>
+                {% endif %}
+                <button
+                  type="button"
+                  class="emp-modal-btn emp-modal-btn--primary"
+                  data-open-bank-modal="{% endblock %}00"
+                  data-plan-title="{% endblock %}11 Plan"
+                  data-plan-price="{% endblock %}22"
+                >
+                  {% endblock %}33Continue Premium{% endblock %}44Renew
+                  Basic{% endblock %}55
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="emp-plans-heading">
+          <h2>Choose a plan</h2>
+          <p>
+            Select a plan, transfer to our corporate account, and upload your proof of
+            payment for immediate review.
+          </p>
         </div>
 
-        <button type="submit" class="emp-proof-submit-btn">
-          <span>Submit Proof of Payment</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </form>
-    </div>
-  </div>
-</main>
+        {# Plan Selection Grid #}
+        <div class="emp-plan-grid">
+          {# Basic Plan #}
+          <article
+            class="emp-plan-card {% endblock %}99emp-plan-card--active{% endif %}"
+          >
+            {% if subscription and subscription.plan == 'basic' %}
+              <div class="emp-plan-current-chip">Current plan</div>
+            {% endif %}
+            <div class="emp-plan-icon emp-plan-icon--basic">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+              </svg>
+            </div>
+            <h3 class="emp-plan-name">Basic</h3>
+            <div class="emp-plan-price">
+              <strong>₦50,000</strong>
+              <span>/ 30 days</span>
+            </div>
+            <ul class="emp-plan-features">
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Up to 5 vetted profiles per request
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Valid for 30 days, then renew
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                48–72 hour response window
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                1 free replacement within 30 days
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Standard dashboard support
+              </li>
+            </ul>
+            <button
+              type="button"
+              data-open-bank-modal="basic"
+              data-plan-title="Basic Plan"
+              data-plan-price="50,000"
+              class="emp-plan-btn {% if subscription and subscription.plan == 'basic' %}emp-plan-btn--current{% endif %}"
+            >
+              {% if subscription and subscription.plan == 'basic' %}Renew Basic Plan{% else %}Choose Basic
+              Plan{% endif %}
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </article>
 
-<script>
-(function () {
-  var modal = document.getElementById('bankTransferModal');
-  var planInput = document.getElementById('modalPlanInput');
-  var planTitle = document.getElementById('modalPlanTitle');
-  var planPrice = document.getElementById('modalPlanPriceText');
-  var fileInput = document.getElementById('proofFileInput');
-  var namePreview = document.getElementById('fileNamePreview');
+          {# Premium Plan #}
+          <article
+            class="emp-plan-card emp-plan-card--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-card--active{% endif %}"
+          >
+            <div class="emp-plan-recommended">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                />
+              </svg>
+              Most Popular
+            </div>
+            {% if subscription and subscription.plan == 'premium' %}
+              <div class="emp-plan-current-chip">Current plan</div>
+            {% endif %}
+            <div class="emp-plan-icon emp-plan-icon--premium">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                />
+              </svg>
+            </div>
+            <h3 class="emp-plan-name">Premium</h3>
+            <div class="emp-plan-price">
+              <strong>₦100,000</strong>
+              <span>/ 90 days</span>
+            </div>
+            <ul class="emp-plan-features">
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Unlimited matched profiles pushed
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Valid for 90 days, then renew
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Priority 24-hour dashboard delivery
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Uncapped replacements within 90 days
+              </li>
+              <li>
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Dedicated account manager support
+              </li>
+            </ul>
+            <button
+              type="button"
+              data-open-bank-modal="premium"
+              data-plan-title="Premium Plan"
+              data-plan-price="100,000"
+              class="emp-plan-btn emp-plan-btn--premium {% if subscription and subscription.plan == 'premium' %}emp-plan-btn--current{% endif %}"
+            >
+              {% if subscription and subscription.plan == 'premium' %}Renew Premium Plan{% else %}Choose Premium
+              Plan{% endif %}
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </article>
+        </div>
 
-  function openModal(plan, title, price) {
-    if (planInput) planInput.value = plan;
-    if (planTitle) planTitle.textContent = 'Pay for ' + title;
-    if (planPrice) planPrice.textContent = '₦' + price;
-    if (modal) {
-      modal.classList.add('is-open');
-      modal.setAttribute('aria-hidden', 'false');
-    }
-  }
+        {# Recent Payments History #}
+        {% if recent_payments %}
+          <div class="emp-payment-history" style="margin-top: 36px">
+            <div class="emp-section-head" style="padding: 20px 24px 16px">
+              <h2 class="emp-panel-title">Payment &amp; Transfer Records</h2>
+              <a class="emp-link" href="/dashboard/employer/payments/">View all →</a>
+            </div>
+            <div
+              class="dashboard-table-scroll"
+              style="margin: 0 24px 20px"
+              tabindex="0"
+              role="region"
+              aria-label="Recent payment history table"
+            >
+              <table class="portal-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Plan</th>
+                    <th>Amount</th>
+                    <th>Bank / Channel</th>
+                    <th>Status</th>
+                    <th>Receipt</th>
+                    <th>Reference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in recent_payments %}
+                    <tr>
+                      <td>{{ p.created_at|default:p.paid_at|date:"d M Y" }}</td>
+                      <td><strong>{{ p.subscription.get_plan_display|default:"Subscription" }}</strong></td>
+                      <td>₦{{ p.display_amount|floatformat:0 }}</td>
+                      <td>{{ p.bank_name|default:"Bank Transfer" }}</td>
+                      <td>
+                        <span
+                          class="status-badge {% if p.status == 'success' %}status-badge--green{% elif p.status == 'failed' %}status-badge--red{% else %}status-badge--yellow{% endif %}"
+                        >
+                          {{ p.get_status_display }}
+                        </span>
+                      </td>
+                      <td>
+                        {% if p.proof %}
+                          <a
+                            href="{{ p.proof.url }}"
+                            target="_blank"
+                            style="color: #d90429; font-weight: 600; font-size: 12px"
+                          >
+                            View Proof ↗
+                          </a>
+                        {% else %}
+                          <span style="color: #94a3b8; font-size: 12px">—</span>
+                        {% endif %}
+                      </td>
+                      <td style="font-size: 11px; color: #94a3b8">{{ p.reference }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endif %}
 
-  function closeModal() {
-    if (modal) {
-      modal.classList.remove('is-open');
-      modal.setAttribute('aria-hidden', 'true');
-    }
-  }
+        {# ── Bank Transfer & Receipt Upload Modal ── #}
+        <div class="emp-bank-modal-overlay" id="bankTransferModal" aria-hidden="true">
+          <div class="emp-bank-modal">
+            <button
+              type="button"
+              class="emp-bank-modal-close"
+              data-close-bank-modal
+              aria-label="Close dialog"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
 
-  /* ── Renewal prompt: dismissible, and re-openable from the banner ── */
-  function closeRenewal() {
-    var r = document.getElementById('renewalModal');
-    if (!r) return;
-    r.classList.remove('emp-modal-overlay--visible');
-    r.setAttribute('aria-hidden', 'true');
-    try { sessionStorage.setItem('renewalDismissed', '1'); } catch (e) {}
-  }
+            <div class="emp-bank-modal-head">
+              <span class="emp-bank-modal-tag" id="modalPlanTag">
+                Direct Bank Transfer
+              </span>
+              <h2 class="emp-bank-modal-title" id="modalPlanTitle">
+                Pay for Subscription
+              </h2>
+              <p class="emp-bank-modal-sub">
+                Please make a transfer of
+                <strong id="modalPlanPriceText" style="color: #d90429">
+                  ₦50,000
+                </strong>
+                to either of the accounts below, then upload your proof of payment.
+              </p>
+            </div>
 
-  (function () {
-    var r = document.getElementById('renewalModal');
-    if (!r) return;
-    var dismissed = false;
-    try { dismissed = sessionStorage.getItem('renewalDismissed') === '1'; } catch (e) {}
-    if (dismissed) {
-      r.classList.remove('emp-modal-overlay--visible');
-      r.setAttribute('aria-hidden', 'true');
-    }
-    r.addEventListener('click', function (e) {
-      // Clicking the backdrop dismisses; the action buttons bubble up to
-      // the bank-modal handler first, so only the backdrop reaches here.
-      if (e.target === r) closeRenewal();
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && r.classList.contains('emp-modal-overlay--visible')) {
-        closeRenewal();
-      }
-    });
-  })();
+            {# Bank Account Details Grid #}
+            <div class="emp-bank-cards-grid">
+              {# WEMA BANK #}
+              <div class="emp-bank-card">
+                <div class="emp-bank-name-badge">
+                  <span>WEMA BANK</span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                <div class="emp-bank-acct-num">012 388 3405</div>
+                <div class="emp-bank-acct-name">TARGET JOBSPACE LIMITED</div>
+                <button type="button" class="emp-copy-btn" data-copy-num="0123883405">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                    ></path>
+                  </svg>
+                  <span>Copy Number</span>
+                </button>
+              </div>
 
-  document.querySelectorAll('[data-open-bank-modal]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var plan = btn.getAttribute('data-open-bank-modal') || 'basic';
-      var title = btn.getAttribute('data-plan-title') || 'Basic Plan';
-      var price = btn.getAttribute('data-plan-price') || '50,000';
-      // The renewal prompt can trigger this too — dismiss it so the
-      // payment instructions are the only thing on screen.
-      closeRenewal();
-      openModal(plan, title, price);
-    });
-  });
+              {# ZENITH BANK #}
+              <div class="emp-bank-card emp-bank-card--zenith">
+                <div class="emp-bank-name-badge">
+                  <span>ZENITH BANK</span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                <div class="emp-bank-acct-num">131 084 2261</div>
+                <div class="emp-bank-acct-name">TARGET JOBSPACE LIMITED</div>
+                <button type="button" class="emp-copy-btn" data-copy-num="1310842261">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                    ></path>
+                  </svg>
+                  <span>Copy Number</span>
+                </button>
+              </div>
+            </div>
 
-  document.querySelectorAll('[data-close-bank-modal]').forEach(function (btn) {
-    btn.addEventListener('click', closeModal);
-  });
+            {# Upload Proof Form #}
+            <form
+              class="emp-proof-form"
+              action="{% url 'website:submit_payment_proof' %}"
+              method="post"
+              enctype="multipart/form-data"
+            >
+              {% csrf_token %}
+              <input type="hidden" name="plan" id="modalPlanInput" value="basic" />
 
-  if (modal) {
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal) closeModal();
-    });
-  }
+              <div class="emp-form-row">
+                <label for="bankPaidSelect">Bank Paid Into *</label>
+                <select name="bank_name" id="bankPaidSelect" required>
+                  <option value="WEMA BANK (0123883405)">
+                    Wema Bank — 012 388 3405
+                  </option>
+                  <option value="ZENITH BANK (1310842261)">
+                    Zenith Bank — 131 084 2261
+                  </option>
+                </select>
+              </div>
 
-  // Copy account number
-  document.querySelectorAll('[data-copy-num]').forEach(function (btn) {
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      var num = btn.getAttribute('data-copy-num');
-      if (!num) return;
-      navigator.clipboard.writeText(num).then(function () {
-        var span = btn.querySelector('span');
-        var original = span ? span.textContent : '';
-        btn.classList.add('is-copied');
-        if (span) span.textContent = 'Copied!';
-        setTimeout(function () {
-          btn.classList.remove('is-copied');
-          if (span) span.textContent = original || 'Copy Number';
-        }, 2000);
-      });
-    });
-  });
+              <div class="emp-form-row">
+                <label for="senderNameInput">Sender Account / Company Name *</label>
+                <input
+                  type="text"
+                  name="sender_name"
+                  id="senderNameInput"
+                  required
+                  placeholder="e.g. Acme Tech Ltd or Samuel Nnaji"
+                  value="{{ employer.company_name|default:request.user.get_full_name|default:'' }}"
+                />
+              </div>
 
-  // File preview
-  if (fileInput && namePreview) {
-    fileInput.addEventListener('change', function () {
-      if (fileInput.files && fileInput.files[0]) {
-        namePreview.textContent = 'Selected: ' + fileInput.files[0].name;
-        namePreview.style.display = 'block';
-      } else {
-        namePreview.style.display = 'none';
-      }
-    });
-  }
+              <div class="emp-form-row">
+                <label>Upload Payment Receipt / Proof *</label>
+                <div class="emp-file-drop" id="proofDropZone">
+                  <input
+                    type="file"
+                    name="proof"
+                    id="proofFileInput"
+                    accept="image/*,.pdf"
+                    required
+                  />
+                  <div class="emp-file-drop-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                  </div>
+                  <strong style="font-size: 13px; color: #0f172a">
+                    Click or drag receipt here
+                  </strong>
+                  <p style="font-size: 11.5px; color: #64748b; margin: 3px 0 0">
+                    PNG, JPG, or PDF (max 10MB)
+                  </p>
+                  <div
+                    class="emp-file-name-preview"
+                    id="fileNamePreview"
+                    style="display: none"
+                  ></div>
+                </div>
+              </div>
 
-  // Auto-open modal if URL query param ?plan=basic or ?plan=premium
-  var urlParams = new URLSearchParams(window.location.search);
-  var planParam = urlParams.get('plan');
-  if (planParam === 'premium') {
-    openModal('premium', 'Premium Plan', '100,000');
-  } else if (planParam === 'basic') {
-    openModal('basic', 'Basic Plan', '50,000');
-  }
-})();
-</script>
-{% endblock %}
+              <button type="submit" class="emp-proof-submit-btn">
+                <span>Submit Proof of Payment</span>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      <script>
+        (function () {
+          var modal = document.getElementById("bankTransferModal");
+          var planInput = document.getElementById("modalPlanInput");
+          var planTitle = document.getElementById("modalPlanTitle");
+          var planPrice = document.getElementById("modalPlanPriceText");
+          var fileInput = document.getElementById("proofFileInput");
+          var namePreview = document.getElementById("fileNamePreview");
+
+          function openModal(plan, title, price) {
+            if (planInput) planInput.value = plan;
+            if (planTitle) planTitle.textContent = "Pay for " + title;
+            if (planPrice) planPrice.textContent = "₦" + price;
+            if (modal) {
+              modal.classList.add("is-open");
+              modal.setAttribute("aria-hidden", "false");
+            }
+          }
+
+          function closeModal() {
+            if (modal) {
+              modal.classList.remove("is-open");
+              modal.setAttribute("aria-hidden", "true");
+            }
+          }
+
+          /* ── Renewal prompt: dismissible, and re-openable from the banner ── */
+          function closeRenewal() {
+            var r = document.getElementById("renewalModal");
+            if (!r) return;
+            r.classList.remove("emp-modal-overlay--visible");
+            r.setAttribute("aria-hidden", "true");
+            try {
+              sessionStorage.setItem("renewalDismissed", "1");
+            } catch (e) {}
+          }
+
+          (function () {
+            var r = document.getElementById("renewalModal");
+            if (!r) return;
+            var dismissed = false;
+            try {
+              dismissed = sessionStorage.getItem("renewalDismissed") === "1";
+            } catch (e) {}
+            if (dismissed) {
+              r.classList.remove("emp-modal-overlay--visible");
+              r.setAttribute("aria-hidden", "true");
+            }
+            r.addEventListener("click", function (e) {
+              // Clicking the backdrop dismisses; the action buttons bubble up to
+              // the bank-modal handler first, so only the backdrop reaches here.
+              if (e.target === r) closeRenewal();
+            });
+            document.addEventListener("keydown", function (e) {
+              if (
+                e.key === "Escape" &&
+                r.classList.contains("emp-modal-overlay--visible")
+              ) {
+                closeRenewal();
+              }
+            });
+          })();
+
+          document.querySelectorAll("[data-open-bank-modal]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var plan = btn.getAttribute("data-open-bank-modal") || "basic";
+              var title = btn.getAttribute("data-plan-title") || "Basic Plan";
+              var price = btn.getAttribute("data-plan-price") || "50,000";
+              // The renewal prompt can trigger this too — dismiss it so the
+              // payment instructions are the only thing on screen.
+              closeRenewal();
+              openModal(plan, title, price);
+            });
+          });
+
+          document
+            .querySelectorAll("[data-close-bank-modal]")
+            .forEach(function (btn) {
+              btn.addEventListener("click", closeModal);
+            });
+
+          if (modal) {
+            modal.addEventListener("click", function (e) {
+              if (e.target === modal) closeModal();
+            });
+          }
+
+          // Copy account number
+          document.querySelectorAll("[data-copy-num]").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+              e.preventDefault();
+              var num = btn.getAttribute("data-copy-num");
+              if (!num) return;
+              navigator.clipboard.writeText(num).then(function () {
+                var span = btn.querySelector("span");
+                var original = span ? span.textContent : "";
+                btn.classList.add("is-copied");
+                if (span) span.textContent = "Copied!";
+                setTimeout(function () {
+                  btn.classList.remove("is-copied");
+                  if (span) span.textContent = original || "Copy Number";
+                }, 2000);
+              });
+            });
+          });
+
+          // File preview
+          if (fileInput && namePreview) {
+            fileInput.addEventListener("change", function () {
+              if (fileInput.files && fileInput.files[0]) {
+                namePreview.textContent = "Selected: " + fileInput.files[0].name;
+                namePreview.style.display = "block";
+              } else {
+                namePreview.style.display = "none";
+              }
+            });
+          }
+
+          // Auto-open modal if URL query param ?plan=basic or ?plan=premium
+          var urlParams = new URLSearchParams(window.location.search);
+          var planParam = urlParams.get("plan");
+          if (planParam === "premium") {
+            openModal("premium", "Premium Plan", "100,000");
+          } else if (planParam === "basic") {
+            openModal("basic", "Basic Plan", "50,000");
+          }
+        })();
+      </script>
+    {% endblock %}
