@@ -133,11 +133,11 @@ PROBE_JS = """
     if (r.width === 0 && r.height === 0) return;
     const st = getComputedStyle(el);
     if (st.display === 'none' || st.visibility === 'hidden') return;
-    // Ignore things inside an ancestor scroll container: they are meant to
-    // stick out and be scrolled to.
-    let a = el.parentElement, clipped = true;
-    while (a) {
-      if (getComputedStyle(a).overflowX === 'visible') { clipped = false; break; }
+    // Anything inside a scroll container is by design: it sticks out so it
+    // can be scrolled to, and it never extends the document.
+    let a = el.parentElement, clipped = false;
+    while (a && a !== document.documentElement) {
+      if (getComputedStyle(a).overflowX !== 'visible') { clipped = true; break; }
       a = a.parentElement;
     }
     const over = Math.round(r.right - vw);
@@ -152,17 +152,39 @@ PROBE_JS = """
   });
   const seen = new Map();
   bad.forEach((b) => { if (!seen.has(b.sel) || seen.get(b.sel).over < b.over) seen.set(b.sel, b); });
+  const scrollers = [...document.querySelectorAll('.dashboard-table-scroll')]
+    .map((s) => ({
+      box: Math.round(s.clientWidth), content: Math.round(s.scrollWidth),
+      canScroll: s.scrollWidth > s.clientWidth + 1,
+      tableW: Math.round(s.querySelector('table')?.scrollWidth || 0),
+    }));
   return {
     vw,
     scrollW: document.documentElement.scrollWidth,
     docOver: document.documentElement.scrollWidth - vw,
+    scrollers,
     bad: [...seen.values()].sort((a, b) => b.over - a.over).slice(0, 14),
   };
 }
 """
 
 
+def kill_stale_servers():
+    """Leftover runserver processes hold a sqlite lock on the scratch DB and
+    make requests hang, which looks like a browser timeout."""
+    subprocess.run(
+        ["pwsh", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | "
+         "Where-Object { $_.CommandLine -like '*runserver*' -and "
+         "$_.CommandLine -like '*" + str(PORT) + "*' } | "
+         "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"],
+        check=False, capture_output=True,
+    )
+
+
 def main():
+    kill_stale_servers()
+    time.sleep(1)
     if SCRATCH_DB.exists():
         SCRATCH_DB.unlink()
     session_key = seed()
@@ -190,23 +212,29 @@ def main():
                     "domain": "127.0.0.1", "path": "/",
                 }])
                 page = ctx.new_page()
+                page.set_default_navigation_timeout(60000)
                 page.goto(f"http://127.0.0.1:{PORT}/dashboard/admin/",
-                          wait_until="load")
-                page.wait_for_timeout(400)
+                          wait_until="domcontentloaded")
+                page.wait_for_timeout(600)
                 res = page.evaluate(PROBE_JS)
                 print(f"\n=== width {w}px | scrollWidth={res['scrollW']} "
                       f"| PAGE OVERFLOW={res['docOver']}px ===")
                 for b in res["bad"]:
                     print(f"  +{b['over']:>4}px w={b['w']:>4}  {b['sel']}")
                 if not res["bad"]:
-                    print("  (no un-clipped offenders)")
-                if w == 375:
-                    page.screenshot(path=str(BASE / "_adm_375_before.png"),
-                                    full_page=True)
+                    print("  (no page-level offenders)")
+                for s in res["scrollers"]:
+                    print(f"  table-scroll: box={s['box']} content={s['content']} "
+                          f"scrollable={s['canScroll']}")
+                if w in (375, 1280):
+                    page.screenshot(
+                        path=str(BASE / f"_adm_{w}_after.png"), full_page=True)
                 ctx.close()
             browser.close()
     finally:
         server.terminate()
+        server.kill()
+        kill_stale_servers()
 
 
 if __name__ == "__main__":
