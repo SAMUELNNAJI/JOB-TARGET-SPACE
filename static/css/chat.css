@@ -607,6 +607,14 @@
   color: #fca5a5;
 }
 
+/* Clip recorded on another environment (or before the media disk existed):
+   the transcript keeps its shape, but no player is built for it at all. */
+.chat-audio--unavailable {
+  border-style: dashed;
+  opacity: 0.85;
+  padding: 8px 12px;
+}
+
 /* The clip is on the server but this browser cannot decode it (every
    recording is .webm/Opus, which iOS Safari refuses). Unlike .is-missing the
    play button stays enabled, because a retry can still succeed. */

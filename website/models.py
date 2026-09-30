@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils import timezone
 
 
@@ -445,3 +446,22 @@ class SupportMessage(models.Model):
         # tiebreaker keeps ordering stable when two rows share a timestamp.
         ordering = ("created_at", "id")
         indexes = [models.Index(fields=("thread", "id"))]
+
+    @cached_property
+    def audio_available(self) -> bool:
+        """Whether the clip this row points at can actually be served here.
+
+        `audio` is a FileField, so Postgres holds only a relative path - the
+        bytes live in MEDIA_ROOT, which is per-machine storage (the laptop's
+        `media/` folder in dev, the Render disk in prod) while the database is
+        shared. A note recorded on one of them is therefore a valid row with no
+        file on the other, and a player built for it can only ever fail.
+        Templates ask this first and show a quiet notice instead.
+        """
+        if not self.audio:
+            return False
+        try:
+            return self.audio.storage.exists(self.audio.name)
+        except Exception:          # storage backend hiccup = treat as absent
+            return False
+

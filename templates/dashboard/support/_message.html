@@ -22,7 +22,7 @@
       </div>
     {% endif %}
 
-    {% if message.audio %}
+    {% if message.audio and message.audio_available %}
       <div
         class="chat-audio"
         data-audio-is-mine="{% if mine %}1{% else %}0{% endif %}"
@@ -82,6 +82,16 @@
         </div>
 
         <audio preload="auto" src="{{ message.audio.url }}" data-audio-el></audio>
+      </div>
+    {% elif message.audio %}
+      {# The row still names a clip, but this server's MEDIA_ROOT has no such #}
+      {# file: it was recorded on the other environment (Render disk vs this #}
+      {# laptop) or before the disk existed. Say so plainly instead of handing #}
+      {# back a play button that can only ever fail. #}
+      <div class="chat-audio chat-audio--unavailable">
+        <div class="chat-audio-info">
+          <span class="chat-audio-missing">Voice note unavailable on this server</span>
+        </div>
       </div>
     {% endif %}
 
