@@ -132,6 +132,14 @@ TEMPLATES[0]["OPTIONS"]["builtins"] = ["website.templatetags.seo_extras"]
 # with blank or trivially guessable passwords — a real problem now that the
 # project holds CVs and payment records. These run on signup and on any
 # password change, including in the admin.
+# Allow login with username OR email. The custom backend tries an exact
+# username match first (keeps /admin/ working), then falls back to a
+# case-insensitive email lookup. Both backends must be listed so Django
+# admin (/admin/) still works via the default ModelBackend path.
+AUTHENTICATION_BACKENDS = [
+    "website.backends.EmailOrUsernameModelBackend",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
