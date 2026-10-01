@@ -48,7 +48,7 @@
                 {% if c.qualifications.exists %}
                   <div class="cch-block"><span>Qualifications</span><ul>{% for q in c.qualifications.all %}<li>{{ q.title }}{% if q.institution %} — {{ q.institution }}{% endif %}{% if q.year %} ({{ q.year }}){% endif %}</li>{% endfor %}</ul></div>
                 {% endif %}
-                <div class="cch-block"><span>Documents</span><p>{% if c.cv_documents.exists %}{% for doc in c.cv_documents.all %}<a href="{{ doc.file.url }}" target="_blank">Open CV {{ forloop.counter }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}{% else %}No CV uploaded yet{% endif %}</p></div>
+                <div class="cch-block"><span>Documents</span><p>{% if c.cv_documents.exists %}{% for doc in c.cv_documents.all %}<a href="{% url 'website:candidate_document_download' doc.id %}" target="_blank">Open CV {{ forloop.counter }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}{% else %}No CV uploaded yet{% endif %}</p></div>
                 {% if c.verification_notes %}<div class="cch-block cch-block--notes"><span>Review notes</span><p>{{ c.verification_notes }}</p></div>{% endif %}
               </div>
               <div class="cch-foot">
@@ -62,7 +62,7 @@
           <td>{{ c.specializations.first|default:"Not set" }}</td>
           <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:4px;border-radius:99px;background:#eef0f5;overflow:hidden"><div style="height:100%;width:{{ c.completion_percentage }}%;background:linear-gradient(90deg,#d90429,#ff6b81);border-radius:99px"></div></div><span style="font-size:10px;font-weight:700;color:#3d4a63;white-space:nowrap">{{ c.completion_percentage }}%</span></div></td>
           <td><span class="adm-status-badge adm-status-badge--{{ c.verification_status }}">{{ c.get_verification_status_display }}</span></td>
-          <td>{% if c.cv_documents.exists %}<a href="{{ c.cv_documents.first.file.url }}" target="_blank" class="admin-action secondary">View CV</a>{% else %}<span style="color:#9ca5b6;font-size:10px">None</span>{% endif %}</td>
+          <td>{% if c.cv_documents.exists %}<a href="{% url 'website:candidate_document_download' c.cv_documents.first.id %}" target="_blank" class="admin-action secondary">View CV</a>{% else %}<span style="color:#9ca5b6;font-size:10px">None</span>{% endif %}</td>
           <td>{{ c.user.date_joined|date:"d M Y" }}</td>
           <td>
             <div class="adm-act-group">

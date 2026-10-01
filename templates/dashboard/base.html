@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Dashboard - JobSpace{% endblock %}</title>
+
+  {% include "includes/seo_head.html" %}
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=20">
   <style>
     /* Sidebar badges — white circle, red number (inline so it applies even with it  stale cached CSS) */

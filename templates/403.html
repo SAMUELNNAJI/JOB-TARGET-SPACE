@@ -1,0 +1,107 @@
+{% comment %}
+  403 — shown when a signed-in user reaches something they are not allowed to see,
+  most often by editing a URL to guess another user's document or dashboard ID.
+
+  This is deliberately a calm "not for you" rather than a scary error: the
+  protected-download views raise PermissionDenied, and a stack-trace-looking page
+  would suggest a bug where the correct answer is simply "no".
+{% endcomment %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Not available to you — JobSpace</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="">
+  <style>
+    :root { --ink:#0e1420; --muted:#64748b; --red:#d6001d; --amber:#f59e0b; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 24px; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 500px at 50% -10%, #fff 0%, transparent 60%),
+        linear-gradient(180deg, #fdf8f3 0%, #f4f1ee 100%);
+    }
+    .wrap { text-align: center; max-width: 520px; }
+
+    /* A padlock that tugs at its chain: locked, and staying that way. */
+    .scene { position: relative; width: 200px; height: 180px; margin: 0 auto 28px; }
+    .shackle {
+      position: absolute; top: 6px; left: 78px;
+      width: 46px; height: 46px;
+      border: 9px solid var(--ink);
+      border-bottom: none;
+      border-radius: 24px 24px 0 0;
+      animation: tug 2.8s ease-in-out infinite;
+    }
+    .body-lock {
+      position: absolute; top: 48px; left: 62px;
+      width: 78px; height: 66px;
+      background: var(--amber);
+      border-radius: 12px;
+      box-shadow: 0 10px 26px rgba(245, 158, 11, .32);
+      animation: tug 2.8s ease-in-out infinite;
+    }
+    .keyhole {
+      position: absolute; top: 22px; left: 34px;
+      width: 12px; height: 12px;
+      background: #7c4a03; border-radius: 50%;
+    }
+    .keyhole::after {
+      content: ""; position: absolute; top: 9px; left: 4px;
+      width: 5px; height: 14px; background: #7c4a03; border-radius: 3px;
+    }
+    @keyframes tug {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      30%      { transform: translate(-4px, 6px) rotate(-3deg); }
+      60%      { transform: translate(4px, 12px) rotate(3deg); }
+    }
+    .lock-face {
+      position: absolute; top: 84px; left: 84px;
+      width: 34px; height: 34px; font-size: 26px; line-height: 34px;
+      text-align: center; color: #fff; font-weight: 800;
+      animation: tug 2.8s ease-in-out infinite;
+    }
+    h1 { font-size: 30px; margin: 0 0 10px; letter-spacing: -.02em; }
+    p  { color: var(--muted); line-height: 1.6; margin: 0 0 26px; }
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 12px 22px; border-radius: 10px;
+      font-weight: 600; text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-primary { background: var(--ink); color: #fff; }
+    .btn-ghost   { background: #fff; color: var(--ink); border: 1px solid #d8dde8; }
+    .btn:hover   { transform: translateY(-2px); }
+    .btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .shackle, .body-lock, .lock-face { animation: none; }
+      .btn:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="scene" role="img" aria-label="An illustration of a closed padlock">
+      <div class="shackle"></div>
+      <div class="body-lock">
+        <div class="keyhole"></div>
+      </div>
+      <div class="lock-face">!</div>
+    </div>
+
+    <h1>This isn't available to you</h1>
+    <p>
+      That document belongs to another account. If you think you should have
+      access, get in touch and we'll check.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="/dashboard/candidate/">My dashboard</a>
+      <a class="btn btn-ghost" href="/contact/">Contact support</a>
+    </div>
+  </div>
+</body>
+</html>

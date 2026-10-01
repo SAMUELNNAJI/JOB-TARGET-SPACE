@@ -589,7 +589,7 @@
               </td>
               <td>
                 {% if p.proof %}
-                  <button type="button" class="adm-proof-link" data-preview-proof="{{ p.proof.url }}" data-pay-id="{{ p.id }}" data-pay-emp="{{ p.employer.company_name|default:p.employer.user.username }}" data-pay-plan="{{ p.subscription.get_plan_display|default:'Subscription' }}" data-pay-amt="₦{{ p.amount|floatformat:0 }}" data-pay-status="{{ p.status }}">
+                  <button type="button" class="adm-proof-link" data-preview-proof="{% url 'website:payment_proof_download' p.id %}" data-pay-id="{{ p.id }}" data-pay-emp="{{ p.employer.company_name|default:p.employer.user.username }}" data-pay-plan="{{ p.subscription.get_plan_display|default:'Subscription' }}" data-pay-amt="₦{{ p.amount|floatformat:0 }}" data-pay-status="{{ p.status }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     <span>View Receipt</span>
                   </button>

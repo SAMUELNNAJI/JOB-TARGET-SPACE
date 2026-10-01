@@ -1,0 +1,130 @@
+{% comment %}
+  500 — something broke on our side.
+
+  THIS TEMPLATE IS STRICTLY SELF-CONTAINED, and that is not stylistic. Django
+  renders handler500 when the exception handler ITSELF is what failed, or when
+  the database is unreachable. At that moment:
+
+    * {% static %} is unsafe — the staticfiles manifest is built from the DB
+      in production, and hashing a name can hit storage that is also broken
+    * a context processor is unsafe — website.seo.seo and dashboard_badges both
+      touch the request; dashboard_badges queries the database
+    * the base template is unsafe — it extends nothing useful here and drags in
+      nav that depends on the request user
+
+  So: inline CSS, no {% extends %}, no {% load %}, no context. If you add a
+  font, image or {% static %} reference to this file you reintroduce the bug it
+  exists to survive.
+
+  The reference number is a timestamp, not a lookup key — there is no error
+  table to query when the database is the thing that is down. It lets a user
+  quote a time that maps to the server logs.
+{% endcomment %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Something went wrong — JobSpace</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root { --ink:#0e1420; --muted:#64748b; --red:#d6001d; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 24px; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 500px at 50% -10%, #fff 0%, transparent 60%),
+        linear-gradient(180deg, #fff5f6 0%, #f6f1f3 100%);
+    }
+    .wrap { text-align: center; max-width: 520px; }
+
+    /* A gear that jams, gives up, and tries again. The wobble reads as
+       "recovering", which is the honest thing to show. */
+    .scene { position: relative; width: 200px; height: 180px; margin: 0 auto 28px; }
+    .gear {
+      position: absolute; top: 40px; left: 60px;
+      width: 80px; height: 80px;
+      border: 12px solid var(--ink);
+      border-radius: 50%;
+      animation: jam 2.6s ease-in-out infinite;
+    }
+    .gear::before, .gear::after {
+      content: ""; position: absolute; background: var(--ink);
+    }
+    .gear::before { top: -22px; left: 50%; width: 12px; height: 16px; margin-left: -6px; border-radius: 3px;
+                    box-shadow: 0 96px 0 var(--ink); }
+    .gear::after  { top: 50%; left: -22px; width: 16px; height: 12px; margin-top: -6px; border-radius: 3px;
+                    box-shadow: 96px 0 0 var(--ink); }
+    .hub {
+      position: absolute; top: 40px; left: 92px;
+      width: 16px; height: 16px; border-radius: 50%; background: #fff;
+      border: 4px solid var(--ink);
+    }
+    @keyframes jam {
+      0%       { transform: rotate(0deg) scale(1); }
+      18%      { transform: rotate(38deg) scale(1.06); }
+      32%      { transform: rotate(10deg) scale(.96); }
+      46%      { transform: rotate(46deg) scale(1.04); }
+      62%      { transform: rotate(0deg) scale(1); }
+      100%     { transform: rotate(360deg) scale(1); }
+    }
+    .sweat {
+      position: absolute; top: 22px; right: 34px;
+      width: 14px; height: 18px;
+      background: #38bdf8; border-radius: 0 50% 50% 50%;
+      transform: rotate(45deg);
+      animation: drip 1.6s ease-in infinite;
+    }
+    @keyframes drip {
+      0%   { transform: rotate(45deg) translate(0, 0) scale(.6); opacity: 0; }
+      40%  { opacity: 1; }
+      100% { transform: rotate(45deg) translate(0, 34px) scale(1); opacity: 0; }
+    }
+    .ref {
+      display: inline-block; margin: 0 0 24px; padding: 7px 13px;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 999px;
+      font-family: ui-monospace, "SF Mono", Consolas, monospace;
+      font-size: 12.5px; color: var(--muted);
+    }
+    h1 { font-size: 30px; margin: 0 0 10px; letter-spacing: -.02em; }
+    p  { color: var(--muted); line-height: 1.6; margin: 0 0 26px; }
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 12px 22px; border-radius: 10px;
+      font-weight: 600; text-decoration: none; color: #fff; background: var(--red);
+      box-shadow: 0 6px 16px rgba(214, 0, 29, .26);
+      transition: transform .15s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .gear, .sweat { animation: none; }
+      .btn:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="scene" role="img" aria-label="An illustration of a gear that has stopped turning">
+      <div class="gear"></div>
+      <div class="hub"></div>
+      <div class="sweat"></div>
+    </div>
+
+    <h1>Something went wrong on our side</h1>
+    <p>
+      This one is on us, not you. The problem has been logged and we're looking
+      into it. Try again in a moment.
+    </p>
+
+    {# Deliberately not {{ request }} or any context object: handler500 may run
+       with no request in scope at all. #}
+    <span class="ref">Reference: {% now "Y-m-d H:i:s" %} UTC</span>
+
+    <div class="actions">
+      <a class="btn" href="/">Back to home</a>
+    </div>
+  </div>
+</body>
+</html>

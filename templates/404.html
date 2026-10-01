@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found — JobSpace</title>
+  {# A 404 must never be indexed: it is a dead end, and indexing it wastes
+     crawl budget and can displace the real page it was meant to reach. #}
+  <meta name="robots" content="noindex, follow">
+  <meta name="description" content="">
+  <style>
+    :root {
+      --ink: #0e1420;
+      --muted: #64748b;
+      --red: #d6001d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 500px at 50% -10%, #fff 0%, transparent 60%),
+        linear-gradient(180deg, #f7f8fc 0%, #eef1f8 100%);
+    }
+    .wrap { text-align: center; max-width: 520px; }
+
+    /* ── The searching cartoon ──────────────────────────────────────────────
+       Built entirely in CSS: a magnifier that drifts while it scans, over a
+       document whose lines shuffle, and a magnifier handle that trails it.
+       No image request, so it cannot itself 404 — which would be an
+       unfortunate thing for an error page. */
+    .scene {
+      position: relative;
+      width: 220px;
+      height: 190px;
+      margin: 0 auto 28px;
+    }
+    .paper {
+      position: absolute;
+      inset: 18px 34px 0 26px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(14, 20, 32, .10);
+      padding: 18px 16px;
+      transform: rotate(-4deg);
+    }
+    .line {
+      height: 7px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      margin-bottom: 10px;
+      transform-origin: left center;
+    }
+    .line:nth-child(1) { width: 82%; }
+    .line:nth-child(2) { width: 64%; animation: shuffle 2.4s ease-in-out infinite; }
+    .line:nth-child(3) { width: 74%; animation: shuffle 2.4s ease-in-out .3s infinite; }
+    .line:nth-child(4) { width: 48%; animation: shuffle 2.4s ease-in-out .6s infinite; }
+
+    @keyframes shuffle {
+      0%, 100% { transform: scaleX(1); opacity: 1; }
+      50%      { transform: scaleX(.55); opacity: .45; }
+    }
+
+    .glass {
+      position: absolute;
+      top: 6px;
+      left: 92px;
+      width: 74px;
+      height: 74px;
+      border: 8px solid var(--ink);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .55);
+      backdrop-filter: blur(1px);
+      animation: scan 3.2s ease-in-out infinite;
+      box-shadow: 0 8px 18px rgba(14, 20, 32, .16);
+    }
+    .handle {
+      position: absolute;
+      top: 66px;
+      left: 156px;
+      width: 40px;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--ink);
+      transform: rotate(45deg);
+      transform-origin: left center;
+      animation: scan 3.2s ease-in-out infinite;
+    }
+
+    /* One shared keyframe drives both parts so the handle stays attached. */
+    @keyframes scan {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25%      { transform: translate(-16px, 10px) rotate(-6deg); }
+      50%      { transform: translate(14px, 26px) rotate(5deg); }
+      75%      { transform: translate(-8px, 44px) rotate(-3deg); }
+    }
+    /* The handle needs its own rotation on top of the shared translation. */
+    .handle { animation-name: scanHandle; }
+    @keyframes scanHandle {
+      0%, 100% { transform: translate(0, 0) rotate(45deg); }
+      25%      { transform: translate(-16px, 10px) rotate(39deg); }
+      50%      { transform: translate(14px, 26px) rotate(50deg); }
+      75%      { transform: translate(-8px, 44px) rotate(42deg); }
+    }
+
+    .question {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--red);
+      animation: pop 2.2s ease-in-out infinite;
+    }
+    @keyframes pop {
+      0%, 100% { transform: scale(1) rotate(8deg); opacity: .9; }
+      50%      { transform: scale(1.18) rotate(-6deg); opacity: 1; }
+    }
+
+    h1 { font-size: 30px; margin: 0 0 10px; letter-spacing: -.02em; }
+    p  { color: var(--muted); line-height: 1.6; margin: 0 0 26px; }
+
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-primary { background: var(--red); color: #fff; box-shadow: 0 6px 16px rgba(214, 0, 29, .28); }
+    .btn-ghost   { background: #fff; color: var(--ink); border: 1px solid #d8dde8; }
+    .btn:hover   { transform: translateY(-2px); }
+    .btn:focus-visible { outline: 3px solid #0e1420; outline-offset: 2px; }
+
+    /* Respect the OS setting. Vestibular disorders make large looping motion
+       genuinely unpleasant, and a spinning magnifier is exactly that. */
+    @media (prefers-reduced-motion: reduce) {
+      .glass, .handle, .line, .question { animation: none; }
+      .btn:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="scene" role="img" aria-label="An illustration of a magnifying glass searching through a document">
+      <div class="paper">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+      </div>
+      <div class="glass"></div>
+      <div class="handle"></div>
+      <div class="question">?</div>
+    </div>
+
+    <h1>We couldn't find that page</h1>
+    <p>
+      The link may be out of date, or the page may have moved.
+      Try searching from the home page instead.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="/">Back to home</a>
+      <a class="btn btn-ghost" href="/contact/">Contact support</a>
+    </div>
+  </div>
+</body>
+</html>

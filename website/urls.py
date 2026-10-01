@@ -21,11 +21,15 @@ urlpatterns = [
     path("dashboard/candidate/specialization/add/", views.add_specialization, name="add_specialization"),
     path("dashboard/candidate/<slug:section>/", views.candidate_section, name="candidate_section"),
     path("logout/", views.logout_view, name="logout"),
+    # Protected uploads. These replace direct `file.url` links so that a CV,
+    # payment proof or voice note is only served to its owner or to staff.
+    path("documents/<int:document_id>/download/", views.candidate_document_download, name="candidate_document_download"),
+    path("payments/<int:payment_id>/proof/", views.payment_proof_download, name="payment_proof_download"),
+    path("support/messages/<int:message_id>/audio/", views.support_audio_download, name="support_audio_download"),
     path("dashboard/employer/", views.employer_dashboard, name="employer_dashboard"),
+    # Direct bank transfer: the employer uploads proof of payment and an admin
+    # approves it. There is no payment gateway and no webhook.
     path("dashboard/employer/subscription/proof/", views.submit_payment_proof, name="submit_payment_proof"),
-    path("dashboard/employer/subscription/initiate/", views.initiate_subscription, name="initiate_subscription"),
-    path("dashboard/employer/subscription/callback/", views.subscription_callback, name="subscription_callback"),
-    path("dashboard/employer/subscription/webhook/", views.subscription_webhook, name="subscription_webhook"),
     path("dashboard/employer/candidates/<int:match_id>/shortlist/", views.shortlist_candidate, name="shortlist_candidate"),
     path("dashboard/employer/candidates/<int:match_id>/detail/", views.employer_candidate_detail, name="employer_candidate_detail"),
     path("dashboard/employer/candidates/<int:match_id>/accept/", views.accept_candidate, name="accept_candidate"),

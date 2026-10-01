@@ -387,16 +387,30 @@ loopback only and is not reachable from the internet. Never bind it to
 
 ## Two things to know before you rely on this
 
-**1. Uploaded files are public to anyone with the URL.** CVs, payment proofs
-and voice notes are served from `/media/` at predictable paths, and the links
-in the templates are plain `<a href="{{ doc.file.url }}">`. Anyone who learns
-or guesses a URL can open that file without logging in. The nginx config
-forces `Content-Disposition: attachment` so an uploaded HTML or SVG file
-cannot run script under your domain, but that stops cross-site scripting, not
-the download itself. If CVs must be private, the fix is to move them behind an
-authenticated download view that checks the requester owns the document, and
-add `X-Accel-Redirect` instead of the public `alias`. That is an application
-change, not a deployment change, so it is not done here.
+**1. Uploaded files are no longer public.** This used to be the most serious
+gap on the site: templates linked straight to `{{ doc.file.url }}` and
+`jobspace/urls.py` had a catch-all `/media/` route, so every CV, payment proof
+and voice note was downloadable by anyone who learned or guessed the path. For
+a job site, a CV is someone's home address, phone number and salary history.
+
+It is now fixed. Uploads are served only by permission-checked views:
+
+| Route | Visible to |
+|---|---|
+| `/documents/<id>/download/` | the candidate who owns it, or staff |
+| `/payments/<id>/proof/` | the employer who paid, or staff |
+| `/support/messages/<id>/audio/` | the people in that conversation, or staff |
+
+`/media/` returns 404 in production, responses are sent as
+`Content-Disposition: attachment` with `X-Content-Type-Options: nosniff` and
+`Cache-Control: private, no-store`, and the regression tests in
+`website/tests_protected_downloads.py` fail if a public media route is ever
+reintroduced.
+
+> **Do not add an nginx `location /media/` block.** The commented block in
+> `deploy/nginx/jobspace.conf` deliberately serves `/static/` only. An nginx
+> `alias` for `/media/` would bypass Django entirely and re-open the hole that
+> the application layer now closes.
 
 **2. `media/` lives on the VPS disk, not in the database.** Unlike Render,
 this disk is persistent, so uploads survive a redeploy — but not a `rm -rf`.

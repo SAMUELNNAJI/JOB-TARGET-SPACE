@@ -1,0 +1,32 @@
+{% comment %}
+  Shared <head> metadata for BOTH base.html and dashboard/base.html.
+
+  It lives in an include rather than in base.html alone because the dashboard
+  uses a separate base template. Before this was factored out, all 30
+  dashboard pages rendered with no robots tag at all — meaning a crawler that
+  reached /dashboard/ could get a logged-in view of a candidate's CVs indexed,
+  along with the private download URLs the protected views exist to hide.
+
+  If you add a third base template, include this file in its <head> too.
+{% endcomment %}
+{% if seo.description %}
+<meta name="description" content="{{ seo.description }}">
+{% endif %}
+<meta name="robots" content="{{ seo.robots }}">
+<link rel="canonical" href="{{ seo.canonical }}">
+
+<meta property="og:site_name" content="{{ seo.site_name }}">
+<meta property="og:type" content="{{ seo.og_type }}">
+<meta property="og:title" content="{{ seo.title }}">
+{% if seo.description %}<meta property="og:description" content="{{ seo.description }}">{% endif %}
+<meta property="og:url" content="{{ seo.canonical }}">
+<meta property="og:locale" content="en_NG">
+{% if seo.image %}<meta property="og:image" content="{{ seo.image }}" alt="JobSpace">{% endif %}
+{% if seo.image %}<meta property="og:image:width" content="{{ seo.image_width }}"><meta property="og:image:height" content="{{ seo.image_height }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ seo.title }}">
+{% if seo.description %}<meta name="twitter:description" content="{{ seo.description }}">{% endif %}
+{% if seo.image %}<meta name="twitter:image" content="{{ seo.image }}">{% endif %}
+
+{% if seo.indexable %}<link rel="sitemap" type="application/xml" href="/sitemap.xml">{% endif %}
+{% if seo.json_ld %}<script type="application/ld+json">{{ seo.json_ld|json_script_safe }}</script>{% endif %}

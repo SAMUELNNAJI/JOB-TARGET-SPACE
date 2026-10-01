@@ -60,6 +60,9 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "website.context_processors.dashboard_badges",
+                # Per-page <title>, description, canonical, robots and JSON-LD.
+                # The base template reads `seo`, so no view has to pass it.
+                "website.seo.seo",
             ],
         },
     },
@@ -122,6 +125,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_URL = "/signin/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ── Template filters ─────────────────────────────────────────────────────────
+TEMPLATES[0]["OPTIONS"]["builtins"] = ["website.templatetags.seo_extras"]
+
 # Password rules. This list was previously empty, which let accounts be created
 # with blank or trivially guessable passwords — a real problem now that the
 # project holds CVs and payment records. These run on signup and on any
@@ -141,10 +147,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# ── Flutterwave payment gateway ──────────────────────────────────────────────
-FLUTTERWAVE_PUBLIC_KEY   = os.environ.get("FLUTTERWAVE_PUBLIC_KEY", "")
-FLUTTERWAVE_SECRET_KEY   = os.environ.get("FLUTTERWAVE_SECRET_KEY", "")
-FLUTTERWAVE_WEBHOOK_HASH = os.environ.get("FLUTTERWAVE_WEBHOOK_HASH", "")
+# ── Payments ─────────────────────────────────────────────────────────────────
+# There is NO payment gateway. Employers receive the company's bank account
+# details, transfer the money themselves, then upload a screenshot as proof; an
+# admin approves or declines it in the admin payments screen. Nothing about a
+# subscription is activated automatically.
+#
+# The Flutterwave settings (FLUTTERWAVE_PUBLIC_KEY / SECRET_KEY / WEBHOOK_HASH)
+# and its webhook view were removed. Nothing reads these, and leaving them in
+# .env had no effect.
+#
+# The company account details shown to employers are edited directly in the
+# admin. If they are ever moved to the database or an env var, remember that
+# anyone who can read them is a target for invoice fraud, and do not put them
+# in a public template block.
 
 # ── Reverse proxy / TLS ─────────────────────────────────────────────────────
 # nginx terminates TLS and forwards plain HTTP to gunicorn over a Unix socket.

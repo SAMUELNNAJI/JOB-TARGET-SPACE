@@ -8,14 +8,35 @@ staticfiles/
 .env
 .vscode/
 
+# Uploaded files: real CVs, payment proofs and voice notes.
+# These were previously committed by accident — 28 real CVs (.pdf/.docx) are in
+# the history under media/. Real people's home addresses, phone numbers and
+# salary history do not belong in a git repository, and they stay there even
+# after a later commit removes them.
+#
+# The files must be untracked AND purged from history, and the database rows
+# that referenced them treated as compromised. Note that even after that, a CV
+# published publicly is published: anyone who cloned the repo before the purge
+# still has it, so anyone affected should be told.
+media/
+!.gitkeep
+
 # .env.example IS committed; the real .env above never is.
-# Local scratch files that hold query results and diagnostics.
-_plans_result.txt
-_r2.txt
-_r3.txt
-_r4.txt
-_r5.txt
-_tplcheck.txt
-_diag_out.txt
-_*.png
-_*.sqlite3
+
+# Throwaway debugging scratch. Rather than listing files one by one, ignore the
+# whole shape: anything prefixed with `_` at the project root is a scratch
+# harness, not part of the application. This is a deliberate exception to the
+# normal "nothing is ignored" rule and it is why a set of orphaned diagnostic
+# scripts, screenshots and query dumps could sit in the repo unexamined.
+# The `tools/` directory holds the scripts that ARE meant to be kept.
+/_*
+/*.png
+/*.log
+/*.txt
+!requirements.txt
+
+# Local test databases. `db.sqlite3` is already listed above; this catches the
+# ad-hoc ones that get created while running manage.py test.
+/_*.sqlite3
+/t.sqlite3
+/test*.sqlite3

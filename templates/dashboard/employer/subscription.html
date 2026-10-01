@@ -457,7 +457,7 @@
                 <span>Bank: {{ pending_payment.bank_name|default:"Direct Transfer" }}</span>
                 {% if pending_payment.proof %}
                   <a
-                    href="{{ pending_payment.proof.url }}"
+                    href="{% url 'website:payment_proof_download' pending_payment.id %}"
                     target="_blank"
                     style="color: #b45309; font-weight: 700; text-decoration: underline"
                   >
@@ -903,7 +903,7 @@
                       <td>
                         {% if p.proof %}
                           <a
-                            href="{{ p.proof.url }}"
+                            href="{% url 'website:payment_proof_download' p.id %}"
                             target="_blank"
                             style="color: #d90429; font-weight: 600; font-size: 12px"
                           >

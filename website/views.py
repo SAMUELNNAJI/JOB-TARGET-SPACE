@@ -1,4 +1,4 @@
-import secrets
+import os
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -17,10 +17,99 @@ from .forms import (
     QualificationForm, RecruitmentRequestForm, SignInForm, SignUpForm,
 )
 from .models import (
-    AuditLog, CandidateMatch, Notification, Payment, Profile,
+    AuditLog, CandidateDocument, CandidateMatch, Notification, Payment, Profile,
     Qualification, RecruitmentRequest, ReplacementRequest,
     Shortlist, Specialization, Subscription, SupportMessage, SupportThread,
 )
+
+# ─────────────────────────────────────────────────────────────
+# Protected file downloads
+# ─────────────────────────────────────────────────────────────
+#
+# Uploaded files used to be linked directly as `<a href="{{ doc.file.url }}">`.
+# That publishes a stable, guessable URL for every CV, payment proof and voice
+# note: anyone who learned or guessed the path could read the file without
+# logging in. For a job site, a CV is someone's home address, phone number,
+# salary history and employment record.
+#
+# These views sit in front of the files and decide who may read each one.
+# Templates link to the view, never to `file.url`, and the raw /media/ paths
+# are no longer served by nginx — see DEPLOY.md.
+
+
+def _file_response(field_file, filename, content_type=None):
+    """Stream a stored file as a download.
+
+    `Content-Disposition: attachment` matters here: it stops a browser from
+    rendering an uploaded .html or .svg inline under this origin, which would
+    otherwise be stored XSS. The filename is sanitised to its basename so a
+    crafted name cannot inject quotes or path segments into the header.
+    """
+    from django.http import FileResponse
+
+    # The stored name is attacker-influenced only in the sense that users
+    # choose the original filename, so take just the basename and strip quotes
+    # and separators before putting it in a response header.
+    safe_name = os.path.basename(filename) or "download"
+    safe_name = safe_name.replace('"', "").replace("\\", "").replace("\r", "").replace("\n", "")
+    response = FileResponse(
+        field_file.open("rb"),
+        content_type=content_type or "application/octet-stream",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}"'
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
+def candidate_document_download(request, document_id):
+    """A CV, visible only to its owner and to staff.
+
+    Employers do NOT get access here. An employer reaches a candidate's CV
+    through the shortlisting flow, which is the deliberate review path — giving
+    every employer a direct URL would expose every CV on the site.
+    """
+    document = get_object_or_404(CandidateDocument, pk=document_id)
+    if not (request.user.is_staff or request.user.is_superuser):
+        if document.profile.user_id != request.user.id:
+            raise PermissionDenied("This document belongs to another user.")
+    return _file_response(
+        document.file, document.file.name, content_type="application/pdf"
+    )
+
+
+@login_required
+def payment_proof_download(request, payment_id):
+    """A payment receipt, visible to the paying employer and to staff."""
+    payment = get_object_or_404(Payment, pk=payment_id)
+    if not (request.user.is_staff or request.user.is_superuser):
+        if payment.employer.user_id != request.user.id:
+            raise PermissionDenied("This payment belongs to another user.")
+    if not payment.proof:
+        raise Http404("No proof was uploaded for this payment.")
+    return _file_response(
+        payment.proof, payment.proof.name, content_type="image/*"
+    )
+
+
+@login_required
+def support_audio_download(request, message_id):
+    """A chat voice note, visible to its participants and to staff.
+
+    SupportThread is keyed on `profile` (one conversation per profile), not
+    on `user`, so ownership is checked through `thread.profile.user_id`.
+    """
+    message = get_object_or_404(
+        SupportMessage.objects.select_related("thread__profile"), pk=message_id
+    )
+    if not (request.user.is_staff or request.user.is_superuser):
+        if message.thread.profile.user_id != request.user.id:
+            raise PermissionDenied("This message belongs to another conversation.")
+    if not message.audio:
+        raise Http404("This message has no audio.")
+    return _file_response(message.audio, message.audio.name, content_type="audio/webm")
+
 
 # ─────────────────────────────────────────────────────────────
 # Helpers
@@ -35,8 +124,13 @@ PAGE_NAMES = {
     "contact": "contact.html",
     "privacy": "privacy.html",
     "terms": "terms.html",
-    "signin": "signin.html",
-    "signup": "signup.html",
+    # NOTE: "signin" and "signup" used to be listed here, pointing at
+    # templates/signin.html and templates/signup.html. Both were dead: the
+    # /signin/ and /signup/ routes render templates/auth/signin.html and
+    # templates/auth/signup.html via SignInView and the signup view, and the
+    # legacy /signin.html and /signup.html routes do the same. Nothing ever
+    # called page(page_name="signin"), so the root copies were never rendered.
+    # They have been deleted; keep this dict limited to pages page() can serve.
 }
 
 PER_PAGE = 20  # rows per page across all paginated tables
@@ -965,227 +1059,25 @@ def admin_payment_action(request, payment_id):
     return redirect("website:admin_section", section="payments")
 
 
-@login_required
-def initiate_subscription(request):
-    """POST — creates a pending Subscription + Payment row and returns the
-    Flutterwave inline-JS config as JSON so the frontend can open the checkout."""
-    if request.method != "POST":
-        from django.http import HttpResponseNotAllowed
-        return HttpResponseNotAllowed(["POST"])
-
-    employer = _employer_profile(request)
-    plan = request.POST.get("plan", Subscription.Plan.BASIC)
-    if plan not in PLAN_AMOUNTS:
-        return JsonResponse({"ok": False, "error": "Invalid plan."}, status=400)
-
-    from django.conf import settings as django_settings
-    public_key = django_settings.FLUTTERWAVE_PUBLIC_KEY
-    if not public_key:
-        return JsonResponse({"ok": False, "error": "Payment gateway not configured."}, status=503)
-
-    amount = PLAN_AMOUNTS[plan]
-    now    = timezone.now()
-    import uuid
-    tx_ref = f"JOBSPACE-{employer.pk}-{uuid.uuid4().hex[:12].upper()}"
-
-    # Deactivate any in-progress pending payment for this employer (idempotent retry)
-    Payment.objects.filter(
-        employer=employer, status=Payment.Status.PENDING
-    ).update(status=Payment.Status.FAILED)
-
-    # Create a placeholder subscription (inactive until payment confirmed)
-    subscription = Subscription.objects.create(
-        employer=employer,
-        plan=plan,
-        amount=amount,
-        starts_at=now,
-        expires_at=Subscription(plan=plan).expiry_from(now),
-        is_active=False,
-    )
-    Payment.objects.create(
-        employer=employer,
-        subscription=subscription,
-        reference=tx_ref,
-        amount=amount,
-        status=Payment.Status.PENDING,
-    )
-
-    # Build the absolute callback URL
-    callback_url = request.build_absolute_uri(
-        reverse("website:subscription_callback")
-    )
-
-    return JsonResponse({
-        "ok": True,
-        "public_key": public_key,
-        "tx_ref":     tx_ref,
-        "amount":     amount,
-        "currency":   "NGN",
-        "email":      request.user.email,
-        "name":       employer.company_name or request.user.get_full_name() or request.user.username,
-        "phone":      employer.phone or "",
-        "redirect_url": callback_url,
-        "plan_label": subscription.get_plan_display(),
-    })
-
-
-@login_required
-def subscription_callback(request):
-    """GET — Flutterwave redirects here after the user pays (or cancels).
-    We verify the transaction server-side and activate the subscription."""
-    from django.conf import settings as django_settings
-    import urllib.request
-    import json as _json
-
-    status     = request.GET.get("status", "")
-    tx_ref     = request.GET.get("tx_ref", "")
-    tx_id      = request.GET.get("transaction_id", "")
-
-    employer   = _employer_profile(request)
-
-    if status != "successful" or not tx_ref or not tx_id:
-        messages.error(request, "Payment was not completed. Please try again.")
-        return redirect("website:employer_section", section="subscription")
-
-    # Look up the pending payment for this employer + reference
-    try:
-        payment = Payment.objects.select_related("subscription").get(
-            reference=tx_ref, employer=employer, status=Payment.Status.PENDING
-        )
-    except Payment.DoesNotExist:
-        messages.error(request, "Payment reference not found or already processed.")
-        return redirect("website:employer_section", section="subscription")
-
-    # Verify the transaction with Flutterwave REST API
-    secret_key = django_settings.FLUTTERWAVE_SECRET_KEY
-    try:
-        req = urllib.request.Request(
-            f"https://api.flutterwave.com/v3/transactions/{tx_id}/verify",
-            headers={"Authorization": f"Bearer {secret_key}"},
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = _json.loads(resp.read().decode())
-    except Exception:
-        messages.error(request, "Could not verify payment with Flutterwave. Please contact support.")
-        return redirect("website:employer_section", section="subscription")
-
-    if (
-        data.get("status") != "success"
-        or data.get("data", {}).get("status") != "successful"
-        or data["data"].get("tx_ref") != tx_ref
-        or data["data"].get("amount") < payment.amount
-        or data["data"].get("currency") != "NGN"
-    ):
-        payment.status = Payment.Status.FAILED
-        payment.save(update_fields=["status"])
-        messages.error(request, "Payment verification failed. Please contact support.")
-        return redirect("website:employer_section", section="subscription")
-
-    # All checks passed — activate subscription
-    now = timezone.now()
-    payment.status = Payment.Status.SUCCESS
-    payment.paid_at = now
-    payment.save(update_fields=["status", "paid_at"])
-
-    sub = payment.subscription
-    sub.is_active  = True
-    sub.starts_at  = now
-    sub.expires_at = sub.expiry_from(now)
-    sub.save(update_fields=["is_active", "starts_at", "expires_at"])
-
-    # Deactivate any older subscriptions for this employer
-    employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
-
-    employer.notify(
-        title="Subscription activated",
-        message=(
-            f"Your {sub.get_plan_display()} plan is now active and expires on "
-            f"{sub.expires_at.strftime('%d %b %Y')}. "
-            f"Payment reference: {payment.reference}."
-        ),
-        kind=Notification.Kind.PAYMENT,
-    )
-    messages.success(
-        request,
-        f"Payment successful! Your {sub.get_plan_display()} plan is now active."
-    )
-    return redirect("website:employer_section", section="subscription")
-
-
-from django.views.decorators.csrf import csrf_exempt
-
-
-@csrf_exempt
-def subscription_webhook(request):
-    """POST — Flutterwave server-side webhook for async payment confirmation.
-    Verifies the secret hash header before processing."""
-    from django.conf import settings as django_settings
-    import json as _json
-
-    if request.method != "POST":
-        from django.http import HttpResponseNotAllowed
-        return HttpResponseNotAllowed(["POST"])
-
-    # Authenticate the webhook using the verif-hash header.
-    #
-    # The check must be an unconditional comparison. This used to be
-    # `if secret_hash and received_hash != secret_hash`, which meant that with
-    # FLUTTERWAVE_WEBHOOK_HASH unset — the default, and the state any fresh
-    # deployment starts in — the comparison was skipped entirely and ANY
-    # request was accepted. Because this endpoint is @csrf_exempt and publicly
-    # reachable, anyone who guessed the URL could POST a fabricated
-    # `charge.completed` body and have their employer's subscription marked as
-    # paid without paying.
-    #
-    # Comparing against "" means an unconfigured hash rejects every request.
-    # That is the safe failure: payments stop being confirmed, which is
-    # recoverable by setting the env var, versus silently granting free access.
-    secret_hash = django_settings.FLUTTERWAVE_WEBHOOK_HASH
-    received_hash = request.headers.get("verif-hash", "")
-    if not secret_hash:
-        from django.http import HttpResponse
-        return HttpResponse(
-            "Webhook secret is not configured on the server.", status=503
-        )
-    if not secrets.compare_digest(received_hash, secret_hash):
-        from django.http import HttpResponseForbidden
-        return HttpResponseForbidden("Invalid webhook signature.")
-
-    try:
-        payload = _json.loads(request.body)
-    except ValueError:
-        from django.http import HttpResponseBadRequest
-        return HttpResponseBadRequest("Invalid JSON.")
-
-    event = payload.get("event", "")
-    data  = payload.get("data", {})
-
-    if event == "charge.completed" and data.get("status") == "successful":
-        tx_ref = data.get("tx_ref", "")
-        try:
-            payment = Payment.objects.select_related("subscription", "employer").get(
-                reference=tx_ref, status=Payment.Status.PENDING
-            )
-        except Payment.DoesNotExist:
-            # Already processed (by callback) or unknown ref — idempotent, just 200.
-            from django.http import HttpResponse
-            return HttpResponse(status=200)
-
-        now = timezone.now()
-        payment.status  = Payment.Status.SUCCESS
-        payment.paid_at = now
-        payment.save(update_fields=["status", "paid_at"])
-
-        sub = payment.subscription
-        if sub:
-            sub.is_active  = True
-            sub.starts_at  = now
-            sub.expires_at = sub.expiry_from(now)
-            sub.save(update_fields=["is_active", "starts_at", "expires_at"])
-            payment.employer.subscriptions.exclude(pk=sub.pk).filter(is_active=True).update(is_active=False)
-
-    from django.http import HttpResponse
-    return HttpResponse(status=200)
+# ─────────────────────────────────────────────────────────────
+# Subscription activation (direct bank transfer)
+# ─────────────────────────────────────────────────────────────
+#
+# There is NO payment gateway. Employers are shown the company's account
+# details, they transfer the money themselves, then upload a screenshot as
+# proof; an admin approves or declines it in the admin payments screen
+# (`admin_payment_action`, above). That manual-verification flow is the only
+# path, and it is what `submit_payment_proof` feeds.
+#
+# The former Flutterwave integration (initiate_subscription,
+# subscription_callback, subscription_webhook) was removed. The gateway was
+# never referenced by any template, so those three endpoints were unreachable
+# dead code — and the webhook was a live hole: it accepted unsigned POSTs
+# whenever FLUTTERWAVE_WEBHOOK_HASH was unset, letting anyone mark their own
+# subscription paid by posting a fabricated "charge.completed" body.
+#
+# If a gateway is ever reintroduced, it must activate a subscription only after
+# a server-side verification, and never on an unverified client-side callback.
 
 
 # ─────────────────────────────────────────────────────────────

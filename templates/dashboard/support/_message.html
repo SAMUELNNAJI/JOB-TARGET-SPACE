@@ -81,7 +81,7 @@
           </div>
         </div>
 
-        <audio preload="auto" src="{{ message.audio.url }}" data-audio-el></audio>
+        <audio preload="none" src="{% url 'website:support_audio_download' message.id %}" data-audio-el></audio>
       </div>
     {% elif message.audio %}
       {# The row still names a clip, but this server's MEDIA_ROOT has no such #}
