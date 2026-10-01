@@ -133,6 +133,23 @@ CREATE DATABASE jobspace OWNER jobspace;
 > existing sites and gunicorn. A managed database is the better choice here if
 > you have one available.
 
+## Steps 7–10 — Automated
+
+Once the code, virtualenv and database are ready, the remaining setup is done
+by one script rather than by hand. It writes the `.env` with a freshly
+generated `SECRET_KEY`, installs the systemd unit, substitutes your domain into
+the nginx config, fixes the permissions, and starts the service:
+
+```bash
+bash /var/www/jobspace/deploy/bootstrap.sh yourdomain.com
+```
+
+It prints the service status, the last 30 log lines, and the remaining manual
+steps when it finishes. Read that output before continuing.
+
+If you would rather do it by hand, the individual steps are Steps 7 to 10
+below.
+
 ## Step 7 — The environment file
 
 ```bash
