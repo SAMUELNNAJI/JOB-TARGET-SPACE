@@ -29,6 +29,12 @@ Documentation=file:/var/www/jobspace/deploy/DEPLOY.md
 After=network-online.target
 Wants=network-online.target
 
+# NOTE: StartLimitIntervalSec / StartLimitBurst belong in [Unit], not [Service].
+# Putting them under [Service] makes systemd log "Unknown lvalue" and silently
+# ignore them, which disables the crash-loop protection entirely.
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
 [Service]
 Type=simple
 User=jobspace
@@ -74,8 +80,6 @@ ExecReload=/bin/kill -s HUP $MAINPID
 
 Restart=always
 RestartSec=5
-StartLimitIntervalSec=120
-StartLimitBurst=5
 
 # ── Hardening ─────────────────────────────────────────────────────────────
 # These directives need systemd 230+. AlmaLinux 8 ships systemd 239 and
