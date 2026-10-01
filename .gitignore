@@ -7,3 +7,15 @@ db.sqlite3
 staticfiles/
 .env
 .vscode/
+
+# .env.example IS committed; the real .env above never is.
+# Local scratch files that hold query results and diagnostics.
+_plans_result.txt
+_r2.txt
+_r3.txt
+_r4.txt
+_r5.txt
+_tplcheck.txt
+_diag_out.txt
+_*.png
+_*.sqlite3

@@ -75,7 +75,28 @@ DATABASES = {
     )
 }
 
-AUTH_PASSWORD_VALIDATORS = []
+# If DATABASE_URL is missing or malformed, dj_database_url either falls back to
+# the SQLite default above or — when it is set but empty — returns an empty
+# dict. Either way the site would come up with no real database: every request
+# fails, or worse, an empty SQLite file silently appears. That is the failure
+# mode where a deploy looks successful and all the production data is simply
+# not there. Refusing to start turns it into an obvious error instead.
+if not DEBUG and not DATABASES["default"].get("ENGINE"):
+    raise RuntimeError(
+        "DATABASE_URL is missing, empty or unparseable, so no database is "
+        "configured. Set it in /var/www/jobspace/.env to a valid PostgreSQL "
+        "URL, for example "
+        "postgresql://jobspace:PASSWORD@127.0.0.1:5432/jobspace"
+    )
+
+if not DEBUG and DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+    raise RuntimeError(
+        "SQLite is configured while DEBUG is False. DATABASE_URL must point at "
+        "PostgreSQL in production. Set it in /var/www/jobspace/.env, for "
+        "example "
+        "postgresql://jobspace:PASSWORD@127.0.0.1:5432/jobspace"
+    )
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Lagos"
 USE_I18N = True
@@ -83,24 +104,73 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# STORAGES replaces the STATICFILES_STORAGE setting (deprecated in Django 5.1).
+# CompressedManifest = gzipped files with content-hashed names, so nginx and
+# WhiteNoise can serve them with long-lived cache headers and a deploy never
+# serves a stale stylesheet.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_URL = "/signin/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Password rules. This list was previously empty, which let accounts be created
+# with blank or trivially guessable passwords — a real problem now that the
+# project holds CVs and payment records. These run on signup and on any
+# password change, including in the admin.
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
 # ── Flutterwave payment gateway ──────────────────────────────────────────────
 FLUTTERWAVE_PUBLIC_KEY   = os.environ.get("FLUTTERWAVE_PUBLIC_KEY", "")
 FLUTTERWAVE_SECRET_KEY   = os.environ.get("FLUTTERWAVE_SECRET_KEY", "")
 FLUTTERWAVE_WEBHOOK_HASH = os.environ.get("FLUTTERWAVE_WEBHOOK_HASH", "")
 
+# ── Reverse proxy / TLS ─────────────────────────────────────────────────────
+# nginx terminates TLS and forwards plain HTTP to gunicorn over a Unix socket.
+# Without this header Django believes every request arrived over http, so it
+# builds `http://` URLs, emits a redirect to the insecure scheme, and marks
+# cookies insecure. Trusting the header nginx sets is what makes Django
+# correctly treat the request as HTTPS.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Keyed to DEBUG so local development over http keeps working. On the VPS
+# DEBUG is False, so both are True automatically — no extra configuration.
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+# nginx already redirects http -> https (the port 80 block returns 301). This
+# flag is a second, in-app safety net. It must NOT default to True, or the
+# very first request to a brand-new server would bounce forever before the
+# certificate exists. Enable it via .env once HTTPS is live.
 SECURE_SSL_REDIRECT = os.environ.get(
     "SECURE_SSL_REDIRECT", "False"
 ).lower() == "true"
+
+# 0 in .env until HTTPS is confirmed working, then 31536000. Read the Django
+# HSTS deployment checklist first: once a browser has cached this header it
+# cannot be withdrawn until the max-age expires, and a broken certificate
+# afterwards becomes unfixable for those browsers.
 SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
 SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0

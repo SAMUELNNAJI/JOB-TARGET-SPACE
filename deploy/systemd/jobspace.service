@@ -1,0 +1,104 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# JobSpace — systemd unit for gunicorn. Tuned for this VPS.
+#
+# This box: 1 CPU, ~1.9 GB RAM, shared with 2 other live nginx sites.
+# That is tight, so the settings below are deliberately conservative.
+#
+# Install (run as root):
+#   sudo cp deploy/systemd/jobspace.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now jobspace
+#
+# ── WHY 127.0.0.1 AND NOT A UNIX SOCKET ─────────────────────────────────────
+# The first version of this unit used a Unix socket in /run/jobspace. That
+# does not work on this box:
+#   * the socket dir would be mode 0750, so the `nginx` user could not reach
+#     the socket at all, and
+#   * SELinux (enforcing on CentOS) denies nginx connecting to a socket in a
+#     non-standard location — it needs a policy change to permit.
+# Binding to 127.0.0.1 avoids both problems with no policy edits.
+#
+# This is NOT an exposed port. 127.0.0.1 is reachable only from this machine,
+# so the firewall is irrelevant and the site is not reachable from the internet
+# except through nginx. Do NOT change this to 0.0.0.0.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=JobSpace Django application (gunicorn)
+Documentation=file:/var/www/jobspace/deploy/DEPLOY.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jobspace
+Group=jobspace
+WorkingDirectory=/var/www/jobspace
+
+# The virtualenv, not the system python. This is what keeps the app from
+# picking up the packages of the other two sites on this box.
+Environment="PATH=/var/www/jobspace/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=jobspace.settings"
+
+# Secrets live here, owned by jobspace and mode 600. systemd reads it into the
+# process environment. This is what SECRET_KEY and DATABASE_URL come from.
+EnvironmentFile=/var/www/jobspace/.env
+
+# ── Sizing for 1 CPU ───────────────────────────────────────────────────────
+# 2 workers x 2 threads = 4 concurrent requests on a single core, while two
+# other sites are also being served. This is the ceiling, not a target.
+# If the other sites feel slow, drop to --workers 2 --threads 1.
+# Each worker is roughly 90-150 MB, so 2 workers leaves room for the rest.
+ExecStart=/var/www/jobspace/venv/bin/gunicorn \
+    --workers 2 \
+    --threads 2 \
+    --worker-class gthread \
+    --timeout 120 \
+    --graceful-timeout 30 \
+    --keep-alive 5 \
+    --max-requests 800 \
+    --max-requests-jitter 80 \
+    --bind 127.0.0.1:8010 \
+    --access-logfile - \
+    --error-logfile - \
+    --capture-output \
+    jobspace.wsgi:application
+
+# Migrations and static collection run on every start, before gunicorn binds
+# the port. If either fails, the unit fails and the OLD workers keep serving,
+# so a bad deploy is a failed request rather than an outage.
+ExecStartPre=/var/www/jobspace/venv/bin/python manage.py migrate --noinput
+ExecStartPre=/var/www/jobspace/venv/bin/python manage.py collectstatic --noinput
+
+ExecReload=/bin/kill -s HUP $MAINPID
+
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# ── Hardening ─────────────────────────────────────────────────────────────
+# These directives need systemd 230+. AlmaLinux 8 ships systemd 239 and
+# AlmaLinux 9 ships 252, so all of them are safe. If `systemctl start` ever
+# complains about an "Unknown lvalue", run `systemctl --version` and comment
+# that one line out — it is not worth debugging.
+#
+# None of them break Django.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+# Bound the blast radius. The app is a small site and should never be memory
+# starved by a runaway request. If you raise the worker count, raise this too.
+MemoryMax=700M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=jobspace
+
+[Install]
+WantedBy=multi-user.target
