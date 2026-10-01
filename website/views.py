@@ -1,3 +1,5 @@
+import secrets
+
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
@@ -1124,10 +1126,28 @@ def subscription_webhook(request):
         from django.http import HttpResponseNotAllowed
         return HttpResponseNotAllowed(["POST"])
 
-    # Authenticate the webhook using the verif-hash header
+    # Authenticate the webhook using the verif-hash header.
+    #
+    # The check must be an unconditional comparison. This used to be
+    # `if secret_hash and received_hash != secret_hash`, which meant that with
+    # FLUTTERWAVE_WEBHOOK_HASH unset — the default, and the state any fresh
+    # deployment starts in — the comparison was skipped entirely and ANY
+    # request was accepted. Because this endpoint is @csrf_exempt and publicly
+    # reachable, anyone who guessed the URL could POST a fabricated
+    # `charge.completed` body and have their employer's subscription marked as
+    # paid without paying.
+    #
+    # Comparing against "" means an unconfigured hash rejects every request.
+    # That is the safe failure: payments stop being confirmed, which is
+    # recoverable by setting the env var, versus silently granting free access.
     secret_hash = django_settings.FLUTTERWAVE_WEBHOOK_HASH
     received_hash = request.headers.get("verif-hash", "")
-    if secret_hash and received_hash != secret_hash:
+    if not secret_hash:
+        from django.http import HttpResponse
+        return HttpResponse(
+            "Webhook secret is not configured on the server.", status=503
+        )
+    if not secrets.compare_digest(received_hash, secret_hash):
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden("Invalid webhook signature.")
 
