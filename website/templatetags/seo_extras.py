@@ -12,6 +12,25 @@ from django.utils.safestring import mark_safe
 register = template.Library()
 
 
+@register.filter(name="initials")
+def initials(value, max_chars=2):
+    """Return up to *max_chars* initials from a full name.
+
+    "John Doe"     → "JD"
+    "Mary Jane Watson" → "MJ"   (first two words only)
+    "John"         → "JO"       (first 2 chars of single word)
+    ""             → "JS"       (fallback)
+    """
+    name = str(value or "").strip()
+    if not name:
+        return "JS"
+    parts = name.split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[1][0]).upper()
+    # Single word — take first two characters
+    return name[:2].upper()
+
+
 @register.filter(name="json_script_safe", is_safe=True)
 def json_script_safe(value):
     """Serialise a dict to JSON for embedding inside a <script> block.

@@ -33,6 +33,7 @@
 </head>
 <body class="{% block body_class %}dashboard-page{% endblock %}">
   <div class="dashboard-app">
+    <div class="dashboard-sidebar-backdrop" id="sidebarBackdrop" hidden></div>
     <aside class="dashboard-sidebar">
       <div class="dashboard-sidebar-head">
         <a class="dashboard-brand" href="/"><img src="{% static 'images/Logo.png' %}" alt="Target JobSpace"></a>
@@ -107,7 +108,7 @@
           <div class="nav-divider"></div>
 
           <div class="nav-candidate-card">
-            <div class="nav-candidate-avatar">{{ request.user.first_name|default:'JS'|slice:':2'|upper }}</div>
+            <div class="nav-candidate-avatar">{{ request.user.first_name|default:request.user.username|initials }}</div>
             <div class="nav-candidate-info">
               <strong>{{ request.user.first_name|default:request.user.username }}</strong>
               <span>{{ profile.get_verification_status_display|default:"Candidate" }}</span>
@@ -188,7 +189,7 @@
           </div>
           <span class="dashboard-divider"></span>
           <div class="dashboard-user">
-            <span class="dashboard-avatar">{{ request.user.first_name|default:'JS'|slice:':2'|upper }}</span>
+            <span class="dashboard-avatar">{{ request.user.first_name|default:request.user.username|initials }}</span>
             <div class="dashboard-user-copy">
               <strong>{{ request.user.first_name|default:request.user.username }}</strong>
               <small>{% if request.user.is_staff %}Administrator{% elif request.user.profile.role == 'employer' %}Employer{% else %}Candidate{% endif %}</small>

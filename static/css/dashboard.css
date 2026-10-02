@@ -1517,9 +1517,40 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
     font-size: 9px;
   }
 }
+/* ── Tablet (761 – 1050px): hamburger sidebar, same as mobile ── */
 @media (max-width: 1050px) and (min-width: 761px) {
   .dashboard-app {
-    grid-template-columns: 250px minmax(0, 1fr);
+    display: block;
+  }
+  .dashboard-sidebar {
+    position: fixed;
+    z-index: 199988889;
+    left: 0;
+    top: 0;
+    width: 285px;
+    max-width: 88vw;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s;
+    box-shadow: 15px 0 35px rgba(0, 0, 0, 0.25);
+  }
+  .dashboard-sidebar.open {
+    transform: translateX(0);
+  }
+  .dashboard-mobile-menu {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--dash-soft);
+    font-size: 18px;
+  }
+  .dashboard-main {
+    width: 100%;
+  }
+  .dashboard-topbar {
+    padding: 0 18px;
   }
   .dashboard-layout {
     grid-template-columns: 1fr;
@@ -1528,7 +1559,7 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
     display: none;
   }
   .dashboard-content {
-    padding: 20px;
+    padding: 24px;
   }
   .dashboard-hero {
     min-height: 210px;
@@ -6692,8 +6723,8 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 .emp-alert{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:10px;background:#e6faf0;color:#0a7a48;font-size:12px;font-weight:700;margin-bottom:16px;border:1px solid #c3f0d4}
 
 /* form card */
-.emp-form-card{background:#fff;border:1px solid var(--emp-line,#e6eaf4);border-radius:20px;box-shadow:0 20px 60px rgba(14,20,32,.08);overflow:hidden;position:relative;margin-bottom:20px}
-.emp-form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--emp-red,#d90429),#ff536d,var(--emp-red,#d90429));background-size:200% 100%;animation:shimmer 3s linear infinite}
+.emp-form-card{background:#fff;border:1px solid var(--emp-line,#e6eaf4);border-radius:20px;box-shadow:0 20px 60px rgba(14,20,32,.08);overflow:visible;position:relative;margin-bottom:20px}
+.emp-form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--emp-red,#d90429),#ff536d,var(--emp-red,#d90429));background-size:200% 100%;animation:shimmer 3s linear infinite;border-radius:20px 20px 0 0;overflow:hidden}
 .emp-form-card-head{display:flex;align-items:flex-start;gap:16px;padding:26px 30px 22px;border-bottom:1px solid var(--emp-line,#e6eaf4)}
 .emp-form-card-head-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:#fff0f3;color:var(--emp-red,#d90429);flex-shrink:0}
 .emp-form-card-title{font:700 18px/1.2 'Montserrat',sans-serif;color:var(--emp-ink,#0e1420);margin-bottom:4px}
@@ -9639,3 +9670,393 @@ body { font-size: 15px !important; }
   }
 }
 
+
+
+/* ============================================================
+   Employer profile wizard — field hints, required/optional markers,
+   searchable industry select
+   ============================================================ */
+
+.emp-field-hint {
+  font-size: 12px !important;
+  color: #8d98aa;
+  margin: 2px 0 6px;
+  line-height: 1.4;
+}
+
+.emp-req {
+  color: var(--emp-red, #d90429);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.emp-optional {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aab0be;
+  margin-left: 4px;
+}
+
+/* Searchable select wrapper */
+.emp-select-wrap {
+  position: relative;
+}
+
+.emp-select-search {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px;
+  color: #111827;
+  background: #f8fafc;
+  outline: none;
+  border-bottom: 1px solid #e2e7f0;
+}
+
+.emp-select-search:focus {
+  border-color: var(--emp-red, #d90429);
+  background: #fff;
+}
+
+.emp-select-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.emp-select--searchable {
+  border-radius: 0 0 8px 8px !important;
+  border-top: none !important;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+
+/* ============================================================
+   Industry Sector — Custom Searchable Dropdown  (.isd-*)
+   ============================================================ */
+
+.isd-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Trigger button — looks like a styled input */
+.isd-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: left;
+  transition: border-color .15s, box-shadow .15s;
+}
+.isd-trigger:hover {
+  border-color: #c4c9d8;
+}
+.isd-trigger:focus,
+.isd-wrap.is-open .isd-trigger {
+  border-color: var(--emp-red, #d90429);
+  box-shadow: 0 0 0 3px rgba(217,4,41,.10);
+  outline: none;
+}
+.isd-trigger--selected {
+  color: #111827 !important;
+}
+.isd-trigger-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.isd-chevron {
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition: transform .2s;
+}
+.isd-wrap.is-open .isd-chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown panel */
+.isd-panel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  top: auto;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 12px;
+  box-shadow: 0 -8px 32px rgba(0,0,0,.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: isdIn .15s ease;
+}
+@keyframes isdIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.isd-panel[hidden] { display: none; }
+
+/* Search row */
+.isd-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f2f7;
+  color: #9ca3af;
+}
+.isd-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #111827;
+  background: transparent;
+}
+.isd-search::placeholder { color: #b0b8c8; }
+
+/* Options list */
+.isd-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.isd-option {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 0 6px;
+  transition: background .12s;
+  outline: none;
+}
+.isd-option:hover,
+.isd-option:focus {
+  background: #fef2f4;
+  color: var(--emp-red, #d90429);
+}
+.isd-option.is-selected {
+  background: #fef2f4;
+  color: var(--emp-red, #d90429);
+  font-weight: 700;
+}
+.isd-option mark {
+  background: transparent;
+  color: var(--emp-red, #d90429);
+  font-weight: 700;
+}
+
+/* No results */
+.isd-no-results {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+
+/* ============================================================
+   Candidate profile — career preference checkboxes + optional label
+   ============================================================ */
+
+.pf-label-optional {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aab0be;
+  margin-left: 5px;
+}
+
+.pf-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pf-check-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  transition: border-color .15s, background .15s, color .15s;
+  user-select: none;
+}
+
+.pf-check-pill input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--cand-blue, #2563eb);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pf-check-pill:has(input:checked) {
+  border-color: var(--cand-blue, #2563eb);
+  background: #eff6ff;
+  color: var(--cand-blue, #2563eb);
+  font-weight: 600;
+}
+
+.pf-check-pill:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+
+/* ============================================================
+   Skill Tag Input  (.skill-tag-*)
+   ============================================================ */
+
+.skill-tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e7f0;
+  border-radius: 10px;
+  background: #fff;
+  min-height: 46px;
+  cursor: text;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.skill-tag-wrap:focus-within {
+  border-color: var(--cand-blue, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.skill-tag-wrap.is-full {
+  background: #f8fafc;
+}
+
+.skill-tag-chips {
+  display: contents; /* chips sit inline with the input */
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+  white-space: nowrap;
+  animation: chipPop .18s ease;
+}
+
+.skill-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #93c5fd;
+  cursor: pointer;
+  padding: 0;
+  transition: background .12s, color .12s;
+  flex-shrink: 0;
+}
+
+.skill-chip-remove:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.skill-tag-input {
+  flex: 1;
+  min-width: 160px;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #111827;
+  background: transparent;
+  padding: 4px 0;
+  line-height: 1.4;
+}
+
+.skill-tag-input::placeholder {
+  color: #b0b8c8;
+}
+
+.skill-tag-input:disabled {
+  cursor: not-allowed;
+}
+
+.skill-tag-hint {
+  width: 100%;
+  font-size: 11.5px !important;
+  color: #9ca3af;
+  margin: 2px 0 0;
+  line-height: 1.4;
+}
+
+.skill-tag-hint kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid #e2e7f0;
+  border-radius: 4px;
+  font-size: 10px;
+  background: #f8fafc;
+  color: #6b7280;
+  font-family: inherit;
+}
+
+
+/* ============================================================
+   Sidebar backdrop — shown on tablet + mobile when sidebar is open
+   ============================================================ */
+
+.dashboard-sidebar-backdrop {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 1050px) {
+  .dashboard-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 15, 30, 0.50);
+    backdrop-filter: blur(2px);
+    z-index: 199988888; /* just below the sidebar z-index */
+    animation: sidebarFadeIn .2s ease;
+  }
+  .dashboard-sidebar-backdrop[hidden] {
+    display: none;
+  }
+  @keyframes sidebarFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}

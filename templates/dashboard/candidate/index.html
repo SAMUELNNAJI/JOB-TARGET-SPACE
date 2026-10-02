@@ -242,7 +242,7 @@
       <div class="cand-profile-card">
         <div class="cand-profile-card-bg"></div>
         <div class="cand-profile-avatar-wrap">
-          <div class="cand-profile-avatar">{{ request.user.first_name|default:'JS'|slice:':2'|upper }}</div>
+          <div class="cand-profile-avatar">{{ request.user.first_name|default:request.user.username|initials }}</div>
           <div class="cand-profile-avatar-ring"></div>
         </div>
         <div class="cand-profile-name">{{ request.user.first_name|default:request.user.username }} {{ request.user.last_name }}</div>

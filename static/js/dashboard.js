@@ -1,25 +1,38 @@
 const dashboardMenu = document.querySelector('.dashboard-mobile-menu');
 const dashboardSidebar = document.querySelector('.dashboard-sidebar');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+function openSidebar() {
+  dashboardSidebar?.classList.add('open');
+  if (sidebarBackdrop) sidebarBackdrop.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  dashboardSidebar?.classList.remove('open');
+  if (sidebarBackdrop) sidebarBackdrop.hidden = true;
+  document.body.style.overflow = '';
+}
 
 dashboardMenu?.addEventListener('click', () => {
-  dashboardSidebar?.classList.toggle('open');
+  dashboardSidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
 });
 
-/* In-drawer X (phones): the open drawer covers the topbar hamburger, so the
-   drawer carries its own close control. Hidden on desktop via CSS. */
+/* In-drawer X (phones/tablets): close button inside the sidebar */
 (function () {
   var closeBtn = document.querySelector('[data-dashboard-close]');
-  if (closeBtn && dashboardSidebar) {
-    closeBtn.addEventListener('click', function () {
-      dashboardSidebar.classList.remove('open');
-    });
-  }
+  if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
 })();
+
+if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
 
 document.addEventListener('click', event => {
   if (!dashboardSidebar?.classList.contains('open')) return;
-  if (!dashboardSidebar.contains(event.target) && !dashboardMenu?.contains(event.target)) {
-    dashboardSidebar.classList.remove('open');
+  if (
+    !dashboardSidebar.contains(event.target) &&
+    !dashboardMenu?.contains(event.target) &&
+    event.target !== sidebarBackdrop
+  ) {
+    closeSidebar();
   }
 });
 

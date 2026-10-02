@@ -16,7 +16,7 @@
     <div class="pf-hero-content">
       <span class="pf-hero-kicker">MY PROFESSIONAL PROFILE</span>
       <h1 class="pf-hero-title">Make your experience<br><em>impossible to ignore.</em></h1>
-      <p class="pf-hero-sub">Four focused steps. Your information stays private and is reviewed only by Target JobSpace administrators.</p>
+      <p class="pf-hero-sub">Five focused steps. Your information stays private and is reviewed only by Target JobSpace administrators.</p>
     </div>
     <div class="pf-hero-aside">
       <div class="pf-completion-ring" id="pfRingWrap">
@@ -83,6 +83,14 @@
         </div>
         <span class="pf-step-name">Pitch & CV</span>
       </div>
+      <div class="pf-step-line"></div>
+      <div class="pf-step" data-step-label="5">
+        <div class="pf-step-bubble">
+          <span class="pf-step-num">5</span>
+          <svg class="pf-step-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <span class="pf-step-name">Preferences</span>
+      </div>
     </div>
 
     {# ── PROGRESS BAR ── #}
@@ -107,10 +115,21 @@
         </div>
 
         <div class="pf-grid">
-          <div class="pf-field pf-field--required">
+          <div class="pf-field pf-field--full pf-field--required">
             <label class="pf-label" for="{{ form.legal_name.id_for_label }}">Full legal name</label>
             {{ form.legal_name }}
             {% if form.legal_name.errors %}<span class="pf-error">{{ form.legal_name.errors|join:", " }}</span>{% endif %}
+          </div>
+          <div class="pf-field pf-field--full pf-field--required">
+            <label class="pf-label" for="{{ form.professional_headline.id_for_label }}">Professional headline / title</label>
+            {{ form.professional_headline }}
+            <p class="pf-hint">e.g. Senior Backend Engineer · Data Analyst · Creative UX Specialist</p>
+            {% if form.professional_headline.errors %}<span class="pf-error">{{ form.professional_headline.errors|join:", " }}</span>{% endif %}
+          </div>
+          <div class="pf-field pf-field--required">
+            <label class="pf-label" for="{{ form.experience_level.id_for_label }}">Years of professional experience</label>
+            {{ form.experience_level }}
+            {% if form.experience_level.errors %}<span class="pf-error">{{ form.experience_level.errors|join:", " }}</span>{% endif %}
           </div>
           <div class="pf-field pf-field--required">
             <label class="pf-label" for="{{ form.email.id_for_label }}">Email address</label>
@@ -207,13 +226,36 @@
             {% if form.certifications.errors %}<span class="pf-error">{{ form.certifications.errors|join:", " }}</span>{% endif %}
           </div>
           <div class="pf-field pf-field--required">
-            <label class="pf-label" for="{{ form.software_competencies.id_for_label }}">Key software competencies</label>
-            {{ form.software_competencies }}
+            <label class="pf-label">Key software competencies <span class="pf-req-star">*</span></label>
+            {# Hidden textarea — form value, driven by tag JS #}
+            <textarea name="{{ form.software_competencies.html_name }}"
+                      id="{{ form.software_competencies.id_for_label }}"
+                      style="display:none">{{ form.software_competencies.value|default:"" }}</textarea>
+            {# Tag input UI #}
+            <div class="skill-tag-wrap" data-tag-field="{{ form.software_competencies.id_for_label }}" data-max="10">
+              <div class="skill-tag-chips" aria-live="polite"></div>
+              <input type="text" class="skill-tag-input"
+                     placeholder="Type a skill and press Enter or comma…"
+                     autocomplete="off" spellcheck="false"
+                     aria-label="Add software competency">
+              <p class="skill-tag-hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add · click a tag to remove it · max 10</p>
+            </div>
             {% if form.software_competencies.errors %}<span class="pf-error">{{ form.software_competencies.errors|join:", " }}</span>{% endif %}
           </div>
+
           <div class="pf-field pf-field--full">
-            <label class="pf-label" for="{{ form.equipment_competencies.id_for_label }}">Equipment competencies</label>
-            {{ form.equipment_competencies }}
+            <label class="pf-label">Equipment competencies <span class="pf-label-optional">(optional)</span></label>
+            <textarea name="{{ form.equipment_competencies.html_name }}"
+                      id="{{ form.equipment_competencies.id_for_label }}"
+                      style="display:none">{{ form.equipment_competencies.value|default:"" }}</textarea>
+            <div class="skill-tag-wrap" data-tag-field="{{ form.equipment_competencies.id_for_label }}" data-max="10">
+              <div class="skill-tag-chips" aria-live="polite"></div>
+              <input type="text" class="skill-tag-input"
+                     placeholder="Type equipment and press Enter or comma…"
+                     autocomplete="off" spellcheck="false"
+                     aria-label="Add equipment competency">
+              <p class="skill-tag-hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add · click a tag to remove</p>
+            </div>
             {% if form.equipment_competencies.errors %}<span class="pf-error">{{ form.equipment_competencies.errors|join:", " }}</span>{% endif %}
           </div>
         </div>
@@ -301,13 +343,87 @@
         </div>
       </section>
 
+      {# ════ STEP 5 — Career Preferences ════ #}
+      <section class="pf-pane" data-step="5">
+        <div class="pf-pane-head">
+          <div class="pf-pane-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <h2 class="pf-pane-title">Career Preferences</h2>
+            <p class="pf-pane-desc">Help us match you to the right opportunities — all fields here are optional.</p>
+          </div>
+        </div>
+        <div class="pf-grid">
+
+          <div class="pf-field pf-field--full">
+            <label class="pf-label" for="{{ form.job_role_targets.id_for_label }}">
+              Desired job role targets
+              <span class="pf-label-optional">(optional)</span>
+            </label>
+            {{ form.job_role_targets }}
+            <p class="pf-hint">Up to 3 distinct job titles, comma-separated — e.g. Backend Developer, DevOps Engineer</p>
+            {% if form.job_role_targets.errors %}<span class="pf-error">{{ form.job_role_targets.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="pf-field">
+            <label class="pf-label">
+              Preferred employment type
+              <span class="pf-label-optional">(optional)</span>
+            </label>
+            <div class="pf-check-group">
+              {% for value, label in form.employment_nature_choices.field.choices %}
+                <label class="pf-check-pill">
+                  <input type="checkbox"
+                         name="employment_nature_choices"
+                         value="{{ value }}"
+                         {% if value in form.employment_nature_choices.value %}checked{% endif %}>
+                  <span>{{ label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            {% if form.employment_nature_choices.errors %}<span class="pf-error">{{ form.employment_nature_choices.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="pf-field">
+            <label class="pf-label">
+              Workplace model preference
+              <span class="pf-label-optional">(optional)</span>
+            </label>
+            <div class="pf-check-group">
+              {% for value, label in form.workplace_model_choices.field.choices %}
+                <label class="pf-check-pill">
+                  <input type="checkbox"
+                         name="workplace_model_choices"
+                         value="{{ value }}"
+                         {% if value in form.workplace_model_choices.value %}checked{% endif %}>
+                  <span>{{ label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            {% if form.workplace_model_choices.errors %}<span class="pf-error">{{ form.workplace_model_choices.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="pf-field pf-field--full">
+            <label class="pf-label" for="{{ form.target_location.id_for_label }}">
+              Target location
+              <span class="pf-label-optional">(optional)</span>
+            </label>
+            {{ form.target_location }}
+            <p class="pf-hint">Your desired operational hub — e.g. Lagos, Nigeria or Worldwide Remote</p>
+            {% if form.target_location.errors %}<span class="pf-error">{{ form.target_location.errors|join:", " }}</span>{% endif %}
+          </div>
+
+        </div>
+      </section>
+
       {# ── WIZARD ACTIONS ── #}
       <div class="pf-actions" id="pfActions">
         <button type="button" class="pf-btn-back" id="pfBack" hidden>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <span class="pf-counter">Step <strong id="pfCurrentStep">1</strong> of 4</span>
+        <span class="pf-counter">Step <strong id="pfCurrentStep">1</strong> of 5</span>
         <button type="button" class="pf-btn-next" id="pfNext">
           Continue
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
@@ -357,4 +473,105 @@
 
 {% block extra_scripts %}
 <script src="{% static 'js/profile-wizard.js' %}?v=15"></script>
+<script>
+/* ── Skill tag input — works for any [data-tag-field] wrap ── */
+(function () {
+  'use strict';
+
+  function initTagField(wrap) {
+    var fieldId   = wrap.dataset.tagField;
+    var maxTags   = parseInt(wrap.dataset.max || '10', 10);
+    var textarea  = document.getElementById(fieldId);
+    var chipsEl   = wrap.querySelector('.skill-tag-chips');
+    var input     = wrap.querySelector('.skill-tag-input');
+    if (!textarea || !chipsEl || !input) return;
+
+    var tags = [];
+
+    function sync() {
+      textarea.value = tags.join(', ');
+    }
+
+    function renderChips() {
+      chipsEl.innerHTML = '';
+      tags.forEach(function (tag, i) {
+        var chip = document.createElement('span');
+        chip.className = 'skill-chip';
+        chip.setAttribute('role', 'listitem');
+        chip.innerHTML = escHtml(tag)
+          + '<button type="button" class="skill-chip-remove" aria-label="Remove ' + escHtml(tag) + '">'
+          + '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">'
+          + '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+        chip.querySelector('.skill-chip-remove').addEventListener('click', function () {
+          tags.splice(i, 1);
+          renderChips();
+          sync();
+          input.focus();
+        });
+        chipsEl.appendChild(chip);
+      });
+      wrap.classList.toggle('is-full', tags.length >= maxTags);
+      input.disabled = tags.length >= maxTags;
+      input.placeholder = tags.length >= maxTags
+        ? 'Max ' + maxTags + ' tags reached'
+        : input.dataset.placeholder || 'Type a skill and press Enter or comma…';
+    }
+
+    function addTag(raw) {
+      var val = raw.trim().replace(/,+$/, '').trim();
+      if (!val || val.length > 60) return;
+      if (tags.indexOf(val) !== -1) return;          // no duplicates
+      if (tags.length >= maxTags) return;
+      tags.push(val);
+      renderChips();
+      sync();
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Seed from existing textarea value ──
+    var existing = (textarea.value || '').split(',')
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean);
+    existing.forEach(addTag);
+
+    // ── Input events ──
+    input.dataset.placeholder = input.placeholder;
+
+    input.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ',') && input.value.trim()) {
+        e.preventDefault();
+        addTag(input.value);
+        input.value = '';
+      }
+      // Backspace on empty input removes last tag
+      if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop();
+        renderChips();
+        sync();
+      }
+    });
+
+    input.addEventListener('input', function () {
+      // Handle paste with commas
+      if (input.value.includes(',')) {
+        input.value.split(',').forEach(function (part) { addTag(part); });
+        input.value = '';
+      }
+    });
+
+    input.addEventListener('blur', function () {
+      if (input.value.trim()) {
+        addTag(input.value);
+        input.value = '';
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-tag-field]').forEach(initTagField);
+}());
+</script>
 {% endblock %}

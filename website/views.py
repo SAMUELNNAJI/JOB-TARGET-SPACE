@@ -325,11 +325,14 @@ def _candidate_profile_edit(request, profile, title, description):
     # Map each form field → wizard step so errors can jump back to the right step
     FIELD_STEP_MAP = {
         "legal_name": 1, "email": 1, "phone": 1, "whatsapp_number": 1, "address": 1,
+        "professional_headline": 1, "experience_level": 1,
         "specializations": 2, "custom_specialization": 2,
         "primary_degree": 3, "certifications": 3, "software_competencies": 3,
         "equipment_competencies": 3,
         "professional_pitch": 4, "expected_salary": 4, "availability": 4,
         "file": 4,
+        "job_role_targets": 5, "employment_nature_choices": 5,
+        "workplace_model_choices": 5, "target_location": 5,
     }
 
     error_step = None
@@ -1418,24 +1421,27 @@ def admin_employer_detail(request, profile_id):
     ctx = _employer_context(employer)
 
     return JsonResponse({
-        "name":         employer.company_name or employer.user.username,
-        "legal_name":   employer.legal_name or "—",
-        "user_name":    employer.user.get_full_name() or employer.user.username,
-        "email":        employer.user.email or "—",
-        "phone":        employer.phone or "—",
-        "whatsapp":     employer.whatsapp_number or "—",
-        "industry":     employer.industry_sector or "—",
-        "hr_contact":   employer.hr_contact_name or "—",
-        "address":      employer.office_address or "—",
-        "joined":       employer.user.date_joined.strftime("%d %b %Y"),
-        "last_login":   employer.user.last_login.strftime("%d %b %Y") if employer.user.last_login else "Never",
-        "status":       "Active" if employer.user.is_active else "Inactive",
-        "plan":         ctx["plan"],
-        "plan_expires": ctx["plan_expires"],
-        "requests_total": ctx["requests_total"],
-        "matches_total":  ctx["matches_total"],
-        "shortlists":     ctx["shortlists"],
-        "payments":       ctx["payments"],
+        "name":             employer.company_name or employer.user.username,
+        "legal_name":       employer.company_legal_name or employer.legal_name or "—",
+        "user_name":        employer.user.get_full_name() or employer.user.username,
+        "email":            employer.user.email or "—",
+        "phone":            employer.phone or "—",
+        "whatsapp":         employer.whatsapp_number or "—",
+        "industry":         employer.industry_sector or "—",
+        "company_size":     employer.company_size or "—",
+        "hq_location":      employer.hq_location or "—",
+        "website":          employer.company_website or "—",
+        "hr_contact":       employer.hr_contact_name or "—",
+        "address":          employer.office_address or "—",
+        "joined":           employer.user.date_joined.strftime("%d %b %Y"),
+        "last_login":       employer.user.last_login.strftime("%d %b %Y") if employer.user.last_login else "Never",
+        "status":           "Active" if employer.user.is_active else "Inactive",
+        "plan":             ctx["plan"],
+        "plan_expires":     ctx["plan_expires"],
+        "requests_total":   ctx["requests_total"],
+        "matches_total":    ctx["matches_total"],
+        "shortlists":       ctx["shortlists"],
+        "payments":         ctx["payments"],
     })
 
 

@@ -294,10 +294,13 @@
         <h4 class="cch-block-label">Corporate details</h4>
         <div class="cch-grid">
           <div class="cch-item"><span>Company name</span><strong data-ed="name2">&nbsp;</strong></div>
-          <div class="cch-item"><span>Registered name</span><strong data-ed="legal_name">&nbsp;</strong></div>
+          <div class="cch-item"><span>Legal / registered name</span><strong data-ed="legal_name">&nbsp;</strong></div>
           <div class="cch-item"><span>Industry sector</span><strong data-ed="industry">&nbsp;</strong></div>
+          <div class="cch-item"><span>Company size</span><strong data-ed="company_size">&nbsp;</strong></div>
           <div class="cch-item"><span>HR / contact name</span><strong data-ed="hr_contact">&nbsp;</strong></div>
+          <div class="cch-item"><span>HQ location</span><strong data-ed="hq_location">&nbsp;</strong></div>
           <div class="cch-item cch-item--wide"><span>Office address</span><strong data-ed="address">&nbsp;</strong></div>
+          <div class="cch-item cch-item--wide"><span>Website</span><strong data-ed="website">&nbsp;</strong></div>
         </div>
       </div>
 
@@ -448,6 +451,12 @@ window.MT_EMPLOYER_DETAIL_URL = "{% url 'website:admin_employer_detail' 0 %}";
       .then(function (d) {
         Object.keys(d).forEach(function (k) { if (k !== 'initials') setField(k, d[k]); });
         setField('initials', (d.name || '?').slice(0, 2).toUpperCase());
+        setField('name2', d.name);
+        setField('user_name2', d.user_name);
+        // new fields
+        setField('company_size', d.company_size || '—');
+        setField('hq_location',  d.hq_location  || '—');
+        setField('website',      d.website       || '—');
         const st = modal.querySelector('[data-ed="status"]');
         if (st) {
           st.textContent = d.status;

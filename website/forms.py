@@ -70,8 +70,6 @@ class CandidateProfileForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
         required=False,
     )
-    # Optional: user types a new specialization name; handled in the view via AJAX,
-    # but also accepted here as a fallback for no-JS browsers.
     custom_specialization = forms.CharField(
         max_length=120,
         required=False,
@@ -82,37 +80,89 @@ class CandidateProfileForm(forms.ModelForm):
         }),
     )
 
+    # ── New career preference fields ─────────────────────────────────────────
+    EMPLOYMENT_NATURE_CHOICES = [
+        ("Full-Time",          "Full-Time"),
+        ("Part-Time",          "Part-Time"),
+        ("Contract/Freelance", "Contract / Freelance"),
+        ("Internship",         "Internship"),
+    ]
+    WORKPLACE_MODEL_CHOICES = [
+        ("On-site", "On-site"),
+        ("Hybrid",  "Hybrid"),
+        ("Remote",  "Remote"),
+    ]
+
+    employment_nature_choices = forms.MultipleChoiceField(
+        choices=EMPLOYMENT_NATURE_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Preferred employment type",
+    )
+    workplace_model_choices = forms.MultipleChoiceField(
+        choices=WORKPLACE_MODEL_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Workplace model preference",
+    )
+
     class Meta:
         model = Profile
         fields = (
-            "legal_name", "address", "email", "phone", "whatsapp_number", "specializations",
+            "legal_name", "address", "email", "phone", "whatsapp_number",
+            "specializations",
             "primary_degree", "certifications", "software_competencies", "equipment_competencies",
             "professional_pitch", "expected_salary", "availability",
+            # new fields
+            "professional_headline", "experience_level",
+            "job_role_targets", "target_location",
         )
-        # custom_specialization is a non-model field defined above — excluded from Meta.fields intentionally
         widgets = {
-            "address": forms.Textarea(attrs={"rows": 3}),
-            "certifications": forms.Textarea(attrs={"rows": 3}),
-            "software_competencies": forms.Textarea(attrs={"rows": 3}),
+            "address":                forms.Textarea(attrs={"rows": 3}),
+            "certifications":         forms.Textarea(attrs={"rows": 3}),
+            "software_competencies":  forms.Textarea(attrs={"rows": 3}),
             "equipment_competencies": forms.Textarea(attrs={"rows": 3}),
-            "professional_pitch": forms.Textarea(attrs={"rows": 5}),
-            "expected_salary": forms.NumberInput(attrs={"min": 0}),
+            "professional_pitch":     forms.Textarea(attrs={"rows": 5}),
+            "expected_salary":        forms.NumberInput(attrs={"min": 0}),
+            "professional_headline":  forms.TextInput(attrs={
+                "placeholder": "e.g. Senior Backend Engineer, Data Analyst, Creative UX Specialist"
+            }),
+            "job_role_targets": forms.TextInput(attrs={
+                "placeholder": "e.g. Backend Developer, DevOps Engineer (up to 3 roles, comma-separated)"
+            }),
+            "target_location": forms.TextInput(attrs={
+                "placeholder": "e.g. Lagos, Nigeria  or  Worldwide Remote"
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.user_id:
             self.fields["email"].initial = self.instance.user.email
-        # ── All wizard fields are required (except whatsapp + custom spec + equipment) ──
+        # Restore multi-checkbox state from comma-sep model field
+        if self.instance and self.instance.pk:
+            if self.instance.employment_nature:
+                self.fields["employment_nature_choices"].initial = [
+                    v.strip() for v in self.instance.employment_nature.split(",") if v.strip()
+                ]
+            if self.instance.workplace_model:
+                self.fields["workplace_model_choices"].initial = [
+                    v.strip() for v in self.instance.workplace_model.split(",") if v.strip()
+                ]
+        # Required fields
         required_fields = (
-            "legal_name", "email", "phone", "address",
-            "primary_degree", "certifications", "software_competencies",
+            "legal_name", "email", "phone",
+            "primary_degree", "software_competencies",
             "professional_pitch", "expected_salary", "availability",
+            "professional_headline", "experience_level",
         )
         for name in required_fields:
             self.fields[name].required = True
-        self.fields["specializations"].required = False
-        # Enforced in clean(): checkbox selection OR custom_specialization text
+        # Optional fields
+        for name in ("whatsapp_number", "certifications", "equipment_competencies",
+                     "address", "job_role_targets", "target_location",
+                     "employment_nature_choices", "workplace_model_choices"):
+            self.fields[name].required = False
 
     def clean_whatsapp_number(self):
         import re
@@ -120,7 +170,6 @@ class CandidateProfileForm(forms.ModelForm):
         if not raw:
             return ""
         digits = re.sub(r"\D", "", raw)
-        # Strip leading Nigeria trunk zero / 234 prefix variants, keep local part check
         if digits.startswith("234") and len(digits) > 10:
             local = digits[3:]
         elif digits.startswith("0"):
@@ -149,21 +198,25 @@ class CandidateProfileForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        # Allow "custom_specialization only" to satisfy specializations
-        specs = cleaned.get("specializations")
+        specs  = cleaned.get("specializations")
         custom = (cleaned.get("custom_specialization") or "").strip()
         if (not specs or len(specs) == 0) and not custom:
             self.add_error("specializations", "Select at least one specialization or add your own.")
         return cleaned
 
     def save(self, commit=True):
-        profile = super().save(commit=commit)
+        profile = super().save(commit=False)
+        # Persist multi-checkbox fields as comma-separated strings
+        en = self.cleaned_data.get("employment_nature_choices") or []
+        wm = self.cleaned_data.get("workplace_model_choices") or []
+        profile.employment_nature = ",".join(en)
+        profile.workplace_model   = ",".join(wm)
         if commit:
-            profile.user.email = self.cleaned_data["email"]
-            profile.user.username = self.cleaned_data["email"].lower()
+            profile.save()
+            profile.user.email      = self.cleaned_data["email"]
+            profile.user.username   = self.cleaned_data["email"].lower()
             profile.user.first_name = self.cleaned_data["legal_name"]
             profile.user.save(update_fields=["email", "username", "first_name"])
-            # No-JS fallback: create + attach a custom specialization if provided
             custom = self.cleaned_data.get("custom_specialization", "").strip()
             if custom:
                 from django.utils.text import slugify
@@ -200,16 +253,131 @@ class QualificationForm(forms.ModelForm):
 
 
 class EmployerProfileForm(forms.ModelForm):
-    email = forms.EmailField()
+    email = forms.EmailField(label="Official email address")
+
+    # ── Industry sector — comprehensive searchable dropdown ──────────────────
+    INDUSTRY_CHOICES = [("", "Select an industry…")] + [(s, s) for s in [
+        "Accounting & Finance",
+        "Administrative & Secretarial",
+        "Advertising & PR",
+        "Agriculture, Forestry & Fishing",
+        "Architecture & Design",
+        "Automotive",
+        "Aviation & Aerospace",
+        "Banking & Financial Services",
+        "Biotechnology & Life Sciences",
+        "Broadcasting & Media",
+        "Building & Construction",
+        "Chemical & Petrochemical",
+        "Consulting & Strategy",
+        "Consumer Goods & FMCG",
+        "Defence & Security",
+        "E-Commerce & Retail Tech",
+        "Education & Training",
+        "Electrical & Electronics",
+        "Energy & Utilities",
+        "Engineering (Civil)",
+        "Engineering (Mechanical)",
+        "Engineering (Electrical)",
+        "Engineering (Chemical)",
+        "Environmental & Sustainability",
+        "Fashion & Apparel",
+        "Food & Beverage",
+        "Government & Public Sector",
+        "Healthcare & Medical",
+        "Hospitality & Tourism",
+        "Human Resources & Recruitment",
+        "Import & Export / Trade",
+        "Information Technology & Software",
+        "Insurance",
+        "Legal & Compliance",
+        "Logistics, Supply Chain & Procurement",
+        "Manufacturing & Production",
+        "Marine & Shipping",
+        "Marketing & Digital Marketing",
+        "Mining & Metals",
+        "NGO & Non-Profit",
+        "Oil & Gas (Upstream)",
+        "Oil & Gas (Midstream)",
+        "Oil & Gas (Downstream)",
+        "Pharmaceutical & Drug Manufacturing",
+        "Power & Renewable Energy",
+        "Printing & Publishing",
+        "Property & Real Estate",
+        "Retail & Wholesale",
+        "Telecommunications",
+        "Transportation",
+        "Waste Management & Recycling",
+        "Other",
+    ]]
+
+    # ── Company size tier ────────────────────────────────────────────────────
+    SIZE_CHOICES = [
+        ("", "Select company size…"),
+        ("1-10",    "1–10 employees (Seed / Startup)"),
+        ("11-50",   "11–50 employees (Growth)"),
+        ("51-200",  "51–200 employees (Mid-Market)"),
+        ("201-500", "201–500 employees (Corporate)"),
+        ("501+",    "501+ employees (Enterprise)"),
+    ]
+
+    industry_sector = forms.ChoiceField(
+        choices=INDUSTRY_CHOICES,
+        label="Industry sector",
+        widget=forms.Select(attrs={"class": "emp-select emp-select--searchable"}),
+    )
+    company_size = forms.ChoiceField(
+        choices=SIZE_CHOICES,
+        label="Company size",
+        required=False,
+        widget=forms.Select(attrs={"class": "emp-select"}),
+    )
 
     class Meta:
         model = Profile
-        fields = ("company_name", "industry_sector", "office_address", "hr_contact_name", "email", "phone")
-        widgets = {"office_address": forms.Textarea(attrs={"rows": 3})}
+        fields = (
+            "company_name",
+            "company_legal_name",
+            "company_website",
+            "company_size",
+            "industry_sector",
+            "office_address",
+            "hq_location",
+            "hr_contact_name",
+            "email",
+            "phone",
+        )
+        widgets = {
+            "office_address": forms.Textarea(attrs={"rows": 3}),
+            "company_website": forms.URLInput(attrs={"placeholder": "https://www.yourcompany.com"}),
+            "hq_location": forms.TextInput(attrs={"placeholder": "e.g. Lagos, Nigeria"}),
+            "phone": forms.TextInput(attrs={"placeholder": "e.g. +234 801 234 5678"}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["email"].initial = self.instance.user.email
+        # Required fields
+        for f in ("company_name", "company_legal_name", "industry_sector",
+                  "hr_contact_name", "office_address", "hq_location", "phone"):
+            self.fields[f].required = True
+        # Optional fields
+        self.fields["company_website"].required = False
+        self.fields["company_size"].required = False
+
+    def clean_company_website(self):
+        url = self.cleaned_data.get("company_website", "").strip()
+        if not url:
+            return ""
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
+        return url
+
+    def clean_industry_sector(self):
+        value = self.cleaned_data.get("industry_sector", "").strip()
+        if not value:
+            raise forms.ValidationError("Select an industry sector.")
+        return value
 
     def save(self, commit=True):
         profile = super().save(commit=commit)

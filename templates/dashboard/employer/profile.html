@@ -30,37 +30,131 @@
       <div class="emp-wiz-steps" id="empWizSteps">
         <div class="emp-wiz-step active" data-step-label="1"><span class="emp-wiz-bubble">1</span><span class="emp-wiz-name">Corporate Details</span></div>
         <span class="emp-wiz-line"></span>
-        <div class="emp-wiz-step" data-step-label="2"><span class="emp-wiz-bubble">2</span><span class="emp-wiz-name">Contact Details</span></div>
+        <div class="emp-wiz-step" data-step-label="2"><span class="emp-wiz-bubble">2</span><span class="emp-wiz-name">Location</span></div>
+        <span class="emp-wiz-line"></span>
+        <div class="emp-wiz-step" data-step-label="3"><span class="emp-wiz-bubble">3</span><span class="emp-wiz-name">Contact Details</span></div>
       </div>
 
       {# ════ STEP 1 — Corporate Details ════ #}
       <div class="emp-form-section emp-wiz-pane active" data-step="1">
         <h3 class="emp-form-section-title">Corporate Details</h3>
         <div class="emp-form-grid">
-          <div class="emp-field emp-field--full"><label class="emp-label">Corporate registered name</label>{{ form.company_name }}{% if form.company_name.errors %}<span class="emp-error">{{ form.company_name.errors|join:", " }}</span>{% endif %}</div>
-          <div class="emp-field"><label class="emp-label">Industry sector</label>{{ form.industry_sector }}</div>
-          <div class="emp-field"><label class="emp-label">HR / contact person's name</label>{{ form.hr_contact_name }}</div>
-          <div class="emp-field emp-field--full"><label class="emp-label">Office address</label>{{ form.office_address }}</div>
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label">Company official name <span class="emp-req">*</span></label>
+            <p class="emp-field-hint">The trading name your company is known by.</p>
+            {{ form.company_name }}
+            {% if form.company_name.errors %}<span class="emp-error">{{ form.company_name.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label">Legal entity name <span class="emp-req">*</span></label>
+            <p class="emp-field-hint">Registered legal name used for billing and official documentation.</p>
+            {{ form.company_legal_name }}
+            {% if form.company_legal_name.errors %}<span class="emp-error">{{ form.company_legal_name.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field">
+            <label class="emp-label">Company website <span class="emp-optional">(optional)</span></label>
+            {{ form.company_website }}
+            <p class="emp-field-hint">Helps candidates research your company.</p>
+            {% if form.company_website.errors %}<span class="emp-error">{{ form.company_website.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field">
+            <label class="emp-label">Company size <span class="emp-optional">(optional)</span></label>
+            {{ form.company_size }}
+            {% if form.company_size.errors %}<span class="emp-error">{{ form.company_size.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label" for="industryTrigger">Industry sector <span class="emp-req">*</span></label>
+            {# Hidden native select — Django reads this on POST #}
+            {{ form.industry_sector }}
+            {# Custom searchable dropdown UI #}
+            <div class="isd-wrap" id="isdWrap">
+              <button type="button" class="isd-trigger" id="industryTrigger"
+                      aria-haspopup="listbox" aria-expanded="false" aria-controls="isdPanel">
+                <span class="isd-trigger-text" id="isdTriggerText">Select an industry…</span>
+                <svg class="isd-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="isd-panel" id="isdPanel" hidden>
+                <div class="isd-search-wrap">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="search" class="isd-search" id="isdSearch"
+                         placeholder="Search industry…" autocomplete="off" spellcheck="false"
+                         aria-label="Search industry sector" aria-controls="isdList">
+                </div>
+                <ul class="isd-list" id="isdList" role="listbox" aria-label="Industry sector options"></ul>
+                <p class="isd-no-results" id="isdNoResults" hidden>No results for this search.</p>
+              </div>
+            </div>
+            {% if form.industry_sector.errors %}<span class="emp-error">{{ form.industry_sector.errors|join:", " }}</span>{% endif %}
+          </div>
+
         </div>
       </div>
 
-      {# ════ STEP 2 — Contact Details ════ #}
+      {# ════ STEP 2 — Location ════ #}
       <div class="emp-form-section emp-wiz-pane" data-step="2">
+        <h3 class="emp-form-section-title">Location &amp; Address</h3>
+        <div class="emp-form-grid">
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label">Primary HQ location <span class="emp-req">*</span></label>
+            <p class="emp-field-hint">City and country where your head office is based (e.g. Lagos, Nigeria).</p>
+            {{ form.hq_location }}
+            {% if form.hq_location.errors %}<span class="emp-error">{{ form.hq_location.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label">Full office address <span class="emp-req">*</span></label>
+            {{ form.office_address }}
+            {% if form.office_address.errors %}<span class="emp-error">{{ form.office_address.errors|join:", " }}</span>{% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      {# ════ STEP 3 — Contact Details ════ #}
+      <div class="emp-form-section emp-wiz-pane" data-step="3">
         <h3 class="emp-form-section-title">Contact Details</h3>
         <div class="emp-form-grid">
-          <div class="emp-field"><label class="emp-label">Official email address</label>{{ form.email }}{% if form.email.errors %}<span class="emp-error">{{ form.email.errors|join:", " }}</span>{% endif %}</div>
-          <div class="emp-field"><label class="emp-label">Phone number</label>{{ form.phone }}</div>
+
+          <div class="emp-field emp-field--full">
+            <label class="emp-label">Hiring manager full name <span class="emp-req">*</span></label>
+            <p class="emp-field-hint">First and last name of the main account operator.</p>
+            {{ form.hr_contact_name }}
+            {% if form.hr_contact_name.errors %}<span class="emp-error">{{ form.hr_contact_name.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field">
+            <label class="emp-label">Official email address <span class="emp-req">*</span></label>
+            {{ form.email }}
+            {% if form.email.errors %}<span class="emp-error">{{ form.email.errors|join:", " }}</span>{% endif %}
+          </div>
+
+          <div class="emp-field">
+            <label class="emp-label">Contact phone number <span class="emp-req">*</span></label>
+            <p class="emp-field-hint">Include international code (e.g. +234 801 234 5678).</p>
+            {{ form.phone }}
+            {% if form.phone.errors %}<span class="emp-error">{{ form.phone.errors|join:", " }}</span>{% endif %}
+          </div>
+
         </div>
       </div>
 
       {# ── WIZARD ACTIONS ── #}
       <div class="emp-form-actions emp-wiz-actions">
         <button type="button" class="emp-cancel-btn" id="empWizBack" hidden>Back</button>
-        <span class="emp-wiz-counter">Step <strong id="empWizCurrent">1</strong> of 2</span>
+        <span class="emp-wiz-counter">Step <strong id="empWizCurrent">1</strong> of 3</span>
         <button type="button" class="emp-submit-btn" id="empWizNext">Continue
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button type="submit" class="emp-submit-btn" id="empWizSave" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Save company profile</button>
+        <button type="submit" class="emp-submit-btn" id="empWizSave" hidden>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save company profile
+        </button>
       </div>
     </form>
   </div>
@@ -80,8 +174,10 @@
 
       <div class="emp-modal-summary">
         <div class="emp-modal-summary-row"><span>Company</span><strong>{{ employer.company_name }}</strong></div>
+        <div class="emp-modal-summary-row"><span>Legal name</span><strong>{{ employer.company_legal_name }}</strong></div>
         <div class="emp-modal-summary-row"><span>Industry</span><strong>{{ employer.industry_sector }}</strong></div>
-        <div class="emp-modal-summary-row"><span>Contact person</span><strong>{{ employer.hr_contact_name }}</strong></div>
+        <div class="emp-modal-summary-row"><span>HQ location</span><strong>{{ employer.hq_location }}</strong></div>
+        <div class="emp-modal-summary-row"><span>Hiring manager</span><strong>{{ employer.hr_contact_name }}</strong></div>
         <div class="emp-modal-summary-row"><span>Official email</span><strong>{{ employer.user.email }}</strong></div>
       </div>
 
@@ -134,8 +230,9 @@
 
   /* Fields that must be completed on each step before advancing */
   var REQUIRED = {
-    1: ['company_name', 'industry_sector', 'hr_contact_name', 'office_address'],
-    2: ['email', 'phone']
+    1: ['company_name', 'company_legal_name', 'industry_sector'],
+    2: ['hq_location', 'office_address'],
+    3: ['hr_contact_name', 'email', 'phone']
   };
 
   function paneFields(step) {
@@ -217,6 +314,173 @@
     }
     showStep(1);
   })();
+}());
+</script>
+
+{# ── Industry sector live search ── #}
+<script>
+(function () {
+  'use strict';
+
+  var nativeSelect = document.getElementById('id_industry_sector');
+  if (!nativeSelect) return;
+
+  // Hide native select — we drive it programmatically
+  nativeSelect.style.display = 'none';
+
+  var wrap      = document.getElementById('isdWrap');
+  var trigger   = document.getElementById('industryTrigger');
+  var trigText  = document.getElementById('isdTriggerText');
+  var panel     = document.getElementById('isdPanel');
+  var search    = document.getElementById('isdSearch');
+  var list      = document.getElementById('isdList');
+  var noResults = document.getElementById('isdNoResults');
+
+  // Build option list from native select
+  var allOptions = [];
+  Array.prototype.forEach.call(nativeSelect.options, function (opt) {
+    if (!opt.value) return; // skip the blank placeholder
+    allOptions.push({ value: opt.value, text: opt.text });
+  });
+
+  function renderList(term) {
+    var filtered = term
+      ? allOptions.filter(function (o) {
+          return o.text.toLowerCase().indexOf(term.toLowerCase()) !== -1;
+        })
+      : allOptions;
+
+    list.innerHTML = '';
+    filtered.forEach(function (o) {
+      var li = document.createElement('li');
+      li.className = 'isd-option' + (o.value === nativeSelect.value ? ' is-selected' : '');
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', o.value === nativeSelect.value ? 'true' : 'false');
+      li.dataset.value = o.value;
+
+      // Highlight matching text
+      if (term) {
+        var idx = o.text.toLowerCase().indexOf(term.toLowerCase());
+        li.innerHTML = o.text.slice(0, idx)
+          + '<mark>' + o.text.slice(idx, idx + term.length) + '</mark>'
+          + o.text.slice(idx + term.length);
+      } else {
+        li.textContent = o.text;
+      }
+      list.appendChild(li);
+    });
+
+    noResults.hidden = filtered.length > 0;
+    // Scroll selected option into view
+    var sel = list.querySelector('.is-selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function selectOption(value, text) {
+    nativeSelect.value = value;
+    trigText.textContent = text;
+    trigger.classList.toggle('isd-trigger--selected', !!value);
+    closePanel();
+  }
+
+  function openPanel() {
+    panel.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    wrap.classList.add('is-open');
+    search.value = '';
+    renderList('');
+    search.focus();
+    // Scroll to currently selected
+    var sel = list.querySelector('.is-selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    wrap.classList.remove('is-open');
+  }
+
+  // Set initial display value if already selected (e.g. form re-render after error)
+  if (nativeSelect.value) {
+    var current = allOptions.find(function (o) { return o.value === nativeSelect.value; });
+    if (current) {
+      trigText.textContent = current.text;
+      trigger.classList.add('isd-trigger--selected');
+    }
+  }
+
+  trigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    panel.hidden ? openPanel() : closePanel();
+  });
+
+  search.addEventListener('input', function () {
+    renderList(search.value.trim());
+  });
+
+  list.addEventListener('click', function (e) {
+    var li = e.target.closest('.isd-option');
+    if (li) selectOption(li.dataset.value, li.textContent);
+  });
+
+  // Keyboard navigation
+  search.addEventListener('keydown', function (e) {
+    var items = Array.prototype.slice.call(list.querySelectorAll('.isd-option'));
+    var focused = list.querySelector('.isd-option:focus');
+    var idx = focused ? items.indexOf(focused) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      var next = items[idx + 1] || items[0];
+      if (next) next.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      var prev = items[idx - 1] || items[items.length - 1];
+      if (prev) prev.focus();
+    } else if (e.key === 'Escape') {
+      closePanel(); trigger.focus();
+    } else if (e.key === 'Enter' && items.length === 1) {
+      e.preventDefault();
+      selectOption(items[0].dataset.value, items[0].textContent);
+    }
+  });
+
+  list.addEventListener('keydown', function (e) {
+    var items = Array.prototype.slice.call(list.querySelectorAll('.isd-option'));
+    var focused = document.activeElement;
+    var idx = items.indexOf(focused);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      var next = items[idx + 1];
+      if (next) next.focus(); else search.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      var prev = items[idx - 1];
+      if (prev) prev.focus(); else search.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (focused.dataset && focused.dataset.value)
+        selectOption(focused.dataset.value, focused.textContent);
+    } else if (e.key === 'Escape') {
+      closePanel(); trigger.focus();
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) closePanel();
+  });
+
+  // Make list items focusable
+  list.addEventListener('DOMSubtreeModified', function () {
+    Array.prototype.forEach.call(list.querySelectorAll('.isd-option'), function (li) {
+      li.setAttribute('tabindex', '0');
+    });
+  });
+
+  renderList('');
 }());
 </script>
 

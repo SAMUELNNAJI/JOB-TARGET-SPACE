@@ -21,10 +21,21 @@ class Profile(models.Model):
         IMMEDIATE = "immediate", "Immediate"
         ONE_MONTH = "one_month", "1 Month Notice"
 
+    class ExperienceLevel(models.TextChoices):
+        ENTRY   = "entry",     "Entry-Level (0–1 year)"
+        JUNIOR  = "junior",    "Junior (1–3 years)"
+        MID     = "mid",       "Mid-Level (3–5 years)"
+        SENIOR  = "senior",    "Senior (5–8 years)"
+        PRINCIPAL = "principal", "Principal / Executive (8+ years)"
+
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=Role.choices)
     phone = models.CharField(max_length=30, blank=True)
     company_name = models.CharField(max_length=150, blank=True)
+    company_legal_name = models.CharField(max_length=200, blank=True)  # legal entity for billing
+    company_website = models.URLField(blank=True)
+    company_size = models.CharField(max_length=40, blank=True)          # size tier slug
+    hq_location = models.CharField(max_length=150, blank=True)         # city, country
     industry_sector = models.CharField(max_length=150, blank=True)
     hr_contact_name = models.CharField(max_length=150, blank=True)
     office_address = models.TextField(blank=True)
@@ -39,6 +50,13 @@ class Profile(models.Model):
     professional_pitch = models.TextField(blank=True)
     expected_salary = models.PositiveIntegerField(null=True, blank=True)
     availability = models.CharField(max_length=20, choices=Availability.choices, blank=True)
+    # ── New career fields ──────────────────────────────────────────────────
+    professional_headline = models.CharField(max_length=120, blank=True)
+    experience_level = models.CharField(max_length=20, choices=ExperienceLevel.choices, blank=True)
+    job_role_targets = models.CharField(max_length=300, blank=True)   # comma-sep, up to 3
+    employment_nature = models.CharField(max_length=150, blank=True)  # comma-sep checkboxes
+    workplace_model   = models.CharField(max_length=100, blank=True)  # comma-sep checkboxes
+    target_location   = models.CharField(max_length=150, blank=True)
     verification_status = models.CharField(max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.DRAFT)
     verification_notes = models.TextField(blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
@@ -55,8 +73,10 @@ class Profile(models.Model):
         return round(sum(bool(value) for value in fields) / len(fields) * 100)
 
     # Fields an employer must supply before the profile counts as complete.
-    EMPLOYER_REQUIRED_FIELDS = ("company_name", "industry_sector", "hr_contact_name",
-                                "office_address", "phone")
+    EMPLOYER_REQUIRED_FIELDS = (
+        "company_name", "company_legal_name", "industry_sector",
+        "hr_contact_name", "office_address", "hq_location", "phone",
+    )
 
     @property
     def employer_profile_complete(self):

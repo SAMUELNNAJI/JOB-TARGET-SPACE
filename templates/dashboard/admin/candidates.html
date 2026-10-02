@@ -38,6 +38,12 @@
                 <div class="cch-item"><span>Availability</span><strong>{{ c.get_availability_display|default:"Not set" }}</strong></div>
                 <div class="cch-item"><span>Expected salary</span><strong>{% if c.expected_salary %}₦{{ c.expected_salary|floatformat:0 }}/month{% else %}Not set{% endif %}</strong></div>
                 <div class="cch-item"><span>Completion</span><strong>{{ c.completion_percentage }}%</strong></div>
+                <div class="cch-item cch-item--wide"><span>Professional headline</span><strong>{{ c.professional_headline|default:"Not set" }}</strong></div>
+                <div class="cch-item"><span>Experience level</span><strong>{{ c.get_experience_level_display|default:"Not set" }}</strong></div>
+                <div class="cch-item"><span>Target location</span><strong>{{ c.target_location|default:"Not set" }}</strong></div>
+                <div class="cch-item"><span>Employment type preference</span><strong>{{ c.employment_nature|default:"Not set" }}</strong></div>
+                <div class="cch-item"><span>Workplace preference</span><strong>{{ c.workplace_model|default:"Not set" }}</strong></div>
+                <div class="cch-item cch-item--wide"><span>Desired job roles</span><strong>{{ c.job_role_targets|default:"Not set" }}</strong></div>
                 <div class="cch-item cch-item--wide"><span>Address</span><strong>{{ c.address|default:"Not set" }}</strong></div>
                 <div class="cch-item cch-item--wide"><span>Primary degree</span><strong>{{ c.primary_degree|default:"Not set" }}</strong></div>
                 <div class="cch-item cch-item--wide"><span>Specializations</span><strong>{% for s in c.specializations.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% empty %}Not set{% endfor %}</strong></div>
