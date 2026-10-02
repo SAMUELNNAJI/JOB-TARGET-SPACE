@@ -30,7 +30,10 @@ echo "==> Installing dependencies"
 
 # ── 3. Fix permissions so nginx can read static + media ───────────────────
 echo "==> Setting permissions"
-chmod 755 /var/www /var/www/jobspace
+# /var/www is owned by root — must use sudo for the top-level chmod.
+sudo chmod 755 /var/www /var/www/jobspace 2>/dev/null \
+    || chmod 755 /var/www/jobspace 2>/dev/null \
+    || true
 chmod -R a+rX "$APP_DIR/staticfiles" "$APP_DIR/media" 2>/dev/null || true
 
 # ── 4. Restart the service ────────────────────────────────────────────────
