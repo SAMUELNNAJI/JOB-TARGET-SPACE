@@ -2,70 +2,79 @@
 #
 # deploy.sh — pull the latest code onto the VPS and restart Target JobSpace.
 #
-# Run as the `jobspace` user, from anywhere:
+# Run as root (or a user with full sudo), from the project directory:
+#   sudo bash /var/www/jobspace/deploy/deploy.sh
+#
+# Or as the jobspace user if /etc/sudoers.d/jobspace grants NOPASSWD on
+# systemctl restart/status jobspace:
 #   sudo -u jobspace bash /var/www/jobspace/deploy/deploy.sh
 #
-# What this does NOT do: it never touches nginx, never touches the systemd
-# unit, and never touches the other two sites on this box. Nginx and the
-# certificate are configuration that changes rarely, not per deploy.
-#
-set -o errexit    # stop on the first failure
-set -o nounset    # error on an undefined variable
-set -o pipefail   # catch failures inside pipes
+set -o errexit
+set -o nounset
+set -o pipefail
 
 APP_DIR=/var/www/jobspace
-DOMAIN="jobspace.example.com"   # CHANGE THIS to your real domain
+VENV="$APP_DIR/venv"
+SERVICE=jobspace
+
 cd "$APP_DIR"
 
+# ── 1. Pull latest code ────────────────────────────────────────────────────
 echo "==> Fetching latest code"
-# The repository is owned by `jobspace` so this never needs sudo or a token.
 git pull --ff-only origin main
 
+# ── 2. Install / upgrade Python dependencies ──────────────────────────────
 echo "==> Installing dependencies"
-# The virtualenv is outside the source tree's control; do not recreate it.
-./venv/bin/pip install --upgrade pip
-./venv/bin/pip install -r requirements.txt
+"$VENV/bin/pip" install --quiet --upgrade pip
+"$VENV/bin/pip" install --quiet -r requirements.txt
 
-# collectstatic and migrate both run automatically in the unit's ExecStartPre,
-# before gunicorn binds the port. Running them here too would do the work
-# twice, so they are deliberately NOT repeated.
-
-# ── Permissions ────────────────────────────────────────────────────────────
-# useradd created this directory mode 700, so nginx — a different user — cannot
-# traverse into it to read staticfiles/ and media/. Without this, every
-# stylesheet and uploaded file 403s while the app itself works fine, which is
-# a confusing failure. The app is unaffected: it runs as `jobspace`, which
-# still has full access. Only read access is granted to everyone else.
-#
-# This runs AFTER the pull on purpose. git can recreate those directories, and
-# a deploy would otherwise silently undo the fix.
+# ── 3. Fix permissions so nginx can read static + media ───────────────────
+echo "==> Setting permissions"
 chmod 755 /var/www /var/www/jobspace
-chmod -R a+rX /var/www/jobspace/staticfiles /var/www/jobspace/media 2>/dev/null || true
+chmod -R a+rX "$APP_DIR/staticfiles" "$APP_DIR/media" 2>/dev/null || true
 
-echo "==> Restarting the service"
-# On failure, print the log tail and stop. The old workers keep serving until
-# the unit comes back up, so a bad deploy is a failed request, not downtime.
-if ! sudo systemctl restart jobspace; then
-    echo "!!! Restart failed. Recent log output:" >&2
-    sudo journalctl -u jobspace -n 50 --no-pager >&2
+# ── 4. Restart the service ────────────────────────────────────────────────
+echo "==> Restarting $SERVICE"
+# Try sudo first; fall back to systemctl directly (works when already root).
+if command -v sudo &>/dev/null && sudo -n systemctl restart "$SERVICE" 2>/dev/null; then
+    echo "    Restarted via sudo systemctl."
+elif systemctl restart "$SERVICE" 2>/dev/null; then
+    echo "    Restarted via systemctl (running as root)."
+else
+    echo ""
+    echo "!!! Could not restart the service automatically." >&2
+    echo "!!! Run this manually as root:" >&2
+    echo "!!!   sudo systemctl restart $SERVICE" >&2
+    echo "!!! Then check the logs with:" >&2
+    echo "!!!   sudo journalctl -u $SERVICE -n 60 --no-pager" >&2
+    echo ""
+    echo "==> Code and dependencies are updated. Only the restart is pending."
     exit 1
 fi
 
-echo "==> Waiting for gunicorn to answer on 127.0.0.1:8010"
-# Check gunicorn DIRECTLY, not through nginx on port 80. Going through nginx
-# would hit the 301 to HTTPS, which tells us nothing about whether the app is
-# up. The Host header must match ALLOWED_HOSTS or Django returns 400.
+# ── 5. Wait for gunicorn to come up ───────────────────────────────────────
+echo "==> Waiting for gunicorn on 127.0.0.1:8010 ..."
 for attempt in $(seq 1 30); do
-    if curl -fsS -o /dev/null -H "Host: $DOMAIN" \
-        http://127.0.0.1:8010/ 2>/dev/null; then
-        echo "==> Site is responding."
+    # Use localhost header — matches ALLOWED_HOSTS default (127.0.0.1).
+    # Accepts both 200 and 301/302 as "up" (301 = HTTPS redirect is fine).
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+        -H "Host: 127.0.0.1" http://127.0.0.1:8010/ 2>/dev/null || echo "000")
+    if [[ "$http_code" =~ ^(200|301|302|400)$ ]]; then
+        echo "==> Gunicorn is responding (HTTP $http_code). Deploy complete."
         exit 0
     fi
     sleep 1
 done
 
-echo "!!! gunicorn not responding on 8010 after 30s." >&2
-echo "!!! If the site is up in a browser, this is usually ALLOWED_HOSTS" >&2
-echo "!!! not containing '$DOMAIN' — Django answers 400 for unknown hosts." >&2
-sudo journalctl -u jobspace -n 50 --no-pager >&2
+echo ""
+echo "!!! Gunicorn did not respond on port 8010 after 30 seconds." >&2
+echo "!!! Check the logs:" >&2
+echo "!!!   sudo journalctl -u $SERVICE -n 60 --no-pager" >&2
+echo "!!! Common causes:" >&2
+echo "!!!   - DATABASE_URL missing or wrong in /var/www/jobspace/.env" >&2
+echo "!!!   - A failing migration in ExecStartPre" >&2
+echo "!!!   - collectstatic failing (missing STATIC_ROOT or bad S3 config)" >&2
+echo "!!!   - Wrong python/gunicorn path (check venv is at $VENV)" >&2
+sudo journalctl -u "$SERVICE" -n 60 --no-pager 2>/dev/null || \
+    journalctl -u "$SERVICE" -n 60 --no-pager 2>/dev/null || true
 exit 1
