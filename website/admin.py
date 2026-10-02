@@ -39,7 +39,7 @@ class ProfileAdmin(admin.ModelAdmin):
         for profile in candidates:
             profile.notify(
                 title="Profile verified — you're in the talent pool!",
-                message="Congratulations! Your professional profile is now Vetted & Verified and has been added to the JobSPACE talent pool. You may now be matched with top employers.",
+                message="Congratulations! Your professional profile is now Vetted & Verified and has been added to the Target JobSpace talent pool. You may now be matched with top employers.",
                 kind=Notification.Kind.VERIFICATION,
             )
         self.message_user(request, f"{candidates.count()} candidate profiles verified.", messages.SUCCESS)

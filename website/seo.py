@@ -16,7 +16,7 @@ from django.templatetags.static import static as static_url
 # the results. Written for a Nigerian job market, which is what this serves.
 PAGE_SEO = {
     "home": {
-        "title": "JobSpace — Verified Jobs & Career Opportunities in Nigeria",
+        "title": "Target JobSpace — Verified Jobs & Career Opportunities in Nigeria",
         "description": (
             "Find vetted job opportunities and connect with verified employers "
             "across Nigeria. Build your profile, upload your CV and get matched "
@@ -26,9 +26,9 @@ PAGE_SEO = {
         "changefreq": "daily",
     },
     "about": {
-        "title": "About JobSpace — Connecting Verified Talent with Employers",
+        "title": "About Target JobSpace — Connecting Verified Talent with Employers",
         "description": (
-            "How JobSpace verifies candidates and employers, vets every profile, "
+            "How Target JobSpace verifies candidates and employers, vets every profile, "
             "and creates safer, more direct connections between professionals "
             "and companies hiring in Nigeria."
         ),
@@ -40,7 +40,7 @@ PAGE_SEO = {
         "description": (
             "Post your recruitment needs and reach pre-vetted candidates across "
             "Nigeria. Review verified CVs, shortlist the best fit and fill your "
-            "roles faster with JobSpace."
+            "roles faster with Target JobSpace."
         ),
         "priority": "0.9",
         "changefreq": "weekly",
@@ -56,9 +56,9 @@ PAGE_SEO = {
         "changefreq": "weekly",
     },
     "how_it_works": {
-        "title": "How JobSpace Works — For Candidates and Employers",
+        "title": "How Target JobSpace Works — For Candidates and Employers",
         "description": (
-            "A step-by-step guide to using JobSpace: how candidates register and "
+            "A step-by-step guide to using Target JobSpace: how candidates register and "
             "get verified, how employers submit vacancies, and how matches and "
             "shortlisting work."
         ),
@@ -66,9 +66,9 @@ PAGE_SEO = {
         "changefreq": "monthly",
     },
     "contact": {
-        "title": "Contact JobSpace — Support, Questions and Feedback",
+        "title": "Contact Target JobSpace — Support, Questions and Feedback",
         "description": (
-            "Get in touch with the JobSpace team for help with your account, "
+            "Get in touch with the Target JobSpace team for help with your account, "
             "applications, employer plans or anything else. We aim to reply "
             "within one working day."
         ),
@@ -76,9 +76,9 @@ PAGE_SEO = {
         "changefreq": "monthly",
     },
     "privacy": {
-        "title": "Privacy Policy — JobSpace",
+        "title": "Privacy Policy — Target JobSpace",
         "description": (
-            "How JobSpace collects, uses and protects your personal information, "
+            "How Target JobSpace collects, uses and protects your personal information, "
             "including the CVs and documents you upload and how employers are "
             "given access to them."
         ),
@@ -86,9 +86,9 @@ PAGE_SEO = {
         "changefreq": "yearly",
     },
     "terms": {
-        "title": "Terms of Service — JobSpace",
+        "title": "Terms of Service — Target JobSpace",
         "description": (
-            "The terms governing the use of JobSpace by candidates and "
+            "The terms governing the use of Target JobSpace by candidates and "
             "employers, including subscriptions, verification standards and "
             "acceptable use."
         ),
@@ -141,7 +141,7 @@ def _json_ld(request, key, meta, canonical):
     """schema.org payload. Rich results are the point of this — plain meta tags
     only get a blue link in the results."""
     site_url = _absolute(request, "/")
-    site = {"@type": "WebSite", "name": "JobSpace", "url": site_url}
+    site = {"@type": "WebSite", "name": "Target JobSpace", "url": site_url}
 
     if key == "home":
         return {
@@ -173,7 +173,7 @@ def seo(request):
                 "canonical": canonical,
                 "indexable": indexable,
                 "og_type": "website",
-                "site_name": "JobSpace",
+                "site_name": "Target JobSpace",
                 # 1200x630 share card, not Logo.png (1779x884 letterboxes badly
                 # in WhatsApp/Facebook previews). static() resolves the
                 # ManifestStaticFilesStorage hash so the URL survives
@@ -189,7 +189,7 @@ def seo(request):
     if path.startswith(PRIVATE_PREFIXES):
         return page(
             {
-                "title": "JobSpace",
+                "title": "Target JobSpace",
                 "description": "",
                 "robots": "noindex, nofollow",
                 "json_ld": None,
@@ -204,7 +204,7 @@ def seo(request):
         # competing with the real content.
         return page(
             {
-                "title": "JobSpace",
+                "title": "Target JobSpace",
                 "description": "",
                 "robots": "noindex, follow",
                 "json_ld": None,

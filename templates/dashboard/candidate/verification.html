@@ -1,6 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% load static %}
-{% block title %}Verification Status - JobSpace{% endblock %}
+{% block title %}Verification Status - Target JobSpace{% endblock %}
 {% block body_class %}candidate-dashboard{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
 
@@ -17,7 +17,7 @@
       <span class="vf-hero-kicker">VERIFICATION STATUS</span>
       {% if profile.verification_status == "verified" %}
         <h1 class="vf-hero-title">You're in the<br><em>talent pool!</em></h1>
-        <p class="vf-hero-sub">Your profile is Vetted &amp; Verified. You are now visible to employers through JobSPACE matching.</p>
+        <p class="vf-hero-sub">Your profile is Vetted &amp; Verified. You are now visible to employers through Target JobSpace matching.</p>
       {% elif profile.verification_status == "verifying" %}
         <h1 class="vf-hero-title">Under<br><em>verification.</em></h1>
         <p class="vf-hero-sub">Our team is reviewing your CV and credentials. We'll notify you as soon as the process is complete.</p>
@@ -274,7 +274,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             Congratulations — you're verified!
           </h3>
-          <p>Your professional profile is Vetted &amp; Verified and has been added to the JobSPACE talent pool. You may now be matched with top employers. Keep your profile current to maximise your chances.</p>
+          <p>Your professional profile is Vetted &amp; Verified and has been added to the Target JobSpace talent pool. You may now be matched with top employers. Keep your profile current to maximise your chances.</p>
         </div>
         <div class="vf-actions">
           <a class="vf-btn vf-btn--green" href="/dashboard/candidate/matches/">

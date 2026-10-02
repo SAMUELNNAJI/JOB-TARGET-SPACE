@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build.sh — Render build script for JobSpace
+# build.sh — Render build script for Target JobSpace
 set -o errexit   # exit immediately on any error
 
 pip install --upgrade pip

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# JobSpace — deploying to THIS server (AlmaLinux 8, nginx in conf.d/)
+# Target JobSpace — deploying to THIS server (AlmaLinux 8, nginx in conf.d/)
 # ─────────────────────────────────────────────────────────────────────────────
 
 Everything in `deploy/` is additive. Nothing here edits `nginx.conf` or either

@@ -1,4 +1,4 @@
-# JobSpace Django site
+# Target JobSpace Django site
 
 ## Setup
 

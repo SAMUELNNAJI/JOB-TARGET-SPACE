@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if role == 'employer' %}Employer Registration{% elif role == 'candidate' %}Candidate Registration{% else %}Create Account{% endif %} — JobSpace</title>
+  <title>{% if role == 'employer' %}Employer Registration{% elif role == 'candidate' %}Candidate Registration{% else %}Create Account{% endif %} — Target JobSpace</title>
 
   {# Auth pages are private: this include emits noindex for /signin/ and /signup/. #}
   {% include "includes/seo_head.html" %}
@@ -34,7 +34,7 @@
     <aside class="auth-side">
       <div class="auth-side-grid"></div>
       <a class="auth-brand" href="/">
-        <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+        <img src="{% static 'images/Logo.png' %}" alt="Target JobSpace">
       </a>
       <div class="auth-side-body">
         <span class="auth-side-kicker">MAKE YOUR NEXT MOVE</span>
@@ -46,7 +46,7 @@
           <p class="auth-side-desc">Build your professional profile, get verified by our team, and get matched with employers looking for exactly your skills.</p>
         {% else %}
           <h2 class="auth-side-title">Build a career or team with<br><em>more intention.</em></h2>
-          <p class="auth-side-desc">Choose your path and let JobSpace connect the right people to meaningful opportunities — every step handled by humans.</p>
+          <p class="auth-side-desc">Choose your path and let Target JobSpace connect the right people to meaningful opportunities — every step handled by humans.</p>
         {% endif %}
       </div>
       <div class="auth-side-pills">
@@ -78,7 +78,7 @@
         {# ── ROLE PICKER ── #}
         <div class="auth-choice-wrap">
           <div class="auth-choice-heading">
-            <h1>How will you use JobSpace?</h1>
+            <h1>How will you use Target JobSpace?</h1>
             <p>Choose the account type that fits your goal.</p>
           </div>
           <div class="choice-grid">
@@ -109,7 +109,7 @@
           <input type="hidden" name="role" value="{{ role }}">
 
           <a class="auth-card-logo" href="/signup/">
-            <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+            <img src="{% static 'images/Logo.png' %}" alt="Target JobSpace">
           </a>
 
           <h1>{% if role == 'employer' %}Employer registration{% else %}Candidate registration{% endif %}</h1>

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign In — JobSpace</title>
+  <title>Sign In — Target JobSpace</title>
 
   {# Auth pages are private: this include emits noindex for /signin/ and /signup/. #}
   {% include "includes/seo_head.html" %}
@@ -34,7 +34,7 @@
     <aside class="auth-side">
       <div class="auth-side-grid"></div>
       <a class="auth-brand" href="/">
-        <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+        <img src="{% static 'images/Logo.png' %}" alt="Target JobSpace">
       </a>
       <div class="auth-side-body">
         <span class="auth-side-kicker">YOUR NEXT MOVE</span>
@@ -69,11 +69,11 @@
         {% csrf_token %}
 
         <a class="auth-card-logo" href="/">
-          <img src="{% static 'images/Logo.png' %}" alt="JobSpace">
+          <img src="{% static 'images/Logo.png' %}" alt="Target JobSpace">
         </a>
 
         <h1>Welcome back</h1>
-        <p>Sign in to your JobSpace dashboard to manage your profile and opportunities.</p>
+        <p>Sign in to your Target JobSpace dashboard to manage your profile and opportunities.</p>
 
         {% if form.non_field_errors %}
           <div class="form-errors">{{ form.non_field_errors }}</div>

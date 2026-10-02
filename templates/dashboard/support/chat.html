@@ -1,6 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% load static %}
-{% block title %}{% if profile.role == 'employer' %}Employer Concierge & Support - JobSpace{% else %}Candidate Support Chat - JobSpace{% endif %}{% endblock %}
+{% block title %}{% if profile.role == 'employer' %}Employer Concierge & Support - Target JobSpace{% else %}Candidate Support Chat - Target JobSpace{% endif %}{% endblock %}
 {% block body_class %}{% if profile.role == 'employer' %}employer-dashboard{% else %}candidate-dashboard{% endif %}{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
 
@@ -27,7 +27,7 @@
           EMPLOYER HIRING CONCIERGE
         </span>
         <h1 class="dash-hero-title">Dedicated<br><em>Hiring Support.</em></h1>
-        <p class="dash-hero-sub">Direct access to your JobSPACE account manager for {{ profile.company_name|default:"your organization" }}. Priority assistance with candidate requisitions, talent shortlists, replacements, and subscription billing.</p>
+        <p class="dash-hero-sub">Direct access to your Target JobSpace account manager for {{ profile.company_name|default:"your organization" }}. Priority assistance with candidate requisitions, talent shortlists, replacements, and subscription billing.</p>
       {% else %}
         <span class="chat-hero-kicker">
           <span class="chat-live-beacon"></span>
@@ -60,7 +60,7 @@
         </div>
         <div class="chat-head-info">
           <div class="chat-head-title-row">
-            <strong>JobSPACE Support Team</strong>
+            <strong>Target JobSpace Support Team</strong>
             <span class="chat-role-pill">
               {% if profile.role == 'employer' %}Employer Concierge{% else %}Candidate Support{% endif %}
             </span>
@@ -114,7 +114,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             <span>Check verification status</span>
           </button>
-          <button type="button" class="chat-chip" data-prompt="How does the JobSPACE matching process work once I am verified?">
+          <button type="button" class="chat-chip" data-prompt="How does the Target JobSpace matching process work once I am verified?">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
             <span>How matching works</span>
           </button>
@@ -137,7 +137,7 @@
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
       </div>
-      <h3>Welcome to JobSPACE Support</h3>
+      <h3>Welcome to Target JobSpace Support</h3>
       <p>Send your inquiry below or tap a quick topic above. Our specialized team receives your message immediately and will reply directly in this thread.</p>
     </div>
 

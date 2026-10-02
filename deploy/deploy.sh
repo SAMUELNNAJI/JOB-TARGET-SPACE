@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# deploy.sh — pull the latest code onto the VPS and restart JobSpace.
+# deploy.sh — pull the latest code onto the VPS and restart Target JobSpace.
 #
 # Run as the `jobspace` user, from anywhere:
 #   sudo -u jobspace bash /var/www/jobspace/deploy/deploy.sh

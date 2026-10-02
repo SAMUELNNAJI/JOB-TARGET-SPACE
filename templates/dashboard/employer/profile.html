@@ -1,6 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% load static %}
-{% block title %}Company Profile - JobSpace{% endblock %}
+{% block title %}Company Profile - Target JobSpace{% endblock %}
 {% block body_class %}employer-dashboard{% endblock %}
 {% block notification_count %}{{ unread_count }}{% endblock %}
 {% block content %}
@@ -14,14 +14,14 @@
     <div class="emp-form-hero-content">
       <span class="emp-hero-kicker">COMPANY PROFILE</span>
       <h1 class="emp-hero-title">Present your<br><em>best company.</em></h1>
-      <p class="emp-hero-sub">Keep your corporate details current so JobSPACE can support your recruitment workflow effectively.</p>
+      <p class="emp-hero-sub">Keep your corporate details current so Target JobSpace can support your recruitment workflow effectively.</p>
     </div>
   </section>
   {% if messages %}{% for message in messages %}<div class="emp-alert"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>{{ message }}</div>{% endfor %}{% endif %}
   <div class="emp-form-card">
     <div class="emp-form-card-head">
       <div class="emp-form-card-head-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
-      <div><h2 class="emp-form-card-title">Company Information</h2><p class="emp-form-card-sub">This information is visible to JobSPACE administrators only — not to candidates.</p></div>
+      <div><h2 class="emp-form-card-title">Company Information</h2><p class="emp-form-card-sub">This information is visible to Target JobSpace administrators only — not to candidates.</p></div>
     </div>
     <form method="post" class="emp-form" id="empProfileWizard" novalidate>
       {% csrf_token %}
@@ -75,7 +75,7 @@
       <h2 class="emp-modal-title" id="profileCompleteTitle">Company profile complete</h2>
       <p class="emp-modal-text">
         Great &mdash; your company details are saved. Next, tell us the professional
-        you're hiring and a JobSPACE administrator will source vetted candidates for you.
+        you're hiring and a Target JobSpace administrator will source vetted candidates for you.
       </p>
 
       <div class="emp-modal-summary">

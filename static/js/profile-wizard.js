@@ -1,5 +1,5 @@
 /* ============================================================
-   Profile Wizard — JobSPACE candidate dashboard
+   Profile Wizard — Target JobSpace candidate dashboard
    ============================================================ */
 
 (function () {

@@ -1,5 +1,5 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Candidates Received - JobSpace{% endblock %}
+{% block title %}Candidates Received - Target JobSpace{% endblock %}
   {% block body_class %}employer-dashboard{% endblock %}
     {% block notification_count %}
       {{ unread_count }}
@@ -21,7 +21,7 @@
               <em>great hire.</em>
             </h1>
             <p class="emp-hero-sub">
-              Only candidates reviewed and specifically pushed by JobSPACE
+              Only candidates reviewed and specifically pushed by Target JobSpace
               administrators appear here — vetted, verified, and ready.
             </p>
           </div>
@@ -35,7 +35,7 @@
           <div class="emp-section-head">
             <div><h2 class="emp-panel-title">Candidates received</h2></div>
             <div style="display: flex; align-items: center; gap: 10px">
-              <span class="emp-avail-badge">● Vetted by JobSPACE</span>
+              <span class="emp-avail-badge">● Vetted by Target JobSpace</span>
               <span class="emp-section-count">{{ page_obj.paginator.count }} total</span>
             </div>
           </div>
@@ -143,7 +143,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                       </svg>
                       <span>
-                        <strong>Rejected during JobSPACE verification.</strong>
+                        <strong>Rejected during Target JobSpace verification.</strong>
                         Reason: {{ match.profile.verification_notes|default:"No reason recorded." }}
                       </span>
                     </div>
@@ -170,7 +170,7 @@
               </div>
               <h3>No candidates received yet</h3>
               <p>
-                JobSPACE administrators will push vetted candidates here when they match
+                Target JobSpace administrators will push vetted candidates here when they match
                 your active recruitment requests.
               </p>
               <a class="emp-empty-btn" href="/dashboard/employer/requests/">
@@ -298,7 +298,7 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              Contact information is managed by JobSPACE to protect candidate privacy.
+              Contact information is managed by Target JobSpace to protect candidate privacy.
               Reach out via your account manager to initiate contact.
             </div>
           </div>
@@ -511,7 +511,7 @@
                 "cmaMatchNote",
                 "Introduced to your dashboard on " +
                   esc(d.matched_on) +
-                  " by JobSPACE.",
+                  " by Target JobSpace.",
               );
             }
 

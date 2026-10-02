@@ -232,22 +232,22 @@ def candidate_section(request, section):
         "verification": (
             "Verification Status",
             "Track the review of your professional profile.",
-            "Your information is reviewed by JobSPACE administrators before you enter the talent pool.",
+            "Your information is reviewed by Target JobSpace administrators before you enter the talent pool.",
         ),
         "matches": (
             "Opportunities / Matches",
-            "See opportunities selected for you by JobSPACE administrators.",
+            "See opportunities selected for you by Target JobSpace administrators.",
             "Candidates cannot browse or contact employers directly. Only approved matches appear here.",
         ),
         "jobs": (
             "Opportunities / Matches",
-            "See opportunities selected for you by JobSPACE administrators.",
+            "See opportunities selected for you by Target JobSpace administrators.",
             "Candidates cannot browse or contact employers directly. Only approved matches appear here.",
         ),
         "support": (
             "Support Chat",
             "Ask our team anything about your account, verification, or matches.",
-            "Messages go straight to the JobSPACE team and you will get a reply in the same thread.",
+            "Messages go straight to the Target JobSpace team and you will get a reply in the same thread.",
         ),
         "applications": (
             "Applications",
@@ -257,7 +257,7 @@ def candidate_section(request, section):
         "notifications": (
             "Notifications",
             "See profile updates, matches, and important reminders.",
-            "Your latest JobSpace activity will appear here.",
+            "Your latest Target JobSpace activity will appear here.",
         ),
     }
     if section not in sections:
@@ -574,7 +574,7 @@ def employer_section(request, section):
             req.save()
             employer.notify(
                 title="Recruitment request submitted",
-                message=f"Your request for {req.position} has been submitted and is under review by JobSPACE administrators.",
+                message=f"Your request for {req.position} has been submitted and is under review by Target JobSpace administrators.",
                 kind=Notification.Kind.SYSTEM,
             )
             messages.success(request, "Recruitment request submitted.")
@@ -680,7 +680,7 @@ def employer_section(request, section):
             "section_title": "Notifications",
         })
 
-    # ── Support → real chat with JobSPACE ─────────────────────
+    # ── Support → real chat with Target JobSpace ─────────────────────
     if section == "support":
         return redirect("website:support_chat")
 
@@ -729,7 +729,7 @@ def accept_candidate(request, match_id):
         title="An employer has accepted your profile",
         message=(
             f"{employer.company_name or 'An employer'} has accepted your profile "
-            f"for {position}. JobSPACE will be in touch to coordinate next steps."
+            f"for {position}. Target JobSpace will be in touch to coordinate next steps."
         ),
         kind=Notification.Kind.MATCH,
     )
@@ -760,7 +760,7 @@ def employer_candidate_detail(request, match_id):
     """GET — returns a candidate's professional profile as JSON for the
     employer detail modal. Contact information (phone, whatsapp, email,
     address) is intentionally excluded so employers must go through
-    JobSPACE to reach the candidate."""
+    Target JobSpace to reach the candidate."""
     employer = _employer_profile(request)
     match    = get_object_or_404(
         CandidateMatch.objects.select_related("profile__user")
@@ -1585,7 +1585,7 @@ def remove_match(request, match_id):
     )
     match.profile.notify(
         title="An introduction was withdrawn",
-        message=f"A previous match with {employer_name} has been withdrawn by the JobSPACE team.",
+        message=f"A previous match with {employer_name} has been withdrawn by the Target JobSpace team.",
         kind=Notification.Kind.MATCH,
     )
 
@@ -1614,7 +1614,7 @@ def push_candidate(request, match_id):
     # Notify candidate
     match.profile.notify(
         title="Your profile was shared with an employer",
-        message=f"Your verified profile has been shared with {match.employer.company_name or 'an employer'}. You may be contacted soon through JobSPACE.",
+        message=f"Your verified profile has been shared with {match.employer.company_name or 'an employer'}. You may be contacted soon through Target JobSpace.",
         kind=Notification.Kind.MATCH,
     )
     return redirect("website:admin_section", section="matching")
@@ -1647,7 +1647,7 @@ def admin_verify_candidate(request, profile_id):
 
     profile.notify(
         title="Profile verified",
-        message="Congratulations! Your professional profile has been vetted and verified by JobSPACE. You are now in the talent pool and can be matched with employers.",
+        message="Congratulations! Your professional profile has been vetted and verified by Target JobSpace. You are now in the talent pool and can be matched with employers.",
         kind=Notification.Kind.VERIFICATION,
     )
     AuditLog.objects.create(
@@ -1688,7 +1688,7 @@ def admin_reject_candidate(request, profile_id):
     for match in profile.matches.select_related("employer").filter(is_active=True):
         match.employer.notify(
             title="A candidate in your list was rejected",
-            message=f"{_candidate_label(profile)} was rejected during JobSPACE verification. "
+            message=f"{_candidate_label(profile)} was rejected during Target JobSpace verification. "
                     f"Reason: {reason}",
             kind=Notification.Kind.VERIFICATION,
         )
@@ -1722,7 +1722,7 @@ def admin_revoke_verification(request, profile_id):
 
     profile.notify(
         title="Verification revoked",
-        message=f"Your verification has been revoked by JobSPACE. Reason: {reason} "
+        message=f"Your verification has been revoked by Target JobSpace. Reason: {reason} "
                 "Please update your profile and resubmit it for review.",
         kind=Notification.Kind.VERIFICATION,
     )
@@ -2248,7 +2248,7 @@ def dashboard_search(request):
 
 
 # ─────────────────────────────────────────────────────────────
-# Support chat — user <-> JobSPACE, rendered with htmx
+# Support chat — user <-> Target JobSpace, rendered with htmx
 # ─────────────────────────────────────────────────────────────
 #
 # The transcript is polled with htmx rather than pushed over a websocket:
@@ -2547,7 +2547,7 @@ def admin_support_send(request):
 
     # Nudge the user through their normal notification channel.
     thread.profile.notify(
-        title="New message from JobSPACE support",
+        title="New message from Target JobSpace support",
         message=body[:120] + ("…" if len(body) > 120 else ""),
         kind=Notification.Kind.SYSTEM,
     )

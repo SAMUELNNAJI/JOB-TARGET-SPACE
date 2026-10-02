@@ -380,7 +380,7 @@ class AuditLog(models.Model):
 
 
 class SupportThread(models.Model):
-    """One conversation between a Profile (candidate or employer) and JobSPACE.
+    """One conversation between a Profile (candidate or employer) and Target JobSpace.
 
     There is exactly one thread per profile — a user always resumes the same
     conversation rather than starting a new one each time they open Support.
@@ -423,7 +423,7 @@ class SupportThread(models.Model):
 class SupportMessage(models.Model):
     class Role(models.TextChoices):
         USER  = "user",  "User"
-        STAFF = "staff", "JobSPACE"
+        STAFF = "staff", "Target JobSpace"
 
     thread = models.ForeignKey(
         SupportThread, on_delete=models.CASCADE, related_name="messages"
