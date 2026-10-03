@@ -455,8 +455,8 @@
 .page-hero .hero-cta{display:flex;justify-content:flex-start;gap:14px;flex-wrap:wrap;margin-top:10px}
 
 /* ── LEGAL PAGES (terms & privacy) ── */
-.legal-page{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1180px;margin:0 auto;padding:64px 7% 96px;align-items:start}
-.legal-page-wrap{background:var(--black,#0d0d0d);border-top:1px solid rgba(255,255,255,.08)}
+.legal-page{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;max-width:1180px;width:100%;margin:0 auto;padding:64px 7% 96px;align-items:start;box-sizing:border-box}
+.legal-page-wrap{background:var(--black,#0d0d0d);border-top:1px solid rgba(255,255,255,.08);overflow-x:hidden;width:100%}
 .legal-toc{position:sticky;top:100px}
 .legal-toc-inner{padding:22px 24px 24px;border-radius:16px;background:var(--glass-bg,#1d1d1d);border:1px solid var(--glass-border,rgba(255,255,255,.1));backdrop-filter:blur(12px)}
 .legal-toc-inner > strong{display:block;font:700 10px/1 'Montserrat',sans-serif;letter-spacing:2.5px;text-transform:uppercase;color:var(--red,#d6001d);margin-bottom:16px}
@@ -491,8 +491,8 @@
 /* responsive */
 @media(max-width:1100px){.values-grid{grid-template-columns:repeat(2,1fr)}.process.steps-5{grid-template-columns:repeat(3,1fr)}.legal-page{grid-template-columns:200px minmax(0,1fr);gap:32px}}
 @media(max-width:900px){.about-grid{grid-template-columns:1fr}.paths-grid{grid-template-columns:1fr}.process{grid-template-columns:repeat(2,1fr)}.process.steps-5{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.content{padding:56px 6%}.values-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.contact-cards{grid-template-columns:1fr}.trust-row{gap:8px}.trust-pill{font-size:12px;padding:9px 14px}.legal-page{grid-template-columns:1fr;padding:40px 6% 64px;gap:0}.legal-toc{position:static;margin-bottom:36px}.legal-contact-grid{grid-template-columns:1fr}.legal-section h2{font-size:18px}}
-@media(max-width:480px){.content{padding:44px 5%}.process{grid-template-columns:1fr}.process.steps-5{grid-template-columns:1fr}.about-tile,.path-card{padding:24px 20px}.value-item{padding:22px 18px}}
+@media(max-width:760px){.content{padding:56px 6%}.values-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.contact-cards{grid-template-columns:1fr}.trust-row{gap:8px}.trust-pill{font-size:12px;padding:9px 14px}.legal-page-wrap{padding:0}.legal-page{grid-template-columns:1fr;width:100%;max-width:100vw;padding:32px 16px 56px 16px;gap:0;margin:0;box-sizing:border-box;overflow:hidden}.legal-toc{position:static;width:100%;margin-bottom:32px}.legal-toc-inner{width:100%;box-sizing:border-box}.legal-body{width:100%;min-width:0;box-sizing:border-box}.legal-contact-grid{grid-template-columns:1fr}.legal-section h2{font-size:18px}.legal-section p,.legal-section ul{max-width:100%;box-sizing:border-box}.legal-section p{font-size:14px;word-break:break-word;overflow-wrap:break-word}.legal-section li{font-size:13.5px}.legal-section a{word-break:break-all}.legal-contact-card a,.legal-contact-card span{word-break:break-all}.legal-intro-card{flex-direction:column;gap:10px}.legal-contact-card{flex-direction:column;gap:8px}}
+@media(max-width:480px){.content{padding:44px 5%}.process{grid-template-columns:1fr}.process.steps-5{grid-template-columns:1fr}.about-tile,.path-card{padding:24px 20px}.value-item{padding:22px 18px}.legal-page{padding:24px 14px 44px 14px}.legal-section h2{gap:10px}.legal-section h2>span{width:28px;height:28px;font-size:12px}}
 
 /* ============================================================
    CONTACT PAGE — split layout redesign
