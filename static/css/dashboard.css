@@ -50,7 +50,7 @@ ul {
   position: sticky;
   top: 0;
   height: 100vh;
-  padding: 18px 14px 16px;
+  padding: 18px 14px 80px;
   background: linear-gradient(155deg, #090909 0%, #130707 74%, #40000e 100%);
   color: #fff;
   overflow-x: hidden;
@@ -3035,7 +3035,9 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 
 /* Sign out link gets a subtle warning tint on hover */
 .nav-logout {
-  margin-top: 4px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,.10);
   opacity: 0.75;
   transition:
     opacity 0.2s,
@@ -10157,4 +10159,22 @@ body { font-size: 15px !important; }
   color: #111827;
   text-align: right;
   word-break: break-all;
+}
+
+
+/* ============================================================
+   Admin Settings page — responsive two-column grid
+   ============================================================ */
+
+.adm-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 1050px) {
+  .adm-settings-grid {
+    grid-template-columns: 1fr;
+  }
 }
