@@ -228,3 +228,22 @@ def dashboard_badges(request):
     except Exception:
         pass
     return ctx
+
+
+def site_settings(request):
+    """Inject site-wide contact details into every template context.
+
+    Usage in any template (no {% load %} needed — registered as a builtin):
+        {{ site.email }}   {{ site.phone }}   {{ site.address }}
+    """
+    try:
+        from .models import SiteSettings
+        site = SiteSettings.load()
+    except Exception:
+        # Graceful fallback during migrations or DB errors
+        class _Defaults:
+            email   = "info@targetjobspace.com"
+            phone   = "+234 913 618 5082"
+            address = "Bayo Dejonwo Street, Maryland, Lagos."
+        site = _Defaults()
+    return {"site": site}

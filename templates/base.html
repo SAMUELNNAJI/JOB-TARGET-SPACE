@@ -58,8 +58,8 @@
       {% endif %}
       <div class="drawer-foot">
         <small>GET IN TOUCH</small>
-        <a class="drawer-mail" href="mailto:info@targetjobspace.com">info@targetjobspace.com</a>
-        <a class="drawer-mail" href="tel:+2349136185082">+234 913 618 5082</a>
+        <a class="drawer-mail" href="mailto:{{ site.email }}">{{ site.email }}</a>
+        <a class="drawer-mail" href="tel:{{ site.phone }}">{{ site.phone }}</a>
       </div>
     </nav>
     <div class="nav-actions">
@@ -106,9 +106,9 @@
         <a class="logo" href="/"><img src="{% static 'images/Logo.png' %}" alt="Target JobSpace"></a>
         <p>A better way for talented people and ambitious businesses to find each other.</p>
         <div class="foot-contact">
-          <a href="mailto:info@targetjobspace.com">info@targetjobspace.com</a>
-          <a href="tel:+2349136185082">+234 913 618 5082</a>
-          <span>Bayo Dejonwo Street, Maryland, Lagos.</span>
+          <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+          <a href="tel:{{ site.phone }}">{{ site.phone }}</a>
+          <span>{{ site.address }}</span>
         </div>
         <div class="socials"><a class="social-btn" href="#" aria-label="X">X</a><a class="social-btn" href="#" aria-label="LinkedIn">in</a><a class="social-btn" href="#" aria-label="Facebook">f</a><a class="social-btn" href="#" aria-label="Instagram">o</a></div>
       </div>

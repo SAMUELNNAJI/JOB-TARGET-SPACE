@@ -63,6 +63,9 @@ TEMPLATES = [
                 # Per-page <title>, description, canonical, robots and JSON-LD.
                 # The base template reads `seo`, so no view has to pass it.
                 "website.seo.seo",
+                # Site-wide contact details (email, phone, address).
+                # Available as {{ site.email }}, {{ site.phone }} in every template.
+                "website.context_processors.site_settings",
             ],
         },
     },

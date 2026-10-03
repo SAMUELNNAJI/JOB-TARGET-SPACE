@@ -1,151 +1,186 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Admin Settings - Target JobSpace{% endblock %} {% block notification_count %}0{% endblock %}
-  {% block content %}
-    <main class="dashboard-content adm-home">
-      <section class="dash-hero">
-        <div class="dash-hero-bg">
-          <span class="dash-hero-orb dash-hero-orb--1"></span>
-          <span class="dash-hero-orb dash-hero-orb--2"></span>
-          <div class="dash-hero-grid"></div>
+{% block title %}Admin Settings - Target JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+
+  <section class="dash-hero">
+    <div class="dash-hero-bg">
+      <span class="dash-hero-orb dash-hero-orb--1"></span>
+      <span class="dash-hero-orb dash-hero-orb--2"></span>
+      <div class="dash-hero-grid"></div>
+    </div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">ADMIN SETTINGS &amp; SECURITY</span>
+      <h1 class="dash-hero-title">Operate with<br><em>confidence.</em></h1>
+      <p class="dash-hero-sub">Manage site contact details and review active platform protections.</p>
+    </div>
+  </section>
+
+  {% if messages %}
+    <div class="adm-flash">
+      {% for message in messages %}
+        <div class="adm-flash-item adm-flash-item--{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
+
+    {# ── Site Contact Details ── #}
+    <section class="adm-panel">
+      <div class="adm-panel-head">
+        <div>
+          <h2 class="adm-panel-title">Site Contact Details</h2>
+          <p class="adm-panel-sub">These appear in the nav, footer, contact page and terms — everywhere on the site.</p>
         </div>
-        <div class="dash-hero-content">
-          <span class="dash-hero-kicker">ADMIN SETTINGS &amp; SECURITY</span>
-          <h1 class="dash-hero-title">
-            Operate with
-            <br />
-            <em>confidence.</em>
-          </h1>
-          <p class="dash-hero-sub">
-            Admin access is protected by Django staff/superuser permissions, session
-            authentication, CSRF protection, and auditable actions.
+      </div>
+
+      <form method="post" class="adm-settings-form">
+        {% csrf_token %}
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label" for="site_email">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Contact email
+          </label>
+          <input type="email" id="site_email" name="site_email"
+                 class="adm-settings-input {% if errors.email %}is-invalid{% endif %}"
+                 value="{{ posted.email|default:site.email }}"
+                 placeholder="info@example.com" required>
+          {% if errors.email %}<span class="adm-settings-error">{{ errors.email }}</span>{% endif %}
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label" for="site_phone">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.1a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.58a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Contact phone
+          </label>
+          <input type="text" id="site_phone" name="site_phone"
+                 class="adm-settings-input {% if errors.phone %}is-invalid{% endif %}"
+                 value="{{ posted.phone|default:site.phone }}"
+                 placeholder="+234 900 000 0000" required>
+          {% if errors.phone %}<span class="adm-settings-error">{{ errors.phone }}</span>{% endif %}
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label" for="site_address">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Office address
+            <span style="font-size:11px;font-weight:400;color:#aab0be;margin-left:4px">(optional)</span>
+          </label>
+          <input type="text" id="site_address" name="site_address"
+                 class="adm-settings-input"
+                 value="{{ posted.address|default:site.address }}"
+                 placeholder="Street, City, State.">
+        </div>
+
+        <div style="padding:16px 20px 20px;border-top:1px solid #f0f2f7;margin-top:4px">
+          <p style="font-size:12px;color:#9ca3af;margin:0 0 12px">
+            Changes take effect immediately across the entire site.
           </p>
+          <button type="submit" class="adm-btn adm-btn--primary" style="width:100%">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save contact details
+          </button>
+        </div>
+      </form>
+
+      {# Current live values preview #}
+      <div class="adm-settings-preview">
+        <p class="adm-settings-preview-label">Currently live on the site</p>
+        <div class="adm-settings-preview-row">
+          <span>Email</span><strong>{{ site.email }}</strong>
+        </div>
+        <div class="adm-settings-preview-row">
+          <span>Phone</span><strong>{{ site.phone }}</strong>
+        </div>
+        <div class="adm-settings-preview-row">
+          <span>Address</span><strong>{{ site.address }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      {# ── Security Controls ── #}
+      <section class="adm-panel">
+        <div class="adm-panel-head">
+          <div>
+            <h2 class="adm-panel-title">Security Controls</h2>
+            <p class="adm-panel-sub">Active platform-wide protections</p>
+          </div>
+        </div>
+        <div class="adm-action-list">
+          {% for label, detail in security_items %}
+            <div class="adm-action-row">
+              <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="adm-action-info"><strong>{{ label }}</strong><span>{{ detail }}</span></div>
+              <span class="status-badge">Enabled</span>
+            </div>
+          {% empty %}
+            {% for label, detail in default_security %}
+              <div class="adm-action-row">
+                <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="adm-action-info"><strong>{{ label }}</strong><span>{{ detail }}</span></div>
+                <span class="status-badge">Enabled</span>
+              </div>
+            {% endfor %}
+          {% endfor %}
+          <div class="adm-action-row">
+            <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="adm-action-info"><strong>Role-based access</strong><span>Staff/superuser Django permission model</span></div>
+            <span class="status-badge">Enabled</span>
+          </div>
+          <div class="adm-action-row">
+            <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="adm-action-info"><strong>Session security</strong><span>Django session middleware active</span></div>
+            <span class="status-badge">Enabled</span>
+          </div>
+          <div class="adm-action-row">
+            <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="adm-action-info"><strong>CSRF protection</strong><span>Token validation on all POST requests</span></div>
+            <span class="status-badge">Enabled</span>
+          </div>
+          <div class="adm-action-row">
+            <div class="adm-action-avatar" style="background:linear-gradient(140deg,#12b76a,#0a7a48)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="adm-action-info"><strong>Audit logging</strong><span>All admin actions recorded in AuditLog</span></div>
+            <span class="status-badge">Enabled</span>
+          </div>
         </div>
       </section>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px">
-        <section class="adm-panel">
-          <div class="adm-panel-head">
-            <div>
-              <h2 class="adm-panel-title">Security Controls</h2>
-              <p class="adm-panel-sub">Active platform-wide protections</p>
-            </div>
+
+      {# ── Admin Quick Actions ── #}
+      <section class="adm-panel">
+        <div class="adm-panel-head">
+          <div>
+            <h2 class="adm-panel-title">Admin Actions</h2>
+            <p class="adm-panel-sub">Quick links for administration</p>
           </div>
-          <div class="adm-action-list">
-            <div class="adm-action-row">
-              <div
-                class="adm-action-avatar"
-                style="background: linear-gradient(140deg, #12b76a, #0a7a48)"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div class="adm-action-info">
-                <strong>Role-based access</strong>
-                <span>Staff/superuser Django permission model</span>
-              </div>
-              <span class="status-badge">Enabled</span>
-            </div>
-            <div class="adm-action-row">
-              <div
-                class="adm-action-avatar"
-                style="background: linear-gradient(140deg, #12b76a, #0a7a48)"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div class="adm-action-info">
-                <strong>Session security</strong>
-                <span>Django session middleware active</span>
-              </div>
-              <span class="status-badge">Enabled</span>
-            </div>
-            <div class="adm-action-row">
-              <div
-                class="adm-action-avatar"
-                style="background: linear-gradient(140deg, #12b76a, #0a7a48)"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div class="adm-action-info">
-                <strong>CSRF protection</strong>
-                <span>Token validation on all POST requests</span>
-              </div>
-              <span class="status-badge">Enabled</span>
-            </div>
-            <div class="adm-action-row">
-              <div
-                class="adm-action-avatar"
-                style="background: linear-gradient(140deg, #12b76a, #0a7a48)"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div class="adm-action-info">
-                <strong>Audit logging</strong>
-                <span>All admin actions recorded in AuditLog</span>
-              </div>
-              <span class="status-badge">Enabled</span>
-            </div>
-          </div>
-        </section>
-        <section class="adm-panel">
-          <div class="adm-panel-head">
-            <div>
-              <h2 class="adm-panel-title">Admin Actions</h2>
-              <p class="adm-panel-sub">Quick links for administration</p>
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <a class="adm-quick-btn" href="/admin/password_change/">
-              Change admin password
-            </a>
-            <a class="adm-quick-btn" href="/admin/">Django admin panel</a>
-            <a class="adm-quick-btn" href="/dashboard/admin/logs/">
-              View activity logs
-            </a>
-            <a class="adm-quick-btn" href="/dashboard/admin/candidates/">
-              Manage candidates
-            </a>
-            <a class="adm-quick-btn" href="/dashboard/admin/employers/">
-              Manage employers
-            </a>
-            <a class="adm-quick-btn" href="/dashboard/admin/matching/">
-              Matching workspace
-            </a>
-          </div>
-        </section>
-      </div>
-    </main>
-  {% endblock %}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:0 20px 20px">
+          <a class="adm-quick-btn" href="/admin/password_change/">Change admin password</a>
+          <a class="adm-quick-btn" href="/admin/">Django admin panel</a>
+          <a class="adm-quick-btn" href="/dashboard/admin/logs/">View activity logs</a>
+          <a class="adm-quick-btn" href="/dashboard/admin/candidates/">Manage candidates</a>
+          <a class="adm-quick-btn" href="/dashboard/admin/employers/">Manage employers</a>
+          <a class="adm-quick-btn" href="/dashboard/admin/matching/">Matching workspace</a>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

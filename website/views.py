@@ -1304,7 +1304,39 @@ def admin_section(request, section):
 
     # ── Settings ──────────────────────────────────────────────
     if section == "settings":
-        return render(request, "dashboard/admin/settings.html", {"unread_count": 0})
+        from .models import SiteSettings
+        site = SiteSettings.load()
+        if request.method == "POST":
+            email   = request.POST.get("site_email", "").strip()
+            phone   = request.POST.get("site_phone", "").strip()
+            address = request.POST.get("site_address", "").strip()
+            errors = {}
+            if not email:
+                errors["email"] = "Email address is required."
+            if not phone:
+                errors["phone"] = "Phone number is required."
+            if not errors:
+                site.email   = email
+                site.phone   = phone
+                site.address = address
+                site.save()
+                AuditLog.objects.create(
+                    actor=request.user,
+                    action="Site contact details updated",
+                    subject=f"email={email}, phone={phone}",
+                )
+                messages.success(request, "Site contact details updated successfully.")
+                return redirect("website:admin_section", section="settings")
+            return render(request, "dashboard/admin/settings.html", {
+                "unread_count": 0,
+                "site": site,
+                "errors": errors,
+                "posted": {"email": email, "phone": phone, "address": address},
+            })
+        return render(request, "dashboard/admin/settings.html", {
+            "unread_count": 0,
+            "site": site,
+        })
 
     raise Http404
 

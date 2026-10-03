@@ -485,3 +485,28 @@ class SupportMessage(models.Model):
         except Exception:          # storage backend hiccup = treat as absent
             return False
 
+
+
+class SiteSettings(models.Model):
+    """Single-row table that stores site-wide contact details.
+
+    Only one row should ever exist (pk=1).  The admin settings page
+    creates it on first save and updates it on subsequent saves.
+    Use SiteSettings.load() anywhere you need the current values.
+    """
+    email   = models.EmailField(default="info@targetjobspace.com")
+    phone   = models.CharField(max_length=30, default="+234 913 618 5082")
+    address = models.CharField(max_length=200, default="Bayo Dejonwo Street, Maryland, Lagos.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Site settings"
+
+    def __str__(self):
+        return "Site settings"
+
+    @classmethod
+    def load(cls):
+        """Return the single settings row, creating it with defaults if absent."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
