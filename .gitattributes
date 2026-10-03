@@ -8,6 +8,9 @@
 *.md   text
 *.txt  text
 *.sh   text eol=lf
+# Preserve execute permission on shell scripts across platforms
+deploy/deploy.sh    text eol=lf
+deploy/bootstrap.sh text eol=lf
 *.yml  text eol=lf
 *.yaml text eol=lf
 *.conf text eol=lf
