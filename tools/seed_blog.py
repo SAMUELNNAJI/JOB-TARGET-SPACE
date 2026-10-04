@@ -189,3 +189,37 @@ for p in posts:
         created += 1
 
 print(f"Seeded {created} new posts. Total blog posts: {BlogPost.objects.count()}")
+
+# ── Download cover images from Unsplash ──────────────────────────────────────
+import urllib.request, tempfile, os
+from django.core.files import File
+
+COVER_IMAGES = {
+    "salary-negotiation-secrets":                ("https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80", "salary.jpg"),
+    "cv-that-gets-read-2026":                    ("https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&q=80", "cv.jpg"),
+    "interview-question-tell-me-about-yourself": ("https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80", "interview.jpg"),
+    "how-to-thrive-remote-work":                 ("https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=800&q=80", "remote.jpg"),
+    "why-nigerian-graduates-getting-rejected":    ("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80", "graduates.jpg"),
+    "hidden-job-market-unadvertised-roles":       ("https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80", "jobs.jpg"),
+}
+
+print("\nDownloading cover images...")
+for slug, (url, fname) in COVER_IMAGES.items():
+    try:
+        post = BlogPost.objects.get(slug=slug)
+        if post.cover_image:
+            print(f"  SKIP (already has image): {slug}")
+            continue
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            urllib.request.urlretrieve(url, tmp.name)
+            with open(tmp.name, "rb") as f:
+                post.cover_image.save(fname, File(f), save=True)
+            os.unlink(tmp.name)
+        print(f"  OK: {slug}")
+    except Exception as e:
+        print(f"  ERR {slug}: {e}")
+
+print("\nAll posts:")
+for p in BlogPost.objects.all():
+    img = p.cover_image.name if p.cover_image else "NO IMAGE"
+    print(f"  {p.slug[:50]:<50}  {img}")
