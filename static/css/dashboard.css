@@ -5921,11 +5921,12 @@ a.dashboard-icon-button { display: inline-grid; place-items: center; text-decora
 }
 .adm-btn--primary {
   background: var(--dash-red, #d90429);
-  color: #fff;
+  color: #fff !important;
   box-shadow: 0 6px 20px rgba(217, 4, 41, 0.28);
 }
 .adm-btn--primary:hover {
   background: #a8001c;
+  color: #fff !important;
   box-shadow: 0 8px 28px rgba(217, 4, 41, 0.4);
   transform: translateY(-1px);
 }
@@ -10177,4 +10178,216 @@ body { font-size: 15px !important; }
   .adm-settings-grid {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ============================================================
+   Admin Blog — Cover image upload section  (dark editorial)
+   ============================================================ */
+
+.blog-upload-section {
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a0a0a 50%, #0f0f1a 100%);
+  border: 1.5px solid rgba(217,4,41,.3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 8px 40px rgba(0,0,0,.35);
+  position: relative;
+}
+.blog-upload-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%, #d90429 25%, #ff6b81 50%, #d90429 75%, transparent 100%);
+  background-size: 200% 100%;
+  animation: blogUpShimmer 2.2s linear infinite;
+}
+@keyframes blogUpShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Header row */
+.blog-upload-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.blog-upload-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: rgba(217,4,41,.15);
+  border: 1px solid rgba(217,4,41,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d90429;
+  flex-shrink: 0;
+  box-shadow: 0 0 18px rgba(217,4,41,.22);
+}
+.blog-upload-title {
+  font: 700 14px/1 'Montserrat', sans-serif;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.blog-upload-subtitle {
+  font-size: 10.5px;
+  color: rgba(255,255,255,.32);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* Current image preview */
+.blog-upload-current {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-wrap: wrap;
+}
+.blog-upload-img-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.blog-upload-img-wrap img {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,.1);
+  display: block;
+}
+.blog-upload-img-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  font: 700 8px/1 'Montserrat', sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.75);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,.45);
+  backdrop-filter: blur(6px);
+}
+
+/* Remove checkbox */
+.blog-upload-remove {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255,255,255,.5);
+  user-select: none;
+  transition: color .15s;
+}
+.blog-upload-remove:hover { color: #ef4444; }
+.blog-upload-remove input[type="checkbox"] { display: none; }
+.blog-upload-remove-box {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.blog-upload-remove input[type="checkbox"]:checked ~ .blog-upload-remove-box {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+
+/* Drop zone */
+.blog-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 24px;
+  cursor: pointer;
+  position: relative;
+  transition: background .18s;
+  text-align: center;
+}
+.blog-upload-dropzone:hover {
+  background: rgba(217,4,41,.07);
+}
+.blog-upload-drop-icon {
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255,255,255,.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.35);
+  transition: all .25s;
+  background: rgba(255,255,255,.03);
+}
+.blog-upload-dropzone:hover .blog-upload-drop-icon {
+  border-color: #d90429;
+  color: #d90429;
+  box-shadow: 0 0 28px rgba(217,4,41,.28);
+  transform: translateY(-3px) scale(1.06);
+}
+.blog-upload-drop-text {
+  font-size: 14px;
+  color: rgba(255,255,255,.65);
+}
+.blog-upload-drop-text strong {
+  color: #d90429;
+  font-weight: 700;
+}
+.blog-upload-drop-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,.25);
+  letter-spacing: .06em;
+}
+.blog-upload-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* New image preview (JS-injected) */
+.blog-upload-new-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px 18px;
+  animation: blogUpFadeIn .28s ease;
+}
+@keyframes blogUpFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.blog-upload-new-preview img {
+  width: 160px; height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid #d90429;
+  box-shadow: 0 0 22px rgba(217,4,41,.35);
+  display: block;
+}
+.blog-upload-new-badge {
+  font: 700 10px/1 'Montserrat', sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #d90429;
+  padding: 6px 12px;
+  border: 1px solid rgba(217,4,41,.4);
+  border-radius: 999px;
+  background: rgba(217,4,41,.1);
 }

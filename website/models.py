@@ -510,3 +510,46 @@ class SiteSettings(models.Model):
         """Return the single settings row, creating it with defaults if absent."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class BlogPost(models.Model):
+    class Category(models.TextChoices):
+        CAREER      = "career",      "Career Advice"
+        HIRING      = "hiring",      "Hiring Tips"
+        INDUSTRY    = "industry",    "Industry Insights"
+        WORKPLACE   = "workplace",   "Workplace Culture"
+        SALARY      = "salary",      "Salary & Negotiation"
+        INTERVIEW   = "interview",   "Interview Prep"
+
+    title       = models.CharField(max_length=200)
+    slug        = models.SlugField(max_length=220, unique=True)
+    category    = models.CharField(max_length=20, choices=Category.choices, default=Category.CAREER)
+    excerpt     = models.TextField(max_length=300)
+    body        = models.TextField()
+    cover_image = models.ImageField(upload_to="blog/%Y/%m/", blank=True, null=True,
+                                    help_text="Landscape image shown on the card and detail page.")
+    cover_color = models.CharField(max_length=40, default="#d90429",
+                                   help_text="Fallback accent colour when no image is uploaded.")
+    author      = models.CharField(max_length=100, default="Target JobSpace Team")
+    is_published = models.BooleanField(default=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return f"/blog/{self.slug}/"
+
+    @property
+    def read_time(self):
+        words = len(self.body.split())
+        minutes = max(1, round(words / 200))
+        return f"{minutes} min read"
+
+    @property
+    def body_paragraphs(self):
+        return [p.strip() for p in self.body.split("\n\n") if p.strip()]

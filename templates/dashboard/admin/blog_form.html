@@ -1,0 +1,200 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }} Blog Post - Target JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">BLOG MANAGEMENT</span>
+      <h1 class="dash-hero-title">{{ action }}<br><em>blog post.</em></h1>
+      <p class="dash-hero-sub">{% if action == "Create" %}Write a new career advice article for your readers.{% else %}Update the content and settings of this post.{% endif %}</p>
+    </div>
+  </section>
+
+  {% if messages %}
+    <div class="adm-flash">{% for m in messages %}<div class="adm-flash-item adm-flash-item--{{ m.tags }}">{{ m }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <section class="adm-panel" style="max-width:860px">
+    <div class="adm-panel-head">
+      <div><h2 class="adm-panel-title">Post details</h2><p class="adm-panel-sub">All fields except Website and Equipment are required.</p></div>
+      <a class="adm-row-btn" href="{% url 'website:admin_blog_list' %}">← Back to list</a>
+    </div>
+
+    {% if error %}
+      <div class="adm-flash" style="margin:0 20px 8px">
+        <div class="adm-flash-item adm-flash-item--error">{{ error }}</div>
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="adm-settings-form" style="padding:20px">
+      {% csrf_token %}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="adm-settings-field" style="grid-column:1/-1">
+          <label class="adm-settings-label">Title *</label>
+          <input type="text" name="title" class="adm-settings-input" required
+                 value="{{ post.title|default:'' }}" placeholder="e.g. 5 Salary Negotiation Secrets Nobody Tells You">
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label">URL slug *</label>
+          <input type="text" name="slug" class="adm-settings-input"
+                 value="{{ post.slug|default:'' }}" placeholder="auto-generated from title if blank">
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label">Category *</label>
+          <select name="category" class="adm-settings-input">
+            {% for val, label in categories %}
+              <option value="{{ val }}" {% if post and post.category == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="adm-settings-field" style="grid-column:1/-1">
+          <div class="blog-upload-section">
+
+            {# ── Header row ── #}
+            <div class="blog-upload-header">
+              <div class="blog-upload-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <div>
+                <div class="blog-upload-title">Cover Image</div>
+                <div class="blog-upload-subtitle">Landscape · 16 : 9 · JPG or PNG · recommended 1200 × 675</div>
+              </div>
+            </div>
+
+            {# ── Current image preview ── #}
+            {% if post and post.cover_image %}
+              <div class="blog-upload-current">
+                <div class="blog-upload-img-wrap">
+                  <img src="{{ post.cover_image.url }}" alt="Current cover">
+                  <div class="blog-upload-img-badge">Current</div>
+                </div>
+                <label class="blog-upload-remove">
+                  <input type="checkbox" name="remove_image" value="1">
+                  <span class="blog-upload-remove-box">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  Remove &amp; replace with new image
+                </label>
+              </div>
+            {% endif %}
+
+            {# ── Drop zone / file input ── #}
+            <label class="blog-upload-dropzone" for="coverImageInput">
+              <div class="blog-upload-drop-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="blog-upload-drop-text">
+                <strong>Click to browse</strong> or drag &amp; drop
+              </div>
+              <div class="blog-upload-drop-hint">JPG, PNG — max 5 MB</div>
+              <input type="file" id="coverImageInput" name="cover_image"
+                     accept="image/jpeg,image/png,image/webp"
+                     class="blog-upload-file-input"
+                     onchange="blogUploadPreview(this)">
+            </label>
+
+            {# ── JS live preview ── #}
+            <div class="blog-upload-new-preview" id="newImgPreview" hidden>
+              <img id="newImgPreviewImg" src="" alt="New image preview">
+              <span class="blog-upload-new-badge">New image selected</span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label">Accent colour <span style="font-size:11px;font-weight:400;color:#9ca3af">(fallback when no image)</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" name="cover_color"
+                   value="{{ post.cover_color|default:'#d90429' }}"
+                   style="width:46px;height:38px;border:none;cursor:pointer;background:none">
+            <input type="text" name="cover_color_text" class="adm-settings-input"
+                   value="{{ post.cover_color|default:'#d90429' }}" placeholder="#d90429"
+                   style="flex:1" oninput="this.previousElementSibling.value=this.value">
+          </div>
+        </div>
+
+        <div class="adm-settings-field" style="grid-column:1/-1">
+          <label class="adm-settings-label">Excerpt * <span style="font-size:11px;font-weight:400;color:#9ca3af">(shown on blog list, max 300 chars)</span></label>
+          <textarea name="excerpt" class="adm-settings-input" rows="2" required
+                    maxlength="300" placeholder="A punchy one-liner that makes readers click...">{{ post.excerpt|default:'' }}</textarea>
+        </div>
+
+        <div class="adm-settings-field" style="grid-column:1/-1">
+          <label class="adm-settings-label">Body * <span style="font-size:11px;font-weight:400;color:#9ca3af">(one blank line = new paragraph)</span></label>
+          <textarea name="body" class="adm-settings-input" rows="18" required
+                    placeholder="Write your article here. Leave a blank line between paragraphs.">{{ post.body|default:'' }}</textarea>
+        </div>
+
+        <div class="adm-settings-field">
+          <label class="adm-settings-label">Author name</label>
+          <input type="text" name="author" class="adm-settings-input"
+                 value="{{ post.author|default:'Target JobSpace Team' }}">
+        </div>
+
+        <div class="adm-settings-field" style="justify-content:center">
+          <label class="adm-settings-label" style="gap:10px;cursor:pointer">
+            <input type="checkbox" name="is_published" value="1"
+                   {% if post == None or post.is_published %}checked{% endif %}
+                   style="width:18px;height:18px;accent-color:#d90429">
+            Publish immediately (visible on the public blog)
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f0f2f7;display:flex;gap:12px">
+        <button type="submit" class="adm-btn adm-btn--primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ action }} post
+        </button>
+        <a href="{% url 'website:admin_blog_list' %}" class="adm-btn adm-btn--ghost">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+<script>
+// Sync colour picker → text input
+document.querySelector('input[type="color"]')?.addEventListener('input', function(){
+  this.nextElementSibling.value = this.value;
+});
+// Auto-generate slug from title (only when slug is empty)
+var titleInput = document.querySelector('input[name="title"]');
+var slugInput  = document.querySelector('input[name="slug"]');
+if (titleInput && slugInput) {
+  titleInput.addEventListener('input', function(){
+    if (slugInput.value) return; // don't overwrite manual slug
+    slugInput.value = titleInput.value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+  });
+}
+// Live preview of selected cover image
+function blogUploadPreview(input) {
+  var preview = document.getElementById('newImgPreview');
+  var img     = document.getElementById('newImgPreviewImg');
+  if (!input.files || !input.files[0]) { preview.hidden = true; return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    img.src = e.target.result;
+    preview.hidden = false;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+{% endblock %}

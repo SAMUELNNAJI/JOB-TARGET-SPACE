@@ -2595,3 +2595,163 @@ def admin_support_send(request):
         "mine":    True,
     })
 
+
+
+# ─────────────────────────────────────────────────────────────
+# Blog — public views
+# ─────────────────────────────────────────────────────────────
+
+from .models import BlogPost
+
+
+def blog_list(request):
+    """Public blog / career advice listing page."""
+    category = request.GET.get("category", "")
+    posts = BlogPost.objects.filter(is_published=True)
+    if category:
+        posts = posts.filter(category=category)
+    return render(request, "blog/list.html", {
+        "posts":      posts,
+        "categories": BlogPost.Category.choices,
+        "active_cat": category,
+    })
+
+
+def blog_detail(request, slug):
+    """Public single article page."""
+    post   = get_object_or_404(BlogPost, slug=slug, is_published=True)
+    recent = BlogPost.objects.filter(is_published=True).exclude(pk=post.pk)[:3]
+    return render(request, "blog/detail.html", {
+        "post":   post,
+        "recent": recent,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# Blog — admin dashboard CRUD
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_blog_list(request):
+    posts = BlogPost.objects.all()
+    return render(request, "dashboard/admin/blog.html", {
+        "page_obj":     paginate(request, posts),
+        "unread_count": 0,
+        "section":      "list",
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_blog_create(request):
+    from django.utils.text import slugify
+    error = None
+    if request.method == "POST":
+        title        = request.POST.get("title", "").strip()
+        slug_input   = request.POST.get("slug", "").strip() or slugify(title)
+        category     = request.POST.get("category", BlogPost.Category.CAREER)
+        excerpt      = request.POST.get("excerpt", "").strip()
+        body         = request.POST.get("body", "").strip()
+        cover_color  = request.POST.get("cover_color", "#d90429").strip()
+        author       = request.POST.get("author", "Target JobSpace Team").strip()
+        is_published = request.POST.get("is_published") == "1"
+        cover_image  = request.FILES.get("cover_image")
+
+        if not title:
+            error = "Title is required."
+        elif not body:
+            error = "Body content is required."
+        elif not excerpt:
+            error = "Excerpt is required."
+        elif BlogPost.objects.filter(slug=slug_input).exists():
+            error = f"A post with slug '{slug_input}' already exists — change the title or slug."
+        else:
+            post = BlogPost(
+                title=title, slug=slug_input, category=category,
+                excerpt=excerpt, body=body, cover_color=cover_color,
+                author=author, is_published=is_published,
+            )
+            if cover_image:
+                post.cover_image = cover_image
+            post.save()
+            AuditLog.objects.create(actor=request.user, action="Blog post created", subject=post.title)
+            messages.success(request, f'Blog post "{post.title}" created.')
+            return redirect("website:admin_blog_list")
+
+    return render(request, "dashboard/admin/blog_form.html", {
+        "unread_count": 0,
+        "action":       "Create",
+        "categories":   BlogPost.Category.choices,
+        "error":        error,
+        "post":         None,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_blog_edit(request, post_id):
+    from django.utils.text import slugify
+    post  = get_object_or_404(BlogPost, pk=post_id)
+    error = None
+    if request.method == "POST":
+        title        = request.POST.get("title", "").strip()
+        slug_input   = request.POST.get("slug", "").strip() or slugify(title)
+        category     = request.POST.get("category", post.category)
+        excerpt      = request.POST.get("excerpt", "").strip()
+        body         = request.POST.get("body", "").strip()
+        cover_color  = request.POST.get("cover_color", post.cover_color).strip()
+        author       = request.POST.get("author", post.author).strip()
+        is_published = request.POST.get("is_published") == "1"
+        cover_image  = request.FILES.get("cover_image")
+        remove_image = request.POST.get("remove_image") == "1"
+
+        if not title:
+            error = "Title is required."
+        elif not body:
+            error = "Body content is required."
+        elif not excerpt:
+            error = "Excerpt is required."
+        elif BlogPost.objects.filter(slug=slug_input).exclude(pk=post.pk).exists():
+            error = f"Slug '{slug_input}' is already used by another post."
+        else:
+            post.title       = title
+            post.slug        = slug_input
+            post.category    = category
+            post.excerpt     = excerpt
+            post.body        = body
+            post.cover_color = cover_color
+            post.author      = author
+            post.is_published = is_published
+            if remove_image:
+                post.cover_image = None
+            elif cover_image:
+                post.cover_image = cover_image
+            post.save()
+            AuditLog.objects.create(actor=request.user, action="Blog post updated", subject=post.title)
+            messages.success(request, f'Blog post "{post.title}" updated.')
+            return redirect("website:admin_blog_list")
+
+    return render(request, "dashboard/admin/blog_form.html", {
+        "unread_count": 0,
+        "action":       "Edit",
+        "categories":   BlogPost.Category.choices,
+        "error":        error,
+        "post":         post,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def admin_blog_delete(request, post_id):
+    post = get_object_or_404(BlogPost, pk=post_id)
+    if request.method == "POST":
+        title = post.title
+        post.delete()
+        AuditLog.objects.create(
+            actor=request.user,
+            action="Blog post deleted",
+            subject=title,
+        )
+        messages.success(request, f'Blog post "{title}" deleted.')
+    return redirect("website:admin_blog_list")

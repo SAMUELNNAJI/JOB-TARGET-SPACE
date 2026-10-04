@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Career Advice Blog — Target JobSpace{% endblock %}
+
+{% block page_styles %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=18">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=18">
+  <link rel="stylesheet" href="{% static 'css/blog.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="blog-page-root">
+
+{# ── Hero — uses the same .page-hero class as every other public page ── #}
+<section class="page-hero blog-list-hero"
+         style="--bg:url('https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1800&q=85')">
+  <small class="eyebrow">✦ CAREER INTELLIGENCE</small>
+  <h1>Advice that<br><em>actually hits.</em></h1>
+  <p>Real career moves, hiring secrets, salary hacks and workplace truths — straight from the Target JobSpace team.</p>
+  <div class="blog-hero-stats">
+    <div class="blog-hero-stat"><strong>{{ posts|length }}</strong><span>Articles</span></div>
+    <div class="blog-hero-stat"><strong>6</strong><span>Topics</span></div>
+    <div class="blog-hero-stat"><strong>Free</strong><span>Always</span></div>
+  </div>
+</section>
+
+{# ── Category filter ── #}
+<div class="blog-filter-wrap">
+  <div class="blog-filter-inner">
+    <a href="/blog/" class="blog-filter-pill {% if not active_cat %}is-active{% endif %}">All posts</a>
+    {% for val, label in categories %}
+      <a href="/blog/?category={{ val }}" class="blog-filter-pill {% if active_cat == val %}is-active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Post grid ── #}
+<div class="blog-grid-wrap">
+  {% if posts %}
+    <div class="blog-grid">
+      {% for post in posts %}
+        <a class="blog-card" href="{{ post.get_absolute_url }}" style="--card-color:{{ post.cover_color }}">
+          <div class="blog-card-cover">
+            {% if post.cover_image %}
+              <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" class="blog-card-img" loading="lazy">
+            {% else %}
+              <div class="blog-card-img-fallback">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.35">
+                  {% if post.category == 'salary' %}<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  {% elif post.category == 'interview' %}<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  {% elif post.category == 'hiring' %}<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  {% elif post.category == 'workplace' %}<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                  {% elif post.category == 'industry' %}<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  {% else %}<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>{% endif %}
+                </svg>
+              </div>
+            {% endif %}
+            <span class="blog-card-cat">{{ post.get_category_display }}</span>
+          </div>
+          <div class="blog-card-body">
+            <h2 class="blog-card-title">{{ post.title }}</h2>
+            <p class="blog-card-excerpt">{{ post.excerpt|truncatechars:110 }}</p>
+            <div class="blog-card-foot">
+              <span class="blog-card-author">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {{ post.author }}
+              </span>
+              <span class="blog-card-meta">{{ post.created_at|date:"d M Y" }} · {{ post.read_time }}</span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="blog-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h3>No posts in this category yet.</h3>
+      <p><a href="/blog/">See all posts →</a></p>
+    </div>
+  {% endif %}
+</div>
+
+{# ── CTA strip ── #}
+<section class="blog-cta-strip">
+  <div class="blog-cta-inner">
+    <div>
+      <h2>Ready to make your move?</h2>
+      <p>Create your profile and let Target JobSpace match you with the right opportunity.</p>
+    </div>
+    <div class="blog-cta-actions">
+      <a class="button" href="/signup/?role=candidate">Join as Candidate →</a>
+      <a class="outline" href="/signup/?role=employer">Hire Talent →</a>
+    </div>
+  </div>
+</section>
+
+</div>
+
+{% endblock %}

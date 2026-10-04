@@ -1,0 +1,245 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Blog Posts - Target JobSpace{% endblock %}
+{% block notification_count %}0{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Admin blog management — responsive "All blog posts" list ──
+   Scoped to this page via .blog-posts-card so no other dashboard table changes.
+   ≤900px  : each row renders as a card — phones and portrait tablets (768px).
+   901–1024: compact table — landscape tablets fit all 7 columns without a
+             sideways scroll; sticky title column as a safety net.
+   ≥1025px : untouched desktop table. */
+
+/* Panel head wraps instead of squeezing the "New post" button. */
+.blog-posts-card .dashboard-panel-head {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── Landscape tablets / small laptops: compact but still tabular ── */
+@media (min-width: 901px) and (max-width: 1024px) {
+  .blog-posts-card .portal-table th {
+    padding: 11px 7px !important;
+    font-size: 10.5px !important;
+  }
+  .blog-posts-card .portal-table td {
+    padding: 12px 7px !important;
+    font-size: 12.5px !important;
+    overflow-wrap: anywhere;
+  }
+  /* Relax the shared 780px floor so the table hugs its content. */
+  .blog-posts-card .dashboard-table-scroll .portal-table {
+    min-width: 640px;
+  }
+  .blog-posts-card .adm-act {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .blog-posts-card .adm-row-btn {
+    padding: 7px 10px !important;
+    font-size: 11.5px !important;
+  }
+  /* Safety net: if a row still overflows, keep the title anchored while
+     the scroller moves sideways. */
+  .blog-posts-card .dashboard-table-scroll .portal-table th:first-child,
+  .blog-posts-card .dashboard-table-scroll .portal-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fff;
+    box-shadow: 1px 0 0 var(--dash-line, #e8ebf2);
+  }
+  .blog-posts-card .dashboard-table-scroll .portal-table thead th:first-child {
+    z-index: 2;
+  }
+}
+
+/* ── Phones & portrait tablets: rows become cards (no sideways scrolling) ── */
+@media (max-width: 900px) {
+  /* Drop the shared min-width floors — cards never scroll sideways. */
+  .blog-posts-card .dashboard-table-scroll .portal-table {
+    min-width: 0;
+  }
+  .blog-posts-card .portal-table,
+  .blog-posts-card .portal-table tbody {
+    display: block;
+    width: 100%;
+    margin-top: 0;
+  }
+  .blog-posts-card .portal-table thead {
+    display: none;
+  }
+  .blog-posts-card .portal-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    padding: 14px 15px;
+    border: 1px solid var(--dash-line, #e8ebf2);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  }
+  .blog-posts-card .portal-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+  /* Each cell becomes a label / value row. The labels come from data-label,
+     which is what lets the column header row be hidden entirely. */
+  .blog-posts-card .portal-table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 7px 0 !important;
+    border-bottom: 1px dashed #eef0f5;
+    font-size: 13px !important;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .blog-posts-card .portal-table td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    font: 700 10.5px/1.4 "Montserrat", sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    text-align: left;
+  }
+  /* Neutralise the shared ≤760px sticky first column so it cannot paint a
+     stray edge line down the side of a card. */
+  .blog-posts-card .portal-table td:first-child {
+    position: static;
+    box-shadow: none;
+  }
+  /* Title cell = card header. */
+  .blog-posts-card .portal-table td.blog-posts-cell--title {
+    display: block;
+    padding: 0 0 10px !important;
+    margin-bottom: 7px;
+    border-bottom: 1px solid var(--dash-line, #e8ebf2);
+    text-align: left;
+  }
+  .blog-posts-card .portal-table td.blog-posts-cell--title strong {
+    display: block;
+    font-size: 15px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  /* Actions cell = full-width, thumb-sized buttons. */
+  .blog-posts-card .portal-table td.blog-posts-cell--actions {
+    display: block;
+    padding: 12px 0 0 !important;
+    border-bottom: 0;
+    text-align: left;
+  }
+  .blog-posts-card .adm-act-group {
+    display: flex;
+    gap: 8px;
+  }
+  .blog-posts-card .adm-act-group > * {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+  }
+  .blog-posts-card .adm-act-group > a,
+  .blog-posts-card .adm-act-group > form {
+    display: flex;
+  }
+  .blog-posts-card .adm-act-group > a {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .blog-posts-card .adm-act-group > form > .adm-act {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+  }
+  .blog-posts-card .adm-act-group > a,
+  .blog-posts-card .adm-act-group > form > .adm-act {
+    min-height: 40px;
+  }
+  /* Empty-state row keeps its centred message (inline padding is overridden
+     so the card stays compact). */
+  .blog-posts-card .portal-table td[colspan] {
+    display: block;
+    padding: 22px 6px !important;
+    border-bottom: 0;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-content adm-home">
+  <section class="dash-hero">
+    <div class="dash-hero-bg"><span class="dash-hero-orb dash-hero-orb--1" style="--orb-col:#d90429"></span><span class="dash-hero-orb dash-hero-orb--2"></span><div class="dash-hero-grid"></div></div>
+    <div class="dash-hero-content">
+      <span class="dash-hero-kicker">BLOG MANAGEMENT</span>
+      <h1 class="dash-hero-title">Career advice<br><em>you control.</em></h1>
+      <p class="dash-hero-sub">Create, edit and publish articles that appear on the public Career Advice blog.</p>
+    </div>
+    <div class="dash-hero-stat"><strong>{{ page_obj.paginator.count }}</strong><span>Posts</span></div>
+  </section>
+
+  {% if messages %}
+    <div class="adm-flash">{% for m in messages %}<div class="adm-flash-item adm-flash-item--{{ m.tags }}">{{ m }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <section class="dashboard-panel admin-table-card blog-posts-card">
+    <div class="dashboard-panel-head">
+      <h2>All blog posts</h2>
+      <a class="adm-btn adm-btn--primary" href="{% url 'website:admin_blog_create' %}" style="color:#fff;text-decoration:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New post
+      </a>
+    </div>
+    <div class="dashboard-table-scroll" tabindex="0" role="region" aria-label="Blog posts table">
+      <table class="portal-table">
+        <thead>
+          <tr><th>Title</th><th>Category</th><th>Author</th><th>Status</th><th>Date</th><th>Read time</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for post in page_obj %}
+            <tr>
+              <td class="blog-posts-cell--title">
+                <strong>{{ post.title }}</strong>
+                <div style="font-size:11px;color:#9ca3af;margin-top:2px">{{ post.excerpt|truncatechars:60 }}</div>
+              </td>
+              <td data-label="Category"><span class="adm-status-badge" style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd">{{ post.get_category_display }}</span></td>
+              <td data-label="Author">{{ post.author }}</td>
+              <td data-label="Status">
+                {% if post.is_published %}
+                  <span class="adm-status-badge adm-status-badge--verified">Published</span>
+                {% else %}
+                  <span class="adm-status-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0">Draft</span>
+                {% endif %}
+              </td>
+              <td data-label="Date">{{ post.created_at|date:"d M Y" }}</td>
+              <td data-label="Read time">{{ post.read_time }}</td>
+              <td class="blog-posts-cell--actions">
+                <div class="adm-act-group">
+                  <a class="adm-act adm-act--verify" href="{% url 'website:admin_blog_edit' post.pk %}">Edit</a>
+                  <a class="adm-row-btn" href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">View</a>
+                  <form method="post" action="{% url 'website:admin_blog_delete' post.pk %}"
+                        data-confirm="Delete '{{ post.title }}'? This cannot be undone.">
+                    {% csrf_token %}
+                    <button type="submit" class="adm-act adm-act--reject">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af">No blog posts yet. <a href="{% url 'website:admin_blog_create' %}" style="color:#d90429">Create the first one →</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/pagination.html" %}
+  </section>
+</main>
+<script>
+document.querySelectorAll('form[data-confirm]').forEach(function(f){
+  f.addEventListener('submit',function(e){ if(!confirm(f.dataset.confirm)) e.preventDefault(); });
+});
+</script>
+{% endblock %}
