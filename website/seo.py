@@ -95,17 +95,27 @@ PAGE_SEO = {
         "priority": "0.3",
         "changefreq": "yearly",
     },
+    "blog": {
+        "title": "Career Advice Blog — Target JobSpace",
+        "description": (
+            "Real career advice, salary negotiation tips, interview prep and hiring insights "
+            "from the Target JobSpace team. Written for Nigerian professionals and employers."
+        ),
+        "priority": "0.8",
+        "changefreq": "weekly",
+    },
 }
 
 # The URL slug each page key is served at.
 PAGE_SLUGS = {
-    "about": "about",
-    "employers": "employers",
-    "candidates": "candidates",
-    "how_it_works": "how-it-works",
-    "contact": "contact",
-    "privacy": "privacy",
-    "terms": "terms",
+    "about":       "about",
+    "employers":   "employers",
+    "candidates":  "candidates",
+    "how_it_works":"how-it-works",
+    "contact":     "contact",
+    "privacy":     "privacy",
+    "terms":       "terms",
+    "blog":        "blog",
 }
 
 # Reverse lookup, built once.
@@ -134,6 +144,8 @@ def _page_key(path):
     """Map a request path to a PAGE_SEO key, or None if it is not a public page."""
     if path == "/":
         return "home"
+    if path.startswith("/blog/"):
+        return "blog"   # handled separately in the blog views
     return _SLUG_TO_KEY.get(path.strip("/"))
 
 
@@ -200,8 +212,6 @@ def seo(request):
     key = _page_key(path)
     if key is None:
         # An unknown public URL — a 404, or a new page with no metadata yet.
-        # noindex is the safe default: absent from results beats a thin page
-        # competing with the real content.
         return page(
             {
                 "title": "Target JobSpace",
@@ -210,6 +220,32 @@ def seo(request):
                 "json_ld": None,
             },
             indexable=False,
+        )
+
+    # Blog list page
+    if key == "blog":
+        meta = PAGE_SEO["blog"]
+        return page(
+            {
+                "title": meta["title"],
+                "description": meta["description"],
+                "robots": "index, follow",
+                "priority": meta["priority"],
+                "changefreq": meta["changefreq"],
+                "json_ld": {
+                    "@context": "https://schema.org",
+                    "@type": "Blog",
+                    "name": "Target JobSpace Career Advice",
+                    "description": meta["description"],
+                    "url": canonical,
+                    "publisher": {
+                        "@type": "Organization",
+                        "name": "Target JobSpace",
+                        "url": _absolute(request, "/"),
+                    },
+                },
+            },
+            indexable=True,
         )
 
     meta = PAGE_SEO[key]

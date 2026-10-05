@@ -23,18 +23,16 @@ def _abs(request, path):
 
 @never_cache
 def sitemap(request):
-    """XML sitemap of the public pages.
-
-    @never_cache is deliberate: a crawler must see the current list, and a
-    cached sitemap is the usual reason new pages stay undiscovered.
-    """
-    base = _abs(request, "/")
+    """XML sitemap of the public pages + all published blog posts."""
+    base    = _abs(request, "/")
     lastmod = timezone.now().date().isoformat()
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
+
+    # Static public pages
     for key, meta in PAGE_SEO.items():
         path = "/" if key == "home" else f"/{PAGE_SLUGS[key]}/"
         lines += [
@@ -45,6 +43,23 @@ def sitemap(request):
             f"    <priority>{meta['priority']}</priority>",
             "  </url>",
         ]
+
+    # Individual blog posts — highest priority, indexed immediately
+    try:
+        from .models import BlogPost
+        for post in BlogPost.objects.filter(is_published=True).order_by("-updated_at"):
+            post_lastmod = post.updated_at.date().isoformat()
+            lines += [
+                "  <url>",
+                f"    <loc>{base.rstrip('')}/blog/{post.slug}/</loc>",
+                f"    <lastmod>{post_lastmod}</lastmod>",
+                "    <changefreq>monthly</changefreq>",
+                "    <priority>0.8</priority>",
+                "  </url>",
+            ]
+    except Exception:
+        pass
+
     lines.append("</urlset>")
 
     return HttpResponse(

@@ -3,6 +3,79 @@
 
 {% block title %}{{ post.title }} — Target JobSpace Blog{% endblock %}
 
+{# ── Full SEO override for blog post ── #}
+{% block extra_head %}
+<meta name="description" content="{{ post.excerpt }}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+{# Open Graph #}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ post.title }} — Target JobSpace Blog">
+<meta property="og:description" content="{{ post.excerpt }}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:site_name" content="Target JobSpace">
+<meta property="og:locale" content="en_NG">
+{% if post.cover_image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.cover_image.url }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
+<meta property="article:published_time" content="{{ post.created_at|date:'c' }}">
+<meta property="article:modified_time" content="{{ post.updated_at|date:'c' }}">
+<meta property="article:author" content="{{ post.author }}">
+<meta property="article:section" content="{{ post.get_category_display }}">
+
+{# Twitter Card #}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ post.title }} — Target JobSpace">
+<meta name="twitter:description" content="{{ post.excerpt }}">
+{% if post.cover_image %}
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.cover_image.url }}">
+{% endif %}
+
+{# JSON-LD Article schema — the main signal for Google rich results #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ post.title|escapejs }}",
+  "description": "{{ post.excerpt|escapejs }}",
+  "datePublished": "{{ post.created_at|date:'c' }}",
+  "dateModified": "{{ post.updated_at|date:'c' }}",
+  "author": {
+    "@type": "Organization",
+    "name": "{{ post.author|escapejs }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Target JobSpace",
+    "url": "{{ request.scheme }}://{{ request.get_host }}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/Logo.png' %}"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.build_absolute_uri }}"
+  },
+  "url": "{{ request.build_absolute_uri }}",
+  "inLanguage": "en-NG",
+  "articleSection": "{{ post.get_category_display|escapejs }}"
+  {% if post.cover_image %}
+  ,"image": {
+    "@type": "ImageObject",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{{ post.cover_image.url }}",
+    "width": 1200,
+    "height": 630
+  }
+  {% endif %}
+}
+</script>
+{% endblock %}
+
 {% block page_styles %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}?v=18">
   <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=18">
@@ -10,6 +83,7 @@
 {% endblock %}
 
 {% block content %}
+{# ── Per-post SEO injected directly so it overrides the context processor ── #}
 
 {# ── Full-width cover image or colour banner ── #}
 <div class="bdet-cover" style="--card-color:{{ post.cover_color }}">
