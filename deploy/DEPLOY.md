@@ -322,6 +322,42 @@ health check sends the right `Host` header:
 nano /var/www/jobspace/deploy/deploy.sh
 ```
 
+## Daily subscription reminder emails
+
+`manage.py send_subscription_reminders` sweeps every active subscription and
+sends, each exactly once per subscription:
+
+- a **renewal warning** when 10 days or fewer remain;
+- an **expiry notice** the moment the plan lapses (also deactivates it and
+  creates the in-app notification).
+
+The employer dashboard ALSO runs the same sweep lazily on page views, so the
+emails go out even with no scheduler at all — but only cron sends them on
+time for employers who never log in. Add one crontab line (as the `jobspace`
+user). Settings read `/var/www/jobspace/.env` through `load_dotenv`, so no
+extra environment plumbing is needed:
+
+```bash
+sudo -u jobspace crontab -e
+```
+
+```
+# Every morning at 8:00 — subscription renewal + expiry emails.
+0 8 * * * cd /var/www/jobspace && venv/bin/python manage.py send_subscription_reminders >> /var/www/jobspace/reminders.log 2>&1
+```
+
+Verify the line took and sanity-probe the command by hand:
+
+```bash
+sudo -u jobspace crontab -l
+sudo -u jobspace bash -c 'cd /var/www/jobspace && venv/bin/python manage.py send_subscription_reminders'
+```
+
+Re-running is always safe: timestamp markers on each subscription row mean a
+second run sends nothing. If an employer never got a mail, check
+`journalctl`/the reminders log for `Email failed ...` lines (usually Zepto
+credentials or an unverified sending domain).
+
 ## When something breaks
 
 ```bash

@@ -482,35 +482,16 @@ def _employer_profile(request):
     return get_object_or_404(Profile, user=request.user, role=Profile.Role.EMPLOYER)
 
 
-def _sweep_expired_plans(employer):
-    """Notify the employer once per plan the moment it lapses.
+def _sweep_subscriptions(employer):
+    """Lazy lifecycle sweep on every employer page view (no cron needed).
 
-    Runs lazily on page views (no cron needed): the first view after a plan's
-    `expires_at` flips its `is_active` off and sends a single "plan expired"
-    notification telling the employer to renew or upgrade. Returns the
-    freshly-lapsed subscription, or None when nothing just expired.
+    Thin wrapper around website.subscription_sweep so page views and the
+    daily `send_subscription_reminders` cron run the SAME implementation:
+    the 10-day renewal email and the moment-it-lapses email + notification,
+    each fired exactly once per subscription row.
     """
-    now = timezone.now()
-    lapsed = (
-        employer.subscriptions.filter(is_active=True, expires_at__lte=now)
-        .order_by("-expires_at").first()
-    )
-    if lapsed is None or lapsed.expiry_notified_at is not None:
-        return None
-    lapsed.is_active = False
-    lapsed.expiry_notified_at = now
-    lapsed.save(update_fields=["is_active", "expiry_notified_at"])
-    employer.notify(
-        title="Your subscription plan has expired",
-        message=(
-            f"Your {lapsed.get_plan_display()} plan expired on "
-            f"{lapsed.expires_at.strftime('%d %b %Y')}. You can no longer submit "
-            "recruitment requests until you renew or upgrade your plan. "
-            "Visit the Subscription page to choose a plan and upload your payment proof."
-        ),
-        kind=Notification.Kind.PAYMENT,
-    )
-    return lapsed
+    from .subscription_sweep import sweep_subscriptions
+    return sweep_subscriptions(employer.subscriptions.filter(is_active=True))
 
 
 # ─────────────────────────────────────────────────────────────
@@ -520,7 +501,7 @@ def _sweep_expired_plans(employer):
 @login_required
 def employer_dashboard(request):
     employer = _employer_profile(request)
-    _sweep_expired_plans(employer)
+    _sweep_subscriptions(employer)
     return render(request, "dashboard/employer/index.html", {
         "employer":      employer,
         "unread_count":  _unread_count(employer),
@@ -535,9 +516,10 @@ def employer_dashboard(request):
 @login_required
 def employer_section(request, section):
     employer = _employer_profile(request)
-    # Lazy expiry sweep: the first page view after a plan lapses flips it
-    # off and notifies the employer exactly once (no cron required).
-    _sweep_expired_plans(employer)
+    # Lazy lifecycle sweep: the first page view after a plan enters the
+    # 10-day window (or lapses) fires the reminder/notification emails —
+    # each exactly once (no cron required).
+    _sweep_subscriptions(employer)
     unread   = _unread_count(employer)
 
     # ── Profile ──────────────────────────────────────────────
@@ -1053,6 +1035,20 @@ def admin_payment_action(request, payment_id):
             ),
             kind=Notification.Kind.SYSTEM,
         )
+
+        # Confirmation email — same non-blocking pattern as signup / match
+        # mail: a failing SMTP backend must never break the admin request.
+        try:
+            from .emails import send_subscription_approved_email
+            send_subscription_approved_email(
+                payment.employer.user,
+                sub.get_plan_display(),
+                verified_amount,
+                sub.expires_at,
+                payment.reference,
+            )
+        except Exception:
+            pass
 
         AuditLog.objects.create(
             actor=request.user,

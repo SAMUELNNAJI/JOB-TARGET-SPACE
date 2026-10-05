@@ -345,3 +345,91 @@ def send_subscription_approved_email(user, plan_label, amount, expires_at, refer
         preheader=f"Your {plan_label} plan is active until {expires_str}.",
     )
     _send(subject, text_body, html_body, user.email)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Renewal reminder — 10 days before the plan expires
+# ─────────────────────────────────────────────────────────────────────────────
+
+def send_subscription_expiring_email(subscription):
+    """Warn the employer once, with 10 days or fewer left on the plan.
+
+    Sent by website.subscription_sweep — never directly from a view.
+    """
+    sub = subscription
+    user = sub.employer.user
+    name = user.first_name or user.username
+    plan = sub.get_plan_display()
+    renew_url = f"{SITE_URL}/dashboard/employer/subscription/"
+    expires_str = sub.expires_at.strftime("%d %B %Y")
+    days = max((sub.expires_at.date() - timezone.now().date()).days, 0)
+    day_word = "day" if days == 1 else "days"
+    subject = f"Your {plan} plan expires in {days} {day_word} — renew to stay matched"
+    content_html = f"""
+    <h2 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#111827">Your plan is expiring soon ⏳</h2>
+    <p style="margin:0 0 18px">Hi {name},</p>
+    <p style="margin:0 0 18px">
+      Your <strong>{plan}</strong> subscription expires on
+      <strong>{expires_str}</strong> — in <strong>{days} {day_word}</strong>.
+      Renew before then to keep your recruitment requests running and your
+      matched candidates flowing without a break.</p>
+    <p style="margin:0 0 6px;padding:16px 18px;background:#fff8f8;border-left:4px solid #d6001d;border-radius:0 8px 8px 0;font-size:14px">
+      <strong>What happens if it lapses:</strong> you won't be able to submit new
+      recruitment requests or receive candidate matches until you renew.</p>
+    <p style="margin:16px 0 0;color:#6b7280;font-size:13.5px">
+      Renewing takes about two minutes — choose your plan, transfer, and upload
+      your proof; our team verifies it the same day.</p>"""
+    text_body = (
+        f"Hi {name},\n\n"
+        f"Your {plan} subscription expires on {expires_str} — in {days} {day_word}.\n\n"
+        "Renew to keep your recruitment requests running without a break. "
+        "After expiry you cannot submit new requests or receive candidate "
+        "matches until you renew.\n\n"
+        f"Renew here: {renew_url}\n"
+    )
+    html_body = _wrap_html(
+        subject, content_html, "Renew my plan", renew_url,
+        preheader=f"Your {plan} plan expires {expires_str} — {days} {day_word} left.",
+    )
+    _send(subject, text_body, html_body, user.email)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Expired — the plan has lapsed and access is off
+# ─────────────────────────────────────────────────────────────────────────────
+
+def send_subscription_expired_email(subscription):
+    """Tell the employer the plan has expired (sent once, alongside the in-app
+    notification created by website.subscription_sweep)."""
+    sub = subscription
+    user = sub.employer.user
+    name = user.first_name or user.username
+    plan = sub.get_plan_display()
+    renew_url = f"{SITE_URL}/dashboard/employer/subscription/"
+    expires_str = sub.expires_at.strftime("%d %B %Y")
+    subject = f"Your {plan} subscription has expired"
+    content_html = f"""
+    <h2 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#111827">Your subscription has expired</h2>
+    <p style="margin:0 0 18px">Hi {name},</p>
+    <p style="margin:0 0 18px">
+      Your <strong>{plan}</strong> plan expired on <strong>{expires_str}</strong>.
+      Your account, profiles and history are all still here — but you can no
+      longer submit recruitment requests or receive matched candidates.</p>
+    <p style="margin:0 0 6px;padding:16px 18px;background:#fff8f8;border-left:4px solid #d6001d;border-radius:0 8px 8px 0;font-size:14px">
+      <strong>Renew in minutes:</strong> choose a plan, transfer, and upload your
+      payment proof. Our team verifies it the same day and your access resumes
+      straight away.</p>
+    <p style="margin:16px 0 0;color:#6b7280;font-size:13.5px">
+      Questions? Reply to this email or contact us on WhatsApp — we're happy to help.</p>"""
+    text_body = (
+        f"Hi {name},\n\n"
+        f"Your {plan} subscription expired on {expires_str}.\n\n"
+        "Your account and history are still here, but you cannot submit "
+        "recruitment requests or receive matched candidates until you renew.\n\n"
+        f"Renew here: {renew_url}\n"
+    )
+    html_body = _wrap_html(
+        subject, content_html, "Renew your plan", renew_url,
+        preheader=f"Your {plan} plan expired {expires_str}. Renew to restore access.",
+    )
+    _send(subject, text_body, html_body, user.email)
