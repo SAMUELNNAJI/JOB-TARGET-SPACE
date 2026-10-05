@@ -2606,12 +2606,24 @@ from .models import BlogPost
 
 def blog_list(request):
     """Public blog / career advice listing page."""
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     category = request.GET.get("category", "")
-    posts = BlogPost.objects.filter(is_published=True)
+    posts_qs = BlogPost.objects.filter(is_published=True)
     if category:
-        posts = posts.filter(category=category)
+        posts_qs = posts_qs.filter(category=category)
+
+    paginator   = Paginator(posts_qs, 9)  # 9 per page — fills a 3-col grid
+    page_number = request.GET.get("page", 1)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     return render(request, "blog/list.html", {
-        "posts":      posts,
+        "posts":      page_obj,
+        "page_obj":   page_obj,
         "categories": BlogPost.Category.choices,
         "active_cat": category,
     })

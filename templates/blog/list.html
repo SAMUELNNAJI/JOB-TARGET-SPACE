@@ -81,6 +81,58 @@
   {% endif %}
 </div>
 
+{# ── Pagination ── #}
+{% if page_obj.has_other_pages %}
+<div class="blog-pagination">
+  <div class="blog-pag-inner">
+
+    {% if page_obj.has_previous %}
+      <a class="blog-pag-btn"
+         href="?page={{ page_obj.previous_page_number }}{% if active_cat %}&category={{ active_cat }}{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Previous
+      </a>
+    {% else %}
+      <span class="blog-pag-btn blog-pag-btn--disabled">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Previous
+      </span>
+    {% endif %}
+
+    <div class="blog-pag-pages">
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="blog-pag-page blog-pag-page--active">{{ num }}</span>
+        {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a class="blog-pag-page"
+             href="?page={{ num }}{% if active_cat %}&category={{ active_cat }}{% endif %}">{{ num }}</a>
+        {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+          <span class="blog-pag-ellipsis">…</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if page_obj.has_next %}
+      <a class="blog-pag-btn"
+         href="?page={{ page_obj.next_page_number }}{% if active_cat %}&category={{ active_cat }}{% endif %}">
+        Next
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    {% else %}
+      <span class="blog-pag-btn blog-pag-btn--disabled">
+        Next
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </span>
+    {% endif %}
+
+  </div>
+  <p class="blog-pag-info">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    &nbsp;·&nbsp; {{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }}
+  </p>
+</div>
+{% endif %}
+
 {# ── CTA strip ── #}
 <section class="blog-cta-strip">
   <div class="blog-cta-inner">
