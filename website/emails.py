@@ -13,6 +13,7 @@ Usage:
 import logging
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,9 @@ SITE_URL  = "https://targetjobspace.com"
 
 def _send(subject, text_body, html_body, to_email):
     """Low-level wrapper — never raises, always logs failures."""
+    if not to_email:
+        logger.warning("Email skipped, no recipient — %s", subject)
+        return
     try:
         from_email = getattr(settings, "DEFAULT_FROM_EMAIL", f"{SITE_NAME} <noreply@targetjobspace.com>")
         msg = EmailMultiAlternatives(subject, text_body, from_email, [to_email])
@@ -31,49 +35,78 @@ def _send(subject, text_body, html_body, to_email):
         logger.error("Email failed to %s — %s: %s", to_email, type(exc).__name__, exc)
 
 
-def _wrap_html(title, content_html, cta_text=None, cta_url=None):
-    """Wrap content in a minimal branded HTML email template."""
+def _wrap_html(title, content_html, cta_text=None, cta_url=None, preheader=None):
+    """Wrap content in the branded HTML email shell every message uses.
+
+    Table-based layout (the only thing Gmail, Outlook and Apple Mail all
+    render reliably), a hidden preheader so inbox previews show a useful
+    sentence instead of the raw HTML, a red accent bar, the dark brand
+    header, and a footer carrying the real-world contact details a
+    corporate email should always have.
+    """
+    preheader = preheader or title
     cta_block = ""
     if cta_text and cta_url:
         cta_block = f"""
-        <tr><td align="center" style="padding:24px 0 8px">
+        <tr><td align="center" style="padding:26px 36px 2px">
           <a href="{cta_url}"
-             style="display:inline-block;padding:14px 32px;background:#d90429;
-                    color:#fff;text-decoration:none;border-radius:999px;
-                    font-weight:700;font-size:15px;font-family:'Helvetica Neue',Arial,sans-serif">
-            {cta_text}
+             style="display:inline-block;padding:15px 34px;background:linear-gradient(135deg,#d6001d,#9b0015);
+                    color:#ffffff;text-decoration:none;border-radius:999px;
+                    font:700 15px/1 'Helvetica Neue',Arial,sans-serif">
+            {cta_text} &rarr;
           </a>
         </td></tr>"""
     return f"""<!doctype html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title}</title></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:'Helvetica Neue',Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 0">
-  <tr><td align="center">
-    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
-      <!-- Header -->
-      <tr><td style="background:linear-gradient(135deg,#090909,#1a0a0a);padding:28px 36px">
-        <span style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.5px">
-          Target <span style="color:#d90429">JobSpace</span>
-        </span>
-      </td></tr>
-      <!-- Body -->
-      <tr><td style="padding:36px 36px 24px;color:#111827;font-size:15px;line-height:1.7">
-        {content_html}
-      </td></tr>
-      {cta_block}
-      <!-- Footer -->
-      <tr><td style="padding:20px 36px 28px;border-top:1px solid #f0f0f0">
-        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">
-          You received this email because you have an account on
-          <a href="{SITE_URL}" style="color:#d90429">targetjobspace.com</a>.
-          If you did not create an account, please ignore this email.
-        </p>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>"""
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+  <title>{title}</title>
+</head>
+<body style="margin:0;padding:0;background:#eef1f7;font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased">
+  <!-- Hidden preheader: the sentence the inbox shows next to the subject -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:transparent">{preheader}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f7;padding:28px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e9f4;border-radius:16px;overflow:hidden">
+        <!-- Accent bar -->
+        <tr><td style="height:4px;background:linear-gradient(90deg,#d6001d,#ff4d6d);font-size:1px;line-height:1px">&nbsp;</td></tr>
+        <!-- Brand header -->
+        <tr><td style="background:#0a0c10;padding:22px 36px">
+          <a href="{SITE_URL}" style="text-decoration:none">
+            <span style="font:800 21px/1 'Helvetica Neue',Arial,sans-serif;color:#ffffff;letter-spacing:-.4px">Target&nbsp;<span style="color:#ff4d6d">JobSpace</span></span>
+          </a>
+        </td></tr>
+        <!-- Body -->
+        <tr><td style="padding:34px 36px 4px;color:#1f2937;font-size:15px;line-height:1.7;font-family:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif">
+          {content_html}
+        </td></tr>
+        {cta_block}
+        <!-- Spacer so the footer rule never hugs the CTA -->
+        <tr><td style="height:24px;font-size:1px;line-height:1px">&nbsp;</td></tr>
+        <!-- Footer -->
+        <tr><td style="background:#f8fafc;border-top:1px solid #eef1f6;padding:22px 36px 28px">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#374151">Target JobSpace</p>
+          <p style="margin:0 0 4px;font-size:12px;color:#8a93a6;line-height:1.7">
+            Bayo Dejonwo Street, Maryland, Lagos, Nigeria<br>
+            <a href="mailto:info@targetjobspace.com" style="color:#d6001d;text-decoration:none">info@targetjobspace.com</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://wa.me/2349136185082" style="color:#d6001d;text-decoration:none">+234 913 618 5082</a>
+          </p>
+          <p style="margin:14px 0 0;font-size:11px;color:#a5adbf;line-height:1.7">
+            You received this email because you have an account on
+            <a href="{SITE_URL}" style="color:#8a93a6;text-decoration:underline">targetjobspace.com</a>.
+            &nbsp;&middot;&nbsp; <a href="{SITE_URL}/privacy/" style="color:#8a93a6;text-decoration:underline">Privacy Policy</a>
+            &nbsp;&middot;&nbsp; <a href="{SITE_URL}/terms/" style="color:#8a93a6;text-decoration:underline">Terms of Service</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -259,3 +292,56 @@ def send_candidate_accepted_email(candidate_user, employer_name, position):
     )
     html_body = _wrap_html(subject, content_html, "Go to my dashboard", dashboard_url)
     _send(subject, text_body, html_body, candidate_user.email)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Subscription approved — admin verified the payment proof
+# ─────────────────────────────────────────────────────────────────────────────
+
+def send_subscription_approved_email(user, plan_label, amount, expires_at, reference=""):
+    """Confirm to an employer that their payment was approved and plan is live.
+
+    Called from views.admin_payment_action the moment staff approve a proof.
+    """
+    name = user.first_name or user.username
+    sub_url = f"{SITE_URL}/dashboard/employer/subscription/"
+    expires_str = expires_at.strftime("%d %b %Y")
+    subject = f"Payment approved — your {plan_label} plan is now active"
+    ref_row = ""
+    if reference:
+        ref_row = (
+            '<tr><td style="padding:12px 18px;color:#6b7280;border-bottom:1px solid #eef1f6">Payment reference</td>'
+            '<td style="padding:12px 18px;font-weight:700;color:#111827;border-bottom:1px solid #eef1f6;text-align:right">'
+            f"{reference}</td></tr>"
+        )
+    content_html = f"""
+    <h2 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#111827">You're all set, {name}! 🎉</h2>
+    <p style="margin:0 0 18px">Your payment has been reviewed and approved by our team.
+    Your <strong>{plan_label}</strong> subscription is now live — you can post recruitment
+    requests and receive matched candidates right away.</p>
+    <table style="width:100%;border-collapse:collapse;background:#f8fafc;border:1px solid #e4e9f4;border-radius:12px;font-size:14px">
+      <tr><td style="padding:12px 18px;color:#6b7280;border-bottom:1px solid #eef1f6">Plan activated</td>
+          <td style="padding:12px 18px;font-weight:700;color:#111827;border-bottom:1px solid #eef1f6;text-align:right">{plan_label}</td></tr>
+      <tr><td style="padding:12px 18px;color:#6b7280;border-bottom:1px solid #eef1f6">Amount verified</td>
+          <td style="padding:12px 18px;font-weight:700;color:#111827;border-bottom:1px solid #eef1f6;text-align:right">₦{amount:,}</td></tr>
+      {ref_row}
+      <tr><td style="padding:12px 18px;color:#6b7280">Active until</td>
+          <td style="padding:12px 18px;font-weight:700;color:#d6001d;text-align:right">{expires_str}</td></tr>
+    </table>
+    <p style="margin:18px 0 0;color:#6b7280;font-size:13.5px">
+      Questions about your plan or invoice? Reply to this email or message us on
+      WhatsApp — a real person will help.</p>"""
+    text_body = (
+        f"Hi {name},\n\n"
+        "Your payment has been approved and your subscription is now active.\n\n"
+        f"Plan: {plan_label}\n"
+        f"Amount verified: ₦{amount:,}\n"
+        + (f"Reference: {reference}\n" if reference else "")
+        + f"Active until: {expires_str}\n\n"
+        f"Subscription page: {sub_url}\n"
+    )
+    html_body = _wrap_html(
+        subject, content_html, "Go to my subscription", sub_url,
+        preheader=f"Your {plan_label} plan is active until {expires_str}.",
+    )
+    _send(subject, text_body, html_body, user.email)

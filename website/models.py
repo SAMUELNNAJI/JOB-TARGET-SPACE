@@ -222,6 +222,11 @@ class Subscription(models.Model):
     # Set the first time the expiry sweep notifies the employer, so the
     # "plan expired" notice is sent exactly once per subscription row.
     expiry_notified_at = models.DateTimeField(null=True, blank=True)
+    # Set when the "expires in 10 days" reminder email goes out — same
+    # once-per-row pattern as expiry_notified_at above, so the renewal
+    # warning can never be sent twice (page-view sweep AND daily cron both
+    # check this marker before sending).
+    renewal_reminder_sent_at = models.DateTimeField(null=True, blank=True)
 
     @property
     def plan_label(self):
