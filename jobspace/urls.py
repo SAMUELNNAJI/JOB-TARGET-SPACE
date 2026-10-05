@@ -18,6 +18,9 @@ from website import seo_views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("website.urls")),
+    # Django's built-in password reset flow (uses EMAIL_* settings to send the token).
+    # Served at /password-reset/ so it doesn't clash with /admin/password_change/.
+    path("password-reset/", include("django.contrib.auth.urls")),
     # SEO endpoints. Kept in the root urlconf because search engines look for
     # them at the site root, not under the app prefix.
     path("sitemap.xml", seo_views.sitemap, name="sitemap"),

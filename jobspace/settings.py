@@ -126,6 +126,8 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGIN_URL = "/signin/"
+LOGIN_REDIRECT_URL = "/signin/"
+PASSWORD_RESET_TIMEOUT = 86400  # link valid for 24 hours
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── Template filters ─────────────────────────────────────────────────────────
@@ -173,7 +175,24 @@ AUTH_PASSWORD_VALIDATORS = [
 # anyone who can read them is a target for invoice fraud, and do not put them
 # in a public template block.
 
-# ── Reverse proxy / TLS ─────────────────────────────────────────────────────
+# ── Email (Zepto SMTP) ────────────────────────────────────────────────────────
+# Set these in .env. While they are blank the backend falls back to
+# console output (prints to gunicorn log) so the app starts cleanly
+# even before Zepto credentials are configured.
+EMAIL_BACKEND   = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST      = os.environ.get("EMAIL_HOST", "smtp.zeptomail.com")
+EMAIL_PORT      = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS   = os.environ.get("EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL  = os.environ.get("DEFAULT_FROM_EMAIL", "Target JobSpace <noreply@targetjobspace.com>")
+SERVER_EMAIL        = DEFAULT_FROM_EMAIL
+CONTACT_EMAIL       = os.environ.get("CONTACT_EMAIL", "info@targetjobspace.com")
+
+# Graceful degradation: if credentials are missing, log emails to console
+# so the site works in development / before Zepto is configured.
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # nginx terminates TLS and forwards plain HTTP to gunicorn over a Unix socket.
 # Without this header Django believes every request arrived over http, so it
 # builds `http://` URLs, emits a redirect to the insecure scheme, and marks

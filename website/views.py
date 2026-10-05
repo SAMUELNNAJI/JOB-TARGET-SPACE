@@ -158,6 +158,22 @@ def _unread_count(profile):
 # ─────────────────────────────────────────────────────────────
 
 def page(request, page_name):
+    if page_name == "contact" and request.method == "POST":
+        name    = request.POST.get("name", "").strip()
+        email   = request.POST.get("email", "").strip()
+        phone   = request.POST.get("phone", "").strip()
+        subject = request.POST.get("subject", "").strip()
+        body    = request.POST.get("message", "").strip()
+        if name and email and body:
+            try:
+                from .emails import send_contact_email
+                send_contact_email(name, email, phone, subject, body)
+                messages.success(request, "Your message has been sent. We'll reply within one business day.")
+            except Exception:
+                messages.error(request, "Sorry, we could not send your message right now. Please email us directly.")
+        else:
+            messages.error(request, "Please fill in your name, email and message.")
+        return redirect("website:contact")
     return render(request, PAGE_NAMES[page_name])
 
 
@@ -170,6 +186,12 @@ def signup(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
+        # Send welcome email (non-blocking — failure is logged, never crashes)
+        try:
+            from .emails import send_welcome_email
+            send_welcome_email(user, role)
+        except Exception:
+            pass
         return redirect(
             "website:candidate_dashboard"
             if role == Profile.Role.CANDIDATE
@@ -754,6 +776,17 @@ def accept_candidate(request, match_id):
         action="Employer accepted candidate",
         subject=f"{employer.company_name} accepted {candidate_name} for {position}",
     )
+
+    # Email the candidate
+    try:
+        from .emails import send_candidate_accepted_email
+        send_candidate_accepted_email(
+            match.profile.user,
+            employer.company_name or employer.user.get_full_name() or employer.user.username,
+            position,
+        )
+    except Exception:
+        pass
 
     return JsonResponse({"ok": True, "accepted_at": match.accepted_at.strftime("%d %b %Y")})
 
@@ -1582,6 +1615,17 @@ def create_match(request):
         ),
         kind=Notification.Kind.MATCH,
     )
+
+    # Email the employer about the new candidate
+    try:
+        from .emails import send_candidate_matched_email
+        send_candidate_matched_email(
+            req_obj.employer.user,
+            _candidate_label(candidate),
+            req_obj.position,
+        )
+    except Exception:
+        pass
 
     return _matching_redirect(
         request, req_obj,
@@ -2589,6 +2633,21 @@ def admin_support_send(request):
         message=body[:120] + ("…" if len(body) > 120 else ""),
         kind=Notification.Kind.SYSTEM,
     )
+
+    # Email nudge — only if the user has been offline for more than 30 minutes.
+    # last_login is updated on every sign-in by Django's auth backend.
+    try:
+        from .emails import send_support_reply_nudge
+        user_obj = thread.profile.user
+        if user_obj.last_login:
+            offline_since = timezone.now() - user_obj.last_login
+            if offline_since.total_seconds() > 30 * 60:
+                send_support_reply_nudge(user_obj)
+        else:
+            # Never logged in after account creation — definitely offline
+            send_support_reply_nudge(user_obj)
+    except Exception:
+        pass
 
     return render(request, "dashboard/support/_message.html", {
         "message": message,
