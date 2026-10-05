@@ -1,0 +1,13 @@
+warning: in the working copy of 'static/css/pages.css', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'templates/registration/password_reset_complete.html', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'templates/registration/password_reset_confirm.html', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'templates/registration/password_reset_done.html', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'templates/registration/password_reset_form.html', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'website/seo.py', CRLF will be replaced by LF the next time Git touches it
+ static/css/pages.css                               |   8 [32m+[m
+ .../registration/password_reset_complete.html      | 101 [32m+++++++[m[31m---[m
+ templates/registration/password_reset_confirm.html | 203 [32m+++++++++++++++++[m[31m----[m
+ templates/registration/password_reset_done.html    | 101 [32m+++++++[m[31m---[m
+ templates/registration/password_reset_form.html    | 117 [32m+++++++++[m[31m---[m
+ website/seo.py                                     |   2 [32m+[m[31m-[m
+ 6 files changed, 413 insertions(+), 119 deletions(-)
