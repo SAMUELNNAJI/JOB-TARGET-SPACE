@@ -1,17 +1,22 @@
-"""Run with: python manage.py shell < tools/seed_blog.py"""
-import os, sys, django
+"""
+Seed 6 career advice blog posts and download their cover images.
+Run on the server:
+    sudo -u jobspace /var/www/jobspace/venv/bin/python /var/www/jobspace/tools/seed_blog.py
+"""
+import os, sys, django, urllib.request, tempfile
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "jobspace.settings")
 django.setup()
 
+from django.core.files import File
 from website.models import BlogPost
 
-posts = [
+POSTS = [
     {
         "title": "5 Salary Negotiation Secrets Nobody Tells You",
         "slug": "salary-negotiation-secrets",
         "category": "salary",
-        "cover_emoji": "💰",
         "cover_color": "#059669",
         "author": "Target JobSpace Team",
         "excerpt": "Most candidates leave serious money on the table because they negotiate wrong. Here are five moves that actually work — backed by real hiring data.",
@@ -45,7 +50,6 @@ posts = [
         "title": "How to Write a CV That Actually Gets Read in 2026",
         "slug": "cv-that-gets-read-2026",
         "category": "career",
-        "cover_emoji": "📄",
         "cover_color": "#2563eb",
         "author": "Target JobSpace Team",
         "excerpt": "Hiring managers spend an average of 6 seconds on a CV before deciding yes or no. Here is exactly how to make those 6 seconds count.",
@@ -73,7 +77,6 @@ posts = [
         "title": "The Interview Question That Trips Everyone Up (And How to Nail It)",
         "slug": "interview-question-tell-me-about-yourself",
         "category": "interview",
-        "cover_emoji": "🎯",
         "cover_color": "#7c3aed",
         "author": "Target JobSpace Team",
         "excerpt": "Tell me about yourself. It sounds simple. It ruins more interviews than any technical question. Here is the formula that works every time.",
@@ -100,7 +103,6 @@ posts = [
         "title": "Remote Work Is Here to Stay — How to Actually Thrive in It",
         "slug": "how-to-thrive-remote-work",
         "category": "workplace",
-        "cover_emoji": "🏠",
         "cover_color": "#0891b2",
         "author": "Target JobSpace Team",
         "excerpt": "Remote work has separated high performers from everyone else. The gap is not about discipline — it is about a few counterintuitive habits most people never figure out.",
@@ -127,7 +129,6 @@ posts = [
         "title": "Why Nigerian Graduates Are Getting Rejected (And How to Fix It)",
         "slug": "why-nigerian-graduates-getting-rejected",
         "category": "career",
-        "cover_emoji": "🌍",
         "cover_color": "#d97706",
         "author": "Target JobSpace Team",
         "excerpt": "The Nigerian job market is brutally competitive and most graduates are making the same five mistakes. Here is the honest breakdown — and the fix.",
@@ -155,7 +156,6 @@ posts = [
         "title": "The Hidden Job Market: 70% of Roles Are Never Advertised",
         "slug": "hidden-job-market-unadvertised-roles",
         "category": "hiring",
-        "cover_emoji": "🔍",
         "cover_color": "#dc2626",
         "author": "Target JobSpace Team",
         "excerpt": "Most jobs are never posted publicly. The companies that hire through platforms like Target JobSpace fill roles faster, quieter, and with better candidates. Here is how to tap into that.",
@@ -182,18 +182,19 @@ posts = [
     },
 ]
 
+# ── Create posts ──────────────────────────────────────────────────────────────
 created = 0
-for p in posts:
+for p in POSTS:
     if not BlogPost.objects.filter(slug=p["slug"]).exists():
         BlogPost.objects.create(**p)
         created += 1
+        print(f"  Created: {p['slug']}")
+    else:
+        print(f"  Already exists: {p['slug']}")
 
-print(f"Seeded {created} new posts. Total blog posts: {BlogPost.objects.count()}")
+print(f"\nSeeded {created} new posts. Total: {BlogPost.objects.count()}")
 
-# ── Download cover images from Unsplash ──────────────────────────────────────
-import urllib.request, tempfile, os
-from django.core.files import File
-
+# ── Download cover images ─────────────────────────────────────────────────────
 COVER_IMAGES = {
     "salary-negotiation-secrets":                ("https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80", "salary.jpg"),
     "cv-that-gets-read-2026":                    ("https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&q=80", "cv.jpg"),
@@ -219,7 +220,7 @@ for slug, (url, fname) in COVER_IMAGES.items():
     except Exception as e:
         print(f"  ERR {slug}: {e}")
 
-print("\nAll posts:")
+print("\nFinal state:")
 for p in BlogPost.objects.all():
     img = p.cover_image.name if p.cover_image else "NO IMAGE"
     print(f"  {p.slug[:50]:<50}  {img}")
