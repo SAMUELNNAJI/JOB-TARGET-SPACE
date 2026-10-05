@@ -124,7 +124,7 @@ _SLUG_TO_KEY = {slug: key for key, slug in PAGE_SLUGS.items()}
 # Anything under these prefixes is private and must never be indexed.
 PRIVATE_PREFIXES = (
     "/dashboard/", "/admin/", "/signin/", "/signup/", "/logout/",
-    "/documents/", "/payments/",
+    "/documents/", "/payments/", "/password-reset/",
 )
 
 
