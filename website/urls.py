@@ -18,6 +18,11 @@ urlpatterns = [
     # ── Blog — public ────────────────────────────────────────────────────
     path("blog/", views.blog_list, name="blog_list"),
     path("blog/<slug:slug>/", views.blog_detail, name="blog_detail"),
+    # Blog comments API (no login required)
+    path("blog/<slug:slug>/comments/", views.blog_comments, name="blog_comments"),
+    path("blog/<slug:slug>/comments/create/", views.blog_comment_create, name="blog_comment_create"),
+    path("blog/comments/<int:comment_id>/update/", views.blog_comment_update, name="blog_comment_update"),
+    path("blog/comments/<int:comment_id>/delete/", views.blog_comment_delete, name="blog_comment_delete"),
 
     # ── Auth ─────────────────────────────────────────────────────────────
     path("signin/", views.SignInView.as_view(), name="signin"),

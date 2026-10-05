@@ -2826,3 +2826,167 @@ def admin_blog_delete(request, post_id):
         )
         messages.success(request, f'Blog post "{title}" deleted.')
     return redirect("website:admin_blog_list")
+
+
+# ─────────────────────────────────────────────────────────────
+# Blog Comments — JSON API (no login required)
+# ─────────────────────────────────────────────────────────────
+
+from .models import BlogComment
+
+
+def _comment_dict(c, user=None, session_token=""):
+    return {
+        "id":          c.pk,
+        "parent_id":   c.parent_id,
+        "author":      c.author_label,
+        "avatar":      c.author_avatar,
+        "body":        c.body,
+        "created_at":  c.created_at.strftime("%d %b %Y, %H:%M"),
+        "is_anonymous": c.is_anonymous,
+        "can_edit":    c.can_edit(user, session_token),
+        "reply_count": c.replies.filter(is_approved=True).count() if not c.parent_id else 0,
+    }
+
+
+def blog_comments(request, slug):
+    """GET — return all approved comments for a post as JSON."""
+    post = get_object_or_404(BlogPost, slug=slug, is_published=True)
+    token = request.GET.get("token", "")
+    user  = request.user if request.user.is_authenticated else None
+
+    top_level = (
+        BlogComment.objects
+        .filter(post=post, parent=None, is_approved=True)
+        .prefetch_related("replies")
+        .order_by("created_at")
+    )
+    result = []
+    for c in top_level:
+        d = _comment_dict(c, user, token)
+        d["replies"] = [
+            _comment_dict(r, user, token)
+            for r in c.replies.filter(is_approved=True).order_by("created_at")
+        ]
+        result.append(d)
+
+    return JsonResponse({"comments": result, "total": len(result)})
+
+
+def blog_comment_create(request, slug):
+    """POST — create a comment or reply."""
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    import json as _json
+    post = get_object_or_404(BlogPost, slug=slug, is_published=True)
+
+    try:
+        data = _json.loads(request.body)
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Invalid JSON."}, status=400)
+
+    body        = (data.get("body") or "").strip()
+    name        = (data.get("name") or "").strip()
+    is_anon     = bool(data.get("is_anonymous"))
+    parent_id   = data.get("parent_id")
+    token       = (data.get("session_token") or "").strip()
+
+    if not body:
+        return JsonResponse({"ok": False, "error": "Comment cannot be empty."}, status=400)
+    if len(body) > 2000:
+        return JsonResponse({"ok": False, "error": "Comment is too long (max 2000 chars)."}, status=400)
+
+    user = request.user if request.user.is_authenticated else None
+
+    # Anonymous users must provide a name (unless posting as Anonymous)
+    if not user and not is_anon and not name:
+        return JsonResponse({"ok": False, "error": "Please enter your name or post anonymously."}, status=400)
+
+    # Validate parent
+    parent = None
+    if parent_id:
+        try:
+            parent = BlogComment.objects.get(pk=int(parent_id), post=post, parent=None, is_approved=True)
+        except (BlogComment.DoesNotExist, ValueError):
+            return JsonResponse({"ok": False, "error": "Invalid parent comment."}, status=400)
+
+    # Determine display name
+    if is_anon:
+        display_name = ""
+    elif user and not name:
+        display_name = user.first_name or user.username
+    else:
+        display_name = name[:60]
+
+    comment = BlogComment.objects.create(
+        post=post,
+        parent=parent,
+        user=user,
+        display_name=display_name,
+        is_anonymous=is_anon,
+        session_token=token[:64] if token else "",
+        body=body,
+    )
+
+    return JsonResponse({
+        "ok":      True,
+        "comment": _comment_dict(comment, user, token),
+    }, status=201)
+
+
+def blog_comment_update(request, comment_id):
+    """PATCH — edit a comment body (owner only)."""
+    if request.method != "PATCH":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["PATCH"])
+
+    import json as _json
+    comment = get_object_or_404(BlogComment, pk=comment_id, is_approved=True)
+
+    try:
+        data = _json.loads(request.body)
+    except ValueError:
+        return JsonResponse({"ok": False, "error": "Invalid JSON."}, status=400)
+
+    token = (data.get("session_token") or "").strip()
+    user  = request.user if request.user.is_authenticated else None
+
+    if not comment.can_edit(user, token):
+        return JsonResponse({"ok": False, "error": "You cannot edit this comment."}, status=403)
+
+    body = (data.get("body") or "").strip()
+    if not body:
+        return JsonResponse({"ok": False, "error": "Comment cannot be empty."}, status=400)
+    if len(body) > 2000:
+        return JsonResponse({"ok": False, "error": "Comment is too long."}, status=400)
+
+    comment.body = body
+    comment.save(update_fields=["body", "updated_at"])
+
+    return JsonResponse({"ok": True, "comment": _comment_dict(comment, user, token)})
+
+
+def blog_comment_delete(request, comment_id):
+    """DELETE — remove a comment and its replies (owner only)."""
+    if request.method != "DELETE":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["DELETE"])
+
+    import json as _json
+    comment = get_object_or_404(BlogComment, pk=comment_id, is_approved=True)
+
+    try:
+        data = _json.loads(request.body or b"{}")
+    except ValueError:
+        data = {}
+
+    token = (data.get("session_token") or "").strip()
+    user  = request.user if request.user.is_authenticated else None
+
+    if not comment.can_edit(user, token):
+        return JsonResponse({"ok": False, "error": "You cannot delete this comment."}, status=403)
+
+    comment.delete()
+    return JsonResponse({"ok": True})

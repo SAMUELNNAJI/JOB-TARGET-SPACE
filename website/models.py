@@ -553,3 +553,58 @@ class BlogPost(models.Model):
     @property
     def body_paragraphs(self):
         return [p.strip() for p in self.body.split("\n\n") if p.strip()]
+
+
+class BlogComment(models.Model):
+    """A comment on a blog post.
+
+    Works for both authenticated and anonymous users:
+    - Authenticated: user FK is set, display_name derived from user.
+    - Anonymous: user is null, display_name is provided by commenter.
+
+    Ownership for anonymous comments is verified by a session_token
+    (UUID stored in the browser's localStorage) so they can edit/delete
+    their own comments without logging in.
+
+    Replies are one level deep: parent is null for top-level comments,
+    set to a top-level comment id for replies.
+    """
+    post        = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name="comments")
+    parent      = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    display_name = models.CharField(max_length=60, blank=True)  # commenter-provided name
+    is_anonymous = models.BooleanField(default=False)           # hide real name
+    session_token = models.CharField(max_length=64, blank=True) # anon ownership proof
+    body        = models.TextField()
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+    is_approved = models.BooleanField(default=True)  # future moderation hook
+
+    class Meta:
+        ordering = ("created_at",)
+
+    def __str__(self):
+        return f"Comment by {self.author_label} on {self.post.slug}"
+
+    @property
+    def author_label(self):
+        if self.is_anonymous:
+            return "Anonymous"
+        if self.display_name:
+            return self.display_name
+        if self.user:
+            return self.user.first_name or self.user.username
+        return "Anonymous"
+
+    @property
+    def author_avatar(self):
+        label = self.author_label
+        return label[:2].upper() if label != "Anonymous" else "AN"
+
+    def can_edit(self, user, session_token=""):
+        """True if this user/token owns the comment."""
+        if user and user.is_authenticated and self.user_id == user.id:
+            return True
+        if session_token and self.session_token and session_token == self.session_token:
+            return True
+        return False

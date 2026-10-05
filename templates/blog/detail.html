@@ -219,4 +219,402 @@
   </div>
 </div>
 
+{# ── Comments section ── #}
+<section class="bcmt-wrap" id="comments"
+         data-post-slug="{{ post.slug }}"
+         data-comments-url="{% url 'website:blog_comments' post.slug %}"
+         data-create-url="{% url 'website:blog_comment_create' post.slug %}"
+         data-update-base="/blog/comments/"
+         data-delete-base="/blog/comments/"
+         data-user-auth="{{ request.user.is_authenticated|lower }}"
+         data-user-name="{{ request.user.first_name|default:request.user.username }}">
+
+  <div class="bcmt-inner">
+
+    <h2 class="bcmt-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Discussion
+      <span class="bcmt-count" id="bcmtCount">0</span>
+    </h2>
+
+    {# ── Write a comment ── #}
+    <div class="bcmt-form-wrap" id="bcmtFormWrap">
+      <div class="bcmt-form-head">
+        {% if request.user.is_authenticated %}
+          <div class="bcmt-avatar" id="bcmtFormAvatar">{{ request.user.first_name|default:request.user.username|initials }}</div>
+          <span class="bcmt-form-user">Commenting as <strong>{{ request.user.first_name|default:request.user.username }}</strong></span>
+        {% else %}
+          <div class="bcmt-avatar bcmt-avatar--anon" id="bcmtFormAvatar">?</div>
+          <span class="bcmt-form-user">Join the discussion</span>
+        {% endif %}
+      </div>
+
+      {# Name row — hidden for authenticated users unless posting anon #}
+      {% if not request.user.is_authenticated %}
+        <div class="bcmt-name-row" id="bcmtNameRow">
+          <input type="text" id="bcmtName" class="bcmt-input" placeholder="Your name (or leave blank to post anonymously)" maxlength="60">
+        </div>
+      {% endif %}
+
+      <textarea id="bcmtBody" class="bcmt-textarea" rows="3" placeholder="What do you think? Share your thoughts…" maxlength="2000"></textarea>
+
+      <div class="bcmt-form-foot">
+        <label class="bcmt-anon-label">
+          <input type="checkbox" id="bcmtAnon"> Post anonymously
+        </label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="bcmt-char-count" id="bcmtCharCount">0 / 2000</span>
+          <button type="button" class="bcmt-submit-btn" id="bcmtSubmit">Post comment</button>
+        </div>
+      </div>
+      <div class="bcmt-form-error" id="bcmtFormError" hidden></div>
+    </div>
+
+    {# ── Comment list ── #}
+    <div class="bcmt-list" id="bcmtList">
+      <div class="bcmt-loading" id="bcmtLoading">
+        <span class="bcmt-spinner"></span> Loading comments…
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/layout.js' %}?v=16"></script>
+<script>
+/* ════════════════════════════════════════════════
+   Blog Comment System — real-time CRUD + replies
+   ════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* ── Config from data attrs ── */
+  var root       = document.getElementById('comments');
+  if (!root) return;
+
+  var SLUG        = root.dataset.postSlug;
+  var FETCH_URL   = root.dataset.commentsUrl;
+  var CREATE_URL  = root.dataset.createUrl;
+  var UPDATE_BASE = root.dataset.updateBase;
+  var DELETE_BASE = root.dataset.deleteBase;
+  var IS_AUTH     = root.dataset.userAuth === 'true';
+  var USER_NAME   = root.dataset.userName || '';
+  var CSRF_TOKEN  = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+
+  /* ── Session token (anon ownership) ── */
+  var SESSION_TOKEN = localStorage.getItem('bcmt_token');
+  if (!SESSION_TOKEN) {
+    SESSION_TOKEN = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
+      return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+    });
+    localStorage.setItem('bcmt_token', SESSION_TOKEN);
+  }
+
+  /* ── DOM refs ── */
+  var listEl      = document.getElementById('bcmtList');
+  var countEl     = document.getElementById('bcmtCount');
+  var loadingEl   = document.getElementById('bcmtLoading');
+  var bodyEl      = document.getElementById('bcmtBody');
+  var nameEl      = document.getElementById('bcmtName');
+  var anonEl      = document.getElementById('bcmtAnon');
+  var submitBtn   = document.getElementById('bcmtSubmit');
+  var formErrorEl = document.getElementById('bcmtFormError');
+  var charCountEl = document.getElementById('bcmtCharCount');
+  var avatarEl    = document.getElementById('bcmtFormAvatar');
+
+  /* ── Helpers ── */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function showError(msg, el) {
+    var target = el || formErrorEl;
+    target.textContent = msg;
+    target.hidden = false;
+    setTimeout(function(){ target.hidden = true; }, 5000);
+  }
+
+  function timeAgo(dateStr) { return dateStr; }
+
+  /* ── Update avatar initials when name changes ── */
+  if (nameEl) {
+    nameEl.addEventListener('input', function() {
+      var v = nameEl.value.trim();
+      if (anonEl && anonEl.checked) return;
+      avatarEl.textContent = v ? v.slice(0,2).toUpperCase() : '?';
+      avatarEl.className = v ? 'bcmt-avatar' : 'bcmt-avatar bcmt-avatar--anon';
+    });
+  }
+  if (anonEl) {
+    anonEl.addEventListener('change', function() {
+      avatarEl.textContent = anonEl.checked ? 'AN' : (IS_AUTH ? USER_NAME.slice(0,2).toUpperCase() : ((nameEl && nameEl.value.trim()) ? nameEl.value.trim().slice(0,2).toUpperCase() : '?'));
+    });
+  }
+
+  /* ── Char counter ── */
+  if (bodyEl && charCountEl) {
+    bodyEl.addEventListener('input', function() {
+      charCountEl.textContent = bodyEl.value.length + ' / 2000';
+    });
+  }
+
+  /* ── Build a single comment HTML ── */
+  function buildComment(c, isReply) {
+    var actions = c.can_edit
+      ? '<div class="bcmt-actions">'
+        + '<button class="bcmt-act-btn" data-edit="' + c.id + '">Edit</button>'
+        + '<button class="bcmt-act-btn bcmt-act-btn--del" data-delete="' + c.id + '">Delete</button>'
+        + '</div>'
+      : '';
+    var replyBtn = !isReply
+      ? '<button class="bcmt-reply-btn" data-reply="' + c.id + '">Reply</button>'
+      : '';
+    var anonTag = c.is_anonymous ? '<span class="bcmt-anon-tag">Anonymous</span>' : '';
+    var replies = '';
+    if (!isReply && c.replies && c.replies.length) {
+      replies = '<div class="bcmt-replies">'
+        + c.replies.map(function(r){ return buildComment(r, true); }).join('')
+        + '</div>';
+    }
+    return '<div class="bcmt-item' + (isReply ? ' bcmt-item--reply' : '') + '" id="bcmt-' + c.id + '" data-parent="' + (c.parent_id || '') + '">'
+      + '<div class="bcmt-item-head">'
+        + '<div class="bcmt-avatar bcmt-avatar--sm' + (c.is_anonymous ? ' bcmt-avatar--anon' : '') + '">' + esc(c.avatar) + '</div>'
+        + '<div class="bcmt-meta">'
+          + '<strong class="bcmt-author">' + esc(c.author) + '</strong>'
+          + anonTag
+          + '<span class="bcmt-time">' + esc(c.created_at) + '</span>'
+        + '</div>'
+        + actions
+      + '</div>'
+      + '<div class="bcmt-body" id="bcmt-body-' + c.id + '">' + esc(c.body) + '</div>'
+      + '<div class="bcmt-item-foot">' + replyBtn + '</div>'
+      + '<div class="bcmt-reply-form" id="bcmt-reply-form-' + c.id + '" hidden></div>'
+      + '<div class="bcmt-edit-form" id="bcmt-edit-form-' + c.id + '" hidden></div>'
+      + replies
+      + '</div>';
+  }
+
+  /* ── Render full list ── */
+  function renderList(comments) {
+    if (loadingEl) loadingEl.hidden = true;
+    if (!comments.length) {
+      listEl.innerHTML = '<div class="bcmt-empty">Be the first to share your thoughts!</div>';
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+    listEl.innerHTML = comments.map(function(c){ return buildComment(c, false); }).join('');
+    if (countEl) countEl.textContent = comments.length;
+    wireActions();
+  }
+
+  /* ── Fetch comments ── */
+  function loadComments() {
+    fetch(FETCH_URL + '?token=' + encodeURIComponent(SESSION_TOKEN), { credentials: 'same-origin' })
+      .then(function(r){ return r.json(); })
+      .then(function(data){ renderList(data.comments || []); })
+      .catch(function(){
+        if (loadingEl) { loadingEl.hidden = true; }
+        listEl.innerHTML = '<div class="bcmt-empty">Could not load comments.</div>';
+      });
+  }
+
+  /* ── Post a comment ── */
+  function postComment(body, name, isAnon, parentId, onSuccess) {
+    var payload = {
+      body: body,
+      name: name || '',
+      is_anonymous: isAnon,
+      session_token: SESSION_TOKEN,
+    };
+    if (parentId) payload.parent_id = parentId;
+
+    fetch(CREATE_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify(payload),
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.ok) {
+        onSuccess(data.comment);
+      } else {
+        showError(data.error || 'Could not post comment.');
+      }
+    })
+    .catch(function(){ showError('Network error. Please try again.'); });
+  }
+
+  /* ── Main submit ── */
+  submitBtn && submitBtn.addEventListener('click', function() {
+    var body  = bodyEl.value.trim();
+    var name  = nameEl ? nameEl.value.trim() : USER_NAME;
+    var isAnon = anonEl ? anonEl.checked : false;
+    if (!body) { showError('Please write a comment first.'); return; }
+
+    submitBtn.disabled = true;
+    postComment(body, name, isAnon, null, function(comment) {
+      bodyEl.value = '';
+      if (nameEl) nameEl.value = '';
+      if (charCountEl) charCountEl.textContent = '0 / 2000';
+      submitBtn.disabled = false;
+      formErrorEl.hidden = true;
+      // Append to list instantly
+      var html = buildComment(comment, false);
+      if (listEl.querySelector('.bcmt-empty')) {
+        listEl.innerHTML = html;
+      } else {
+        listEl.insertAdjacentHTML('beforeend', html);
+      }
+      if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+      wireActions();
+      // Scroll to new comment
+      var el = document.getElementById('bcmt-' + comment.id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  /* ── Wire edit / delete / reply on rendered comments ── */
+  function wireActions() {
+    /* Delete */
+    listEl.querySelectorAll('[data-delete]').forEach(function(btn) {
+      if (btn._wired) return; btn._wired = true;
+      btn.addEventListener('click', function() {
+        if (!confirm('Delete this comment?')) return;
+        var id = btn.dataset.delete;
+        fetch(DELETE_BASE + id + '/delete/', {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+          body: JSON.stringify({ session_token: SESSION_TOKEN }),
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data.ok) {
+            var el = document.getElementById('bcmt-' + id);
+            if (el) {
+              el.style.opacity = '0';
+              el.style.transition = 'opacity .3s';
+              setTimeout(function(){ el.remove(); }, 300);
+            }
+            if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent || '1') - 1);
+          }
+        });
+      });
+    });
+
+    /* Edit */
+    listEl.querySelectorAll('[data-edit]').forEach(function(btn) {
+      if (btn._wired) return; btn._wired = true;
+      btn.addEventListener('click', function() {
+        var id = btn.dataset.edit;
+        var bodyDiv = document.getElementById('bcmt-body-' + id);
+        var editForm = document.getElementById('bcmt-edit-form-' + id);
+        if (!bodyDiv || !editForm) return;
+
+        bodyDiv.hidden = true;
+        editForm.hidden = false;
+        editForm.innerHTML = '<textarea class="bcmt-textarea bcmt-edit-ta" rows="3" maxlength="2000">' + esc(bodyDiv.textContent) + '</textarea>'
+          + '<div style="display:flex;gap:8px;margin-top:8px">'
+          + '<button class="bcmt-submit-btn bcmt-save-btn" data-save="' + id + '">Save</button>'
+          + '<button class="bcmt-cancel-btn" data-cancel-edit="' + id + '">Cancel</button>'
+          + '</div>'
+          + '<div class="bcmt-form-error bcmt-edit-error" hidden></div>';
+
+        var ta = editForm.querySelector('.bcmt-edit-ta');
+        ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+
+        editForm.querySelector('[data-cancel-edit]').addEventListener('click', function() {
+          bodyDiv.hidden = false; editForm.hidden = true; editForm.innerHTML = '';
+        });
+
+        editForm.querySelector('[data-save]').addEventListener('click', function() {
+          var newBody = ta.value.trim();
+          if (!newBody) return;
+          fetch(UPDATE_BASE + id + '/update/', {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ body: newBody, session_token: SESSION_TOKEN }),
+          })
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (data.ok) {
+              bodyDiv.textContent = data.comment.body;
+              bodyDiv.hidden = false;
+              editForm.hidden = true; editForm.innerHTML = '';
+            } else {
+              var errEl = editForm.querySelector('.bcmt-edit-error');
+              errEl.textContent = data.error || 'Could not save.'; errEl.hidden = false;
+            }
+          });
+        });
+      });
+    });
+
+    /* Reply */
+    listEl.querySelectorAll('[data-reply]').forEach(function(btn) {
+      if (btn._wired) return; btn._wired = true;
+      btn.addEventListener('click', function() {
+        var parentId = btn.dataset.reply;
+        var replyForm = document.getElementById('bcmt-reply-form-' + parentId);
+        if (!replyForm) return;
+
+        if (!replyForm.hidden) { replyForm.hidden = true; replyForm.innerHTML = ''; return; }
+
+        var nameField = IS_AUTH ? '' : '<input type="text" class="bcmt-input bcmt-reply-name" placeholder="Your name (optional)" maxlength="60" style="margin-bottom:6px">';
+        replyForm.innerHTML = nameField
+          + '<textarea class="bcmt-textarea bcmt-reply-ta" rows="2" maxlength="2000" placeholder="Write a reply…"></textarea>'
+          + '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">'
+          + '<label class="bcmt-anon-label"><input type="checkbox" class="bcmt-reply-anon"> Anonymous</label>'
+          + '<button class="bcmt-submit-btn bcmt-reply-submit" style="margin-left:auto">Post reply</button>'
+          + '<button class="bcmt-cancel-btn bcmt-reply-cancel">Cancel</button>'
+          + '</div>'
+          + '<div class="bcmt-form-error bcmt-reply-error" hidden></div>';
+        replyForm.hidden = false;
+
+        replyForm.querySelector('.bcmt-reply-cancel').addEventListener('click', function() {
+          replyForm.hidden = true; replyForm.innerHTML = '';
+        });
+
+        replyForm.querySelector('.bcmt-reply-submit').addEventListener('click', function() {
+          var ta     = replyForm.querySelector('.bcmt-reply-ta');
+          var nameIn = replyForm.querySelector('.bcmt-reply-name');
+          var anonIn = replyForm.querySelector('.bcmt-reply-anon');
+          var body   = ta.value.trim();
+          var name   = nameIn ? nameIn.value.trim() : USER_NAME;
+          var isAnon = anonIn ? anonIn.checked : false;
+          if (!body) return;
+
+          postComment(body, name, isAnon, parentId, function(comment) {
+            replyForm.hidden = true; replyForm.innerHTML = '';
+            // Append reply under parent
+            var repliesWrap = document.querySelector('#bcmt-' + parentId + ' > .bcmt-replies');
+            var html = buildComment(comment, true);
+            if (repliesWrap) {
+              repliesWrap.insertAdjacentHTML('beforeend', html);
+            } else {
+              var parentEl = document.getElementById('bcmt-' + parentId);
+              if (parentEl) parentEl.insertAdjacentHTML('beforeend', '<div class="bcmt-replies">' + html + '</div>');
+            }
+            wireActions();
+          });
+        });
+      });
+    });
+  }
+
+  /* ── Initial load ── */
+  loadComments();
+})();
+</script>
 {% endblock %}
