@@ -10,6 +10,7 @@ Usage:
     from .emails import send_welcome_email, send_contact_email, ...
 """
 
+import io
 import logging
 from email.mime.image import MIMEImage
 from pathlib import Path
@@ -26,7 +27,8 @@ SITE_URL  = "https://targetjobspace.com"
 
 # The site logo embedded inside every email (shown behind the header of the
 # branded shell below). Declared once here so a future rebrand only touches
-# these two lines. The header panel is the logo's own deep red.
+# these lines. The header panel is the logo's own deep red, and the artwork
+# is re-tinted white at embed time so it reads on that panel.
 LOGO_CID = "jobspace-logo"
 LOGO_RELATIVE_PATH = "images/Logo.png"
 
@@ -37,15 +39,25 @@ def _logo_image():
     Uses the staticfiles finders (not the STATIC_ROOT folder) so the logo
     resolves in local development, in tests, and on the VPS — even when
     collectstatic hasn't been re-run after a logo swap.
+
+    The artwork ships dark, so it is re-tinted white (its own alpha channel
+    kept, so anti-aliasing survives) before embedding — matching the deep-red
+    header panel in `_wrap_html`.
     """
     logo_path = finders.find(LOGO_RELATIVE_PATH)
     if not logo_path:
         logger.warning("Email logo missing: static/%s not found", LOGO_RELATIVE_PATH)
         return None
     try:
-        with open(logo_path, "rb") as fh:
-            image = MIMEImage(fh.read())
-    except OSError as exc:
+        from PIL import Image
+
+        with Image.open(logo_path) as logo:
+            white = Image.new("RGBA", logo.size, (255, 255, 255, 0))
+            white.putalpha(logo.convert("RGBA").split()[3])
+            buf = io.BytesIO()
+            white.save(buf, format="PNG")
+            image = MIMEImage(buf.getvalue(), _subtype="png")
+    except (OSError, ImportError) as exc:
         logger.warning("Email logo unreadable: %s", exc)
         return None
     image.add_header("Content-ID", f"<{LOGO_CID}>")
