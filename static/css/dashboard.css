@@ -8867,33 +8867,54 @@ body { font-size: 15px !important; }
    Subscription plans — employer request gate
    ═══════════════════════════════════════════════════════════════ */
 
-/* The gate is absolutely positioned inside .emp-form, so that element
-   must establish a containing block for the overlay. */
+/* The gate renders AFTER </main> in the DOM, so it positions against the
+   viewport — not against .emp-form. .emp-form stays relative for the
+   success-confirmation modal's stacking context. */
 .emp-form { position: relative; }
 
-/* ── Employer: blurred request form + subscribe gate ────────── */
-.emp-form-body.is-locked {
-  filter: blur(5px);
+/* ── Employer: blurred page + subscribe gate ────────────────── */
+
+/* Page-level blur: applied to <main> via .emp-page-blurred while the gate
+   is open, so the hero AND the form dim together uniformly. */
+.emp-page-blurred {
+  filter: blur(6px);
   opacity: 0.45;
   pointer-events: none;
   user-select: none;
 }
 
-.emp-sub-gate {
-  position: absolute;
-  inset: 0;
-  z-index: 60;
-  display: none;
-  place-items: center;
-  padding: 20px;
-  overflow-y: auto;
+/* Guards only — .emp-form-body.is-locked must NOT blur or fade on top of
+   .emp-page-blurred, or the form region stacks to double blur/opacity and
+   looks darker than the rest of the page. */
+.emp-form-body.is-locked {
+  pointer-events: none;
+  user-select: none;
 }
 
-.emp-sub-gate[aria-hidden="false"] { display: grid; }
+/* Full-viewport gate overlay: position:fixed centres it in the VIEWPORT
+   regardless of page length or scroll position, on desktop and mobile.
+   Flex + margin:auto on the card centres both axes AND stays fully
+   scrollable when the card is taller than the screen — plain
+   align-items:center clips the top of overflowing flex children. */
+.emp-sub-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500; /* above sidebar/nav (≤2000) and modals (1300), below toasts */
+  display: flex;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
 
 .emp-sub-gate-card {
-  width: 100%;
-  max-width: 560px;
+  margin: auto; /* centres in both axes; resolves to 0 when the card is taller
+                   than the viewport, so the top stays reachable by scrolling */
+  width: min(560px, 100%);
   background: #fff;
   border-radius: 20px;
   padding: 30px 30px 26px;
@@ -9189,6 +9210,13 @@ body { font-size: 15px !important; }
 
 @media (max-width: 520px) {
   .emp-sub-gate-plans { grid-template-columns: 1fr; }
+  /* Tighter gutters + card padding so the modal keeps a clear margin on
+     small phones, and home-indicator space at the bottom on notched ones. */
+  .emp-sub-gate-overlay {
+    padding: 14px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .emp-sub-gate-card { padding: 26px 18px 22px; border-radius: 16px; }
 }
 
 .opp-empty-desc       { font-size: 15px !important; }
