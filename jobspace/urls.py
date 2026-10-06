@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from website import seo_views
+from website.forms import BrandedPasswordResetForm
 
 # Custom error pages. These MUST be the last entries in the root urlconf —
 # handler404 in particular is a catch-all, so anything added after it becomes
@@ -20,6 +22,17 @@ urlpatterns = [
     path("", include("website.urls")),
     # Django's built-in password reset flow (uses EMAIL_* settings to send the token).
     # Served at /password-reset/ so it doesn't clash with /admin/password_change/.
+    # NOTE: the stock `password_reset` route is overridden here so the mailed
+    # link carries the branded red/white HTML template (logo by CID) instead
+    # of Django's default plain-text email. URL name and template stay the
+    # same, so /signin/ and the reset pages keep working untouched.
+    path(
+        "password-reset/password_reset/",
+        auth_views.PasswordResetView.as_view(
+            form_class=BrandedPasswordResetForm,
+        ),
+        name="password_reset",
+    ),
     path("password-reset/", include("django.contrib.auth.urls")),
     # SEO endpoints. Kept in the root urlconf because search engines look for
     # them at the site root, not under the app prefix.

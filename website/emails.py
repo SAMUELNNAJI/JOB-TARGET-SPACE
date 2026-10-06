@@ -11,7 +11,11 @@ Usage:
 """
 
 import logging
+from email.mime.image import MIMEImage
+from pathlib import Path
+
 from django.conf import settings
+from django.contrib.staticfiles import finders
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
@@ -19,6 +23,34 @@ logger = logging.getLogger(__name__)
 
 SITE_NAME = "Target JobSpace"
 SITE_URL  = "https://targetjobspace.com"
+
+# The site logo embedded inside every email (shown behind the header of the
+# branded shell below). Declared once here so a future rebrand only touches
+# these two lines. The header panel is the logo's own deep red.
+LOGO_CID = "jobspace-logo"
+LOGO_RELATIVE_PATH = "images/Logo.png"
+
+
+def _logo_image():
+    """Load the site logo from the static files for CID embedding.
+
+    Uses the staticfiles finders (not the STATIC_ROOT folder) so the logo
+    resolves in local development, in tests, and on the VPS — even when
+    collectstatic hasn't been re-run after a logo swap.
+    """
+    logo_path = finders.find(LOGO_RELATIVE_PATH)
+    if not logo_path:
+        logger.warning("Email logo missing: static/%s not found", LOGO_RELATIVE_PATH)
+        return None
+    try:
+        with open(logo_path, "rb") as fh:
+            image = MIMEImage(fh.read())
+    except OSError as exc:
+        logger.warning("Email logo unreadable: %s", exc)
+        return None
+    image.add_header("Content-ID", f"<{LOGO_CID}>")
+    image.add_header("Content-Disposition", "inline", filename=Path(logo_path).name)
+    return image
 
 
 def _send(subject, text_body, html_body, to_email):
@@ -29,6 +61,15 @@ def _send(subject, text_body, html_body, to_email):
     try:
         from_email = getattr(settings, "DEFAULT_FROM_EMAIL", f"{SITE_NAME} <noreply@targetjobspace.com>")
         msg = EmailMultiAlternatives(subject, text_body, from_email, [to_email])
+        # Order matters: related parts (inline images) are attached BEFORE
+        # the html alternative they belong to.
+        logo = _logo_image()
+        if logo is not None:
+            msg.attach(logo)
+        else:
+            # Missing logo file must never silently ship a broken-image box —
+            # downgrade the header to the text wordmark instead.
+            html_body = html_body.replace('data-logo="cid"', 'data-logo="wordmark"')
         msg.attach_alternative(html_body, "text/html")
         msg.send(fail_silently=False)
     except Exception as exc:
@@ -38,11 +79,14 @@ def _send(subject, text_body, html_body, to_email):
 def _wrap_html(title, content_html, cta_text=None, cta_url=None, preheader=None):
     """Wrap content in the branded HTML email shell every message uses.
 
+    Red-and-white corporate look: a white card on a light-grey page, red
+    accent bar and CTA buttons, the site logo on the logo's own deep red
+    panel, and a footer carrying the real-world contact details a corporate
+    email should always have.
+
     Table-based layout (the only thing Gmail, Outlook and Apple Mail all
-    render reliably), a hidden preheader so inbox previews show a useful
-    sentence instead of the raw HTML, a red accent bar, the dark brand
-    header, and a footer carrying the real-world contact details a
-    corporate email should always have.
+    render reliably), plus a hidden preheader so inbox previews show a
+    useful sentence instead of the raw HTML.
     """
     preheader = preheader or title
     cta_block = ""
@@ -73,10 +117,20 @@ def _wrap_html(title, content_html, cta_text=None, cta_url=None, preheader=None)
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e4e9f4;border-radius:16px;overflow:hidden">
         <!-- Accent bar -->
         <tr><td style="height:4px;background:linear-gradient(90deg,#d6001d,#ff4d6d);font-size:1px;line-height:1px">&nbsp;</td></tr>
-        <!-- Brand header -->
-        <tr><td style="background:#0a0c10;padding:22px 36px">
+        <!-- Brand header: site logo on the logo's own deep-red panel.
+             The <img> renders when the logo was attached by _send (normal
+             case); if the file was missing, _send rewrote data-logo="cid" to
+             data-logo="wordmark" instead, so clients show the red/white
+             wordmark and never a broken-image box. -->
+        <tr><td data-logo="cid" align="center" style="background:#990310;padding:22px 36px">
           <a href="{SITE_URL}" style="text-decoration:none">
-            <span style="font:800 21px/1 'Helvetica Neue',Arial,sans-serif;color:#ffffff;letter-spacing:-.4px">Target&nbsp;<span style="color:#ff4d6d">JobSpace</span></span>
+            <img src="cid:{LOGO_CID}" alt="Target JobSpace" width="220"
+                 style="display:block;width:220px;max-width:100%;height:auto;border:0;outline:none">
+          </a>
+        </td></tr>
+        <tr><td data-logo="wordmark" align="center" style="background:#990310;padding:22px 36px;display:none;max-height:0;overflow:hidden;mso-hide:all">
+          <a href="{SITE_URL}" style="text-decoration:none">
+            <span style="font:800 21px/1 'Helvetica Neue',Arial,sans-serif;color:#ffffff;letter-spacing:-.4px">Target&nbsp;<span style="color:#ffd6dd">JobSpace</span></span>
           </a>
         </td></tr>
         <!-- Body -->

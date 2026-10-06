@@ -56,6 +56,8 @@ class EmailShellTests(TestCase):
             "Do the thing", "https://example.com/x", "#eef1f7",
             "Bayo Dejonwo Street", "wa.me/2349136185082", "Privacy Policy",
             "Terms of Service", SITE_URL,
+            # The header must carry the real logo image, not just words.
+            'src="cid:jobspace-logo"', 'data-logo="cid"', "990310",
         ):
             with self.subTest(needle=needle):
                 self.assertIn(needle, html)
@@ -64,6 +66,46 @@ class EmailShellTests(TestCase):
         """With no explicit preheader, inbox previews show the subject."""
         html = _wrap_html("My subject", "<p>Body</p>")
         self.assertIn("My subject", html)
+
+
+@override_settings(**LOC_MEM)
+class PasswordResetBrandingTests(TestCase):
+    def test_reset_mail_ships_styled_html_with_embedded_logo(self):
+        """The actual regression: reset mails used to arrive plain-text.
+
+        Posting the real reset form must now produce a multipart message
+        whose HTML part carries the red/white shell with the logo, while
+        the plain-text part stays intact for clients that need it.
+        """
+        User.objects.create_user(
+            username="resetme", email="resetme@example.com", password="pw-C0rrect!"
+        )
+        response = self.client.post(
+            "/password-reset/password_reset/",
+            {"email": "resetme@example.com"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+
+        # Plain-text part still present for plain-text clients.
+        self.assertIn("/password-reset/reset/", msg.body)
+        # Styled HTML alternative attached…
+        self.assertEqual(len(msg.alternatives), 1)
+        html = msg.alternatives[0][0]
+        for needle in (
+            'src="cid:jobspace-logo"', "Reset your password", "Choose a new password",
+            "/password-reset/reset/", "990310", "d6001d",
+        ):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, html)
+        # …with the logo file embedded as the attachment it points at.
+        attachments = [
+            a for a in msg.attachments
+            if getattr(a, "get_content_maintype", lambda: "")() == "image"
+        ]
+        self.assertEqual(len(attachments), 1)
+        self.assertEqual(attachments[0].get("Content-ID"), "<jobspace-logo>")
 
 
 @override_settings(**LOC_MEM)

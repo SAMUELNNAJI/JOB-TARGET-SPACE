@@ -1,12 +1,64 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 
+from . import emails as mailer
 from .models import CandidateDocument, Profile, Qualification, RecruitmentRequest, Specialization
 
 
 class SignInForm(AuthenticationForm):
     username = forms.CharField(label="Email address or username")
+
+
+class BrandedPasswordResetForm(PasswordResetForm):
+    """Password reset that sends the red/white branded HTML email.
+
+    Django's stock PasswordResetView only builds a plain-text email from
+    `email_template_name`, which is why reset mails arrived looking like
+    raw text. Overriding `send_mail()` reuses website.emails' `_send` /
+    `_wrap_html` (logo-by-CID, red/white shell) so the reset mail matches
+    every other branded mail the site sends. Drop-in: URL conf just sets
+    `form_class=BrandedPasswordResetForm`.
+    """
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = render_to_string(subject_template_name, context)
+        # Email subject must not contain newlines — exactly like Django does.
+        subject = "".join(subject.splitlines())
+        text_body = render_to_string(email_template_name, context)
+        reset_url = "{protocol}://{domain}/password-reset/reset/{uid}/{token}/".format(
+            protocol=context["protocol"],
+            domain=context["domain"],
+            uid=context["uid"],
+            token=context["token"],
+        )
+        name = context["user"].first_name or context["user"].username
+        content_html = f"""
+    <h2 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#111827">Reset your password 🔑</h2>
+    <p style="margin:0 0 18px">Hi {name},</p>
+    <p style="margin:0 0 18px">
+      You requested a password reset for your Target JobSpace account.
+      Tap the button below to choose a new password.</p>
+    <p style="margin:0 0 6px;padding:16px 18px;background:#fff8f8;border-left:4px solid #d6001d;border-radius:0 8px 8px 0;font-size:14px">
+      <strong>This link is valid for 24 hours.</strong> If you did not request
+      a password reset, you can safely ignore this email.</p>"""
+        html_body = mailer._wrap_html(
+            "Reset your password",
+            content_html,
+            "Choose a new password",
+            reset_url,
+            preheader="Reset your Target JobSpace password — link valid for 24 hours.",
+        )
+        mailer._send(subject, text_body, html_body, to_email)
 
 
 class SignUpForm(UserCreationForm):
