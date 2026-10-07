@@ -598,7 +598,11 @@ class BlogComment(models.Model):
         if self.display_name:
             return self.display_name
         if self.user:
-            return self.user.first_name or self.user.username
+            # Use first_name if set, otherwise use the part before @ in the email
+            if self.user.first_name:
+                return self.user.first_name
+            email = self.user.email or self.user.username
+            return email.split("@")[0] if "@" in email else email
         return "Anonymous"
 
     @property

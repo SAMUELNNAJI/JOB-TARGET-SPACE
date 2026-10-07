@@ -227,7 +227,7 @@
          data-update-base="/blog/comments/"
          data-delete-base="/blog/comments/"
          data-user-auth="{{ request.user.is_authenticated|lower }}"
-         data-user-name="{{ request.user.first_name|default:request.user.username }}">
+         data-user-name="{{ request.user|display_name }}">
 
   <div class="bcmt-inner">
 
@@ -250,8 +250,8 @@
     <div class="bcmt-form-wrap" id="bcmtFormWrap">
       <div class="bcmt-form-head">
         {% if request.user.is_authenticated %}
-          <div class="bcmt-avatar" id="bcmtFormAvatar">{{ request.user.first_name|default:request.user.username|initials }}</div>
-          <span class="bcmt-form-user">Commenting as <strong>{{ request.user.first_name|default:request.user.username }}</strong></span>
+          <div class="bcmt-avatar" id="bcmtFormAvatar">{{ request.user|display_name|initials }}</div>
+          <span class="bcmt-form-user">Commenting as <strong>{{ request.user|display_name }}</strong></span>
         {% else %}
           <div class="bcmt-avatar bcmt-avatar--anon" id="bcmtFormAvatar">?</div>
           <span class="bcmt-form-user">Join the discussion</span>

@@ -12,7 +12,20 @@ from django.utils.safestring import mark_safe
 register = template.Library()
 
 
-@register.filter(name="initials")
+@register.filter(name="display_name")
+def display_name(user):
+    """Return a human-readable display name for a user.
+    Uses first_name if set; otherwise uses the part of the email before '@'
+    so 'nnajisamuel3061@gmail.com' shows as 'nnajisamuel3061', not the full email.
+    """
+    if not user:
+        return ""
+    if user.first_name:
+        return user.first_name
+    email = getattr(user, "email", "") or getattr(user, "username", "")
+    if "@" in email:
+        return email.split("@")[0]
+    return email
 def initials(value, max_chars=2):
     """Return up to *max_chars* initials from a full name.
 
