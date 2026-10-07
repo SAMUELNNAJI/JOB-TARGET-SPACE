@@ -117,6 +117,68 @@
       <article><h4>Chinedu Okafor</h4><small>Product Designer</small><b>★★★★★</b><p>"The best recruitment platform I've used. Great opportunities and a smooth experience from start to finish."</p></article>
     </section>
 
+    {% if featured_posts %}
+    <section class="home-blog">
+      <div class="home-blog-head">
+        <div class="home-blog-kicker">
+          <span class="home-blog-kicker-dot"></span>
+          CAREER INTELLIGENCE
+        </div>
+        <div class="home-blog-titles">
+          <h2 class="home-blog-title">Advice that<br><em>actually hits.</em></h2>
+          <p class="home-blog-sub">Real career moves, hiring secrets and workplace truths — straight from the team.</p>
+        </div>
+        <a class="home-blog-all" href="/blog/">View all articles →</a>
+      </div>
+
+      <div class="home-blog-grid">
+        {% for post in featured_posts %}
+          <a class="home-blog-card" href="{{ post.get_absolute_url }}"
+             style="--hbc:{{ post.cover_color }}">
+
+            {# Cover image or gradient fallback #}
+            <div class="home-blog-card-img">
+              {% if post.cover_image %}
+                <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" loading="lazy">
+              {% else %}
+                <div class="home-blog-card-fallback">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+                    {% if post.category == 'salary' %}<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    {% elif post.category == 'interview' %}<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    {% elif post.category == 'hiring' %}<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    {% elif post.category == 'workplace' %}<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    {% else %}<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>{% endif %}
+                  </svg>
+                </div>
+              {% endif %}
+              <span class="home-blog-card-cat">{{ post.get_category_display }}</span>
+            </div>
+
+            <div class="home-blog-card-body">
+              <h3 class="home-blog-card-title">{{ post.title }}</h3>
+              <p class="home-blog-card-excerpt">{{ post.excerpt|truncatechars:100 }}</p>
+              <div class="home-blog-card-foot">
+                <span class="home-blog-card-meta">{{ post.created_at|date:"d M Y" }}</span>
+                <span class="home-blog-card-read">{{ post.read_time }}</span>
+              </div>
+            </div>
+
+            <div class="home-blog-card-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+
+      <div class="home-blog-foot">
+        <a href="/blog/" class="home-blog-cta">
+          Explore all career articles
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+    </section>
+    {% endif %}
+
     <section class="banner">
       <div>
         <h2>Ready to Build<br>a Better Future?</h2>

@@ -174,7 +174,18 @@ def page(request, page_name):
         else:
             messages.error(request, "Please fill in your name, email and message.")
         return redirect("website:contact")
-    return render(request, PAGE_NAMES[page_name])
+
+    context = {}
+    if page_name == "home":
+        try:
+            from .models import BlogPost
+            context["featured_posts"] = BlogPost.objects.filter(
+                is_published=True
+            ).order_by("-created_at")[:3]
+        except Exception:
+            context["featured_posts"] = []
+
+    return render(request, PAGE_NAMES[page_name], context)
 
 
 def signup(request):
