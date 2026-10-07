@@ -20,12 +20,18 @@ def display_name(user):
     """
     if not user:
         return ""
-    if user.first_name:
-        return user.first_name
+    # getattr: AnonymousUser has no first_name attribute, and this filter is
+    # called on request.user even for unauthenticated visitors.
+    first_name = getattr(user, "first_name", "")
+    if first_name:
+        return first_name
     email = getattr(user, "email", "") or getattr(user, "username", "")
     if "@" in email:
         return email.split("@")[0]
     return email
+
+
+@register.filter(name="initials")
 def initials(value, max_chars=2):
     """Return up to *max_chars* initials from a full name.
 
