@@ -2840,6 +2840,7 @@ def admin_blog_delete(request, post_id):
 # ─────────────────────────────────────────────────────────────
 
 from .models import BlogComment
+from django.views.decorators.csrf import csrf_exempt
 
 
 def _comment_dict(c, user=None, session_token=""):
@@ -2880,6 +2881,7 @@ def blog_comments(request, slug):
     return JsonResponse({"comments": result, "total": len(result)})
 
 
+@csrf_exempt
 def blog_comment_create(request, slug):
     """POST — create a comment or reply."""
     if request.method != "POST":
@@ -2943,6 +2945,7 @@ def blog_comment_create(request, slug):
     }, status=201)
 
 
+@csrf_exempt
 def blog_comment_update(request, comment_id):
     """PATCH — edit a comment body (owner only)."""
     if request.method != "PATCH":
@@ -2975,6 +2978,7 @@ def blog_comment_update(request, comment_id):
     return JsonResponse({"ok": True, "comment": _comment_dict(comment, user, token)})
 
 
+@csrf_exempt
 def blog_comment_delete(request, comment_id):
     """DELETE — remove a comment and its replies (owner only)."""
     if request.method != "DELETE":

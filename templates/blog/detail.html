@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load seo_extras %}
 
 {% block title %}{{ post.title }} — Target JobSpace Blog{% endblock %}
 
@@ -448,7 +449,10 @@
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
       body: JSON.stringify(payload),
     })
-    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if (!r.ok && r.status !== 400 && r.status !== 403) throw new Error('Server error ' + r.status);
+      return r.json();
+    })
     .then(function(data){
       if (data.ok) {
         onSuccess(data.comment);
@@ -456,7 +460,7 @@
         showError(data.error || 'Could not post comment.');
       }
     })
-    .catch(function(){ showError('Network error. Please try again.'); });
+    .catch(function(e){ showError('Could not post comment — please try again. (' + (e.message || 'network error') + ')'); });
   }
 
   /* ── Main submit ── */
