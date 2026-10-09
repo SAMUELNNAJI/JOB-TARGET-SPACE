@@ -445,43 +445,45 @@
     updateLoadMoreBtn();
   }
 
-  /* ── Load more button ── */
+  /* ── Load more button ──
+     Single source of truth: every call wipes any existing #bcmtLoadMore and
+     re-renders exactly one wrap from the current (hasMore, totalComments)
+     state, so the "X of Y" info and the "All Y loaded" note can never both
+     be on screen. Two rapid clicks used to create a duplicate wrap (one
+     listener per stale button) that showed conflicting text after both
+     fetches resolved. */
   function updateLoadMoreBtn() {
-    var existing = document.getElementById('bcmtLoadMore');
+    removeLoadMoreBtn();
+
+    if (!totalComments) return;
+
     if (hasMore) {
-      if (!existing) {
-        var btn = document.createElement('div');
-        btn.className = 'bcmt-load-more-wrap';
-        btn.id = 'bcmtLoadMore';
-        btn.innerHTML = '<button class="bcmt-load-more-btn" id="bcmtLoadMoreBtn">'
-          + LOAD_MORE_LABEL
-          + '</button>'
-          + '<span class="bcmt-load-more-info" id="bcmtLoadMoreInfo"></span>';
-        listEl.parentNode.insertBefore(btn, listEl.nextSibling);
-        document.getElementById('bcmtLoadMoreBtn').addEventListener('click', function() {
-          if (loadingMore) return;
-          loadingMore = true;
-          this.textContent = 'Loading…';
-          this.disabled = true;
-          currentPage += 1;
-          loadPage(currentPage, true);
-        });
-      }
-      var infoEl = document.getElementById('bcmtLoadMoreInfo');
-      if (infoEl) {
-        var loaded = Math.min(currentPage * PER_PAGE, totalComments);
-        infoEl.textContent = loaded + ' of ' + totalComments + ' comments';
-      }
-    } else {
-      removeLoadMoreBtn();
-      // Show total if more than one page was loaded
-      if (totalComments > PER_PAGE) {
-        var wrap = document.createElement('div');
-        wrap.className = 'bcmt-load-more-wrap';
-        wrap.id = 'bcmtLoadMore';
-        wrap.innerHTML = '<span class="bcmt-all-loaded">All ' + totalComments + ' comments loaded</span>';
-        listEl.parentNode.insertBefore(wrap, listEl.nextSibling);
-      }
+      var loaded = Math.min(currentPage * PER_PAGE, totalComments);
+      var btn = document.createElement('div');
+      btn.className = 'bcmt-load-more-wrap';
+      btn.id = 'bcmtLoadMore';
+      btn.innerHTML = '<button class="bcmt-load-more-btn" id="bcmtLoadMoreBtn">'
+        + LOAD_MORE_LABEL
+        + '</button>'
+        + '<span class="bcmt-load-more-info">Showing ' + loaded + ' of ' + totalComments + ' comments</span>';
+      listEl.parentNode.insertBefore(btn, listEl.nextSibling);
+      document.getElementById('bcmtLoadMoreBtn').addEventListener('click', function() {
+        // Re-check at event time too: the wrap is rebuilt on every render, so
+        // a stale handler from an earlier render could otherwise fire twice.
+        if (loadingMore || !hasMore) return;
+        loadingMore = true;
+        this.textContent = 'Loading…';
+        this.disabled = true;
+        currentPage += 1;
+        loadPage(currentPage, true);
+      });
+    } else if (totalComments > PER_PAGE) {
+      // hasMore is false — everything is on screen, so show the end marker.
+      var wrap = document.createElement('div');
+      wrap.className = 'bcmt-load-more-wrap';
+      wrap.id = 'bcmtLoadMore';
+      wrap.innerHTML = '<span class="bcmt-all-loaded">All ' + totalComments + ' comments loaded</span>';
+      listEl.parentNode.insertBefore(wrap, listEl.nextSibling);
     }
   }
 
