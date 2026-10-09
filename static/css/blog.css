@@ -1587,6 +1587,66 @@
   margin-bottom: 10px;
 }
 
+/* Load more (pagination) */
+.bcmt-load-more-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 0 6px;
+}
+.bcmt-load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  background: #131316;
+  color: #fff;
+  border: 2px solid #000;
+  border-radius: 12px;
+  font: 900 13px/1 'Montserrat', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 #ffd60a;
+  transform: skew(-4deg);
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.bcmt-load-more-btn:hover {
+  background: #d90429;
+  transform: skew(-4deg) translate(2px, 2px);
+  box-shadow: 3px 3px 0 #ffd60a;
+}
+.bcmt-load-more-btn:active {
+  transform: skew(-4deg) translate(5px, 5px);
+  box-shadow: 0 0 0 #ffd60a;
+}
+.bcmt-load-more-btn:disabled {
+  opacity: .55;
+  cursor: default;
+  transform: skew(-4deg);
+  box-shadow: 5px 5px 0 #ffd60a;
+  background: #131316;
+}
+.bcmt-load-more-btn svg { flex-shrink: 0; }
+.bcmt-load-more-info {
+  font: 800 11px/1 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.4);
+}
+.bcmt-all-loaded {
+  font: 800 11px/1 'Montserrat', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.35);
+  text-align: center;
+}
+.bcmt-all-loaded::before {
+  content: '✓ ';
+  color: #ffd60a;
+}
+
 /* Avatar — crooked sticker */
 .bcmt-avatar {
   width: 44px;

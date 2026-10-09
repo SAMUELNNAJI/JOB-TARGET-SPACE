@@ -80,7 +80,7 @@
 {% block page_styles %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}?v=18">
   <link rel="stylesheet" href="{% static 'css/pages.css' %}?v=18">
-  <link rel="stylesheet" href="{% static 'css/blog.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'css/blog.css' %}?v=7">
 {% endblock %}
 
 {% block content %}
@@ -320,6 +320,10 @@
   var hasMore       = false;
   var totalComments = 0;
   var loadingMore   = false;
+  /* Shared label for the Load more button — includes the chevron arrow so
+     re-enabling the button after a fetch never loses the icon. */
+  var LOAD_MORE_LABEL = 'Load more comments'
+    + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
 
   /* ── Session token (anon ownership) ── */
   var SESSION_TOKEN = localStorage.getItem('bcmt_token');
@@ -416,20 +420,7 @@
       + '</div>';
   }
 
-  /* ── Render full list ── */
-  function renderList(comments) {
-    if (loadingEl) loadingEl.hidden = true;
-    if (!comments.length) {
-      listEl.innerHTML = '<div class="bcmt-empty">Be the first to share your thoughts!</div>';
-      if (countEl) countEl.textContent = '0';
-      return;
-    }
-    listEl.innerHTML = comments.map(function(c){ return buildComment(c, false); }).join('');
-    if (countEl) countEl.textContent = comments.length;
-    wireActions();
-  }
-
-  /* ── Render comments (append or replace) ── */
+  /* ── Render comments (replace on page 1, append on later pages) ── */
   function renderList(comments, append) {
     if (loadingEl) loadingEl.hidden = true;
 
@@ -463,8 +454,7 @@
         btn.className = 'bcmt-load-more-wrap';
         btn.id = 'bcmtLoadMore';
         btn.innerHTML = '<button class="bcmt-load-more-btn" id="bcmtLoadMoreBtn">'
-          + 'Load more comments'
-          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
+          + LOAD_MORE_LABEL
           + '</button>'
           + '<span class="bcmt-load-more-info" id="bcmtLoadMoreInfo"></span>';
         listEl.parentNode.insertBefore(btn, listEl.nextSibling);
@@ -515,21 +505,31 @@
         currentPage   = data.page    || page;
         loadingMore   = false;
         var btn = document.getElementById('bcmtLoadMoreBtn');
-        if (btn) { btn.textContent = 'Load more comments'; btn.disabled = false; }
+        if (btn) { btn.innerHTML = LOAD_MORE_LABEL; btn.disabled = false; }
         renderList(data.comments || [], append);
       })
       .catch(function() {
         loadingMore = false;
         if (loadingEl) loadingEl.hidden = true;
+        var btn = document.getElementById('bcmtLoadMoreBtn');
+        if (btn) { btn.innerHTML = LOAD_MORE_LABEL; btn.disabled = false; }
         if (!append) {
           listEl.innerHTML = '<div class="bcmt-empty">Could not load comments.</div>';
+        } else {
+          // Fetch failed after the click handler bumped the page — roll it
+          // back so the next click retries the same page instead of skipping it.
+          currentPage = Math.max(1, currentPage - 1);
         }
       });
   }
 
-  /* ── Initial load ── */
+  /* ── Initial load (resets pagination and fetches page 1) ── */
   function loadComments() {
-    currentPage = 1;
+    currentPage   = 1;
+    hasMore       = false;
+    totalComments = 0;
+    loadingMore   = false;
+    removeLoadMoreBtn();
     loadPage(1, false);
   }
 
