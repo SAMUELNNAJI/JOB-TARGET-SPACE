@@ -2858,19 +2858,37 @@ def _comment_dict(c, user=None, session_token=""):
 
 
 def blog_comments(request, slug):
-    """GET — return all approved comments for a post as JSON."""
+    """GET — return approved comments for a post, paginated.
+    Query params:
+      ?token=<str>   — session token for ownership detection
+      ?page=<int>    — page number (default 1)
+      ?per_page=<int> — comments per page (default 10, max 50)
+    """
     post = get_object_or_404(BlogPost, slug=slug, is_published=True)
     token = request.GET.get("token", "")
     user  = request.user if request.user.is_authenticated else None
 
-    top_level = (
+    try:
+        page     = max(1, int(request.GET.get("page", 1)))
+        per_page = min(50, max(1, int(request.GET.get("per_page", 10))))
+    except (ValueError, TypeError):
+        page, per_page = 1, 10
+
+    top_level_qs = (
         BlogComment.objects
         .filter(post=post, parent=None, is_approved=True)
         .prefetch_related("replies")
         .order_by("created_at")
     )
+
+    total      = top_level_qs.count()
+    start      = (page - 1) * per_page
+    end        = start + per_page
+    page_qs    = top_level_qs[start:end]
+    has_more   = end < total
+
     result = []
-    for c in top_level:
+    for c in page_qs:
         d = _comment_dict(c, user, token)
         d["replies"] = [
             _comment_dict(r, user, token)
@@ -2878,7 +2896,13 @@ def blog_comments(request, slug):
         ]
         result.append(d)
 
-    return JsonResponse({"comments": result, "total": len(result)})
+    return JsonResponse({
+        "comments":  result,
+        "total":     total,
+        "page":      page,
+        "per_page":  per_page,
+        "has_more":  has_more,
+    })
 
 
 @csrf_exempt
