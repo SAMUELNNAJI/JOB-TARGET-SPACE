@@ -32,6 +32,30 @@
         </div>
       </div>
     </section>
+    <section class="content contact-map-section" aria-labelledby="visit-us-heading">
+      <div class="contact-map-heading">
+        <div>
+          <small class="eyebrow">FIND OUR OFFICE</small>
+          <h2 id="visit-us-heading">Come and <em>say hello.</em></h2>
+        </div>
+        <a class="contact-map-directions" href="https://www.google.com/maps/search/?api=1&amp;query={{ site.address|urlencode }}" target="_blank" rel="noopener noreferrer">
+          Get directions <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <div class="contact-map-frame">
+        <iframe
+          src="https://www.google.com/maps?q={{ site.address|urlencode }}&amp;output=embed"
+          title="Map showing {{ site.address }}"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen>
+        </iframe>
+        <div class="contact-map-label">
+          <span class="contact-map-pin" aria-hidden="true">⌖</span>
+          <div><b>Target JobSpace</b><span>{{ site.address }}</span></div>
+        </div>
+      </div>
+    </section>
     <section class="content contact-form-section">
       <small class="eyebrow">SEND A MESSAGE</small>
       <h2>Tell us what's on <em>your mind.</em></h2>
