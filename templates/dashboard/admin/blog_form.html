@@ -1,6 +1,9 @@
 {% extends "dashboard/base.html" %}
 {% block title %}{{ action }} Blog Post - Target JobSpace{% endblock %}
 {% block notification_count %}0{% endblock %}
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+{% endblock %}
 {% block content %}
 <main class="dashboard-content adm-home">
   <section class="dash-hero">
@@ -135,9 +138,10 @@
         </div>
 
         <div class="adm-settings-field" style="grid-column:1/-1">
-          <label class="adm-settings-label">Body * <span style="font-size:11px;font-weight:400;color:#9ca3af">(one blank line = new paragraph)</span></label>
-          <textarea name="body" class="adm-settings-input" rows="18" required
-                    placeholder="Write your article here. Leave a blank line between paragraphs.">{{ post.body|default:'' }}</textarea>
+          <label class="adm-settings-label" for="blogBody">Body *</label>
+          <textarea id="blogBody" name="body" class="adm-settings-input" required
+                    placeholder="Write your article here...">{{ post.body|default:'' }}</textarea>
+          <small class="blog-editor-help">Use the toolbar for headings, lists, links, colours and tables. Paragraphs automatically keep comfortable spacing when published.</small>
         </div>
 
         <div class="adm-settings-field">
@@ -166,7 +170,25 @@
     </form>
   </section>
 </main>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 <script>
+$(function () {
+  $('#blogBody').summernote({
+    height: 430,
+    placeholder: 'Write a clear, well-structured article...',
+    disableDragAndDrop: true,
+    toolbar: [
+      ['style', ['style']],
+      ['font', ['bold', 'italic', 'underline', 'clear']],
+      ['color', ['color']],
+      ['para', ['ul', 'ol', 'paragraph']],
+      ['insert', ['link', 'table', 'hr']],
+      ['view', ['codeview', 'help']]
+    ],
+    styleTags: ['p', 'blockquote', 'h2', 'h3', 'h4', 'pre']
+  });
+});
 // Sync colour picker → text input
 document.querySelector('input[type="color"]')?.addEventListener('input', function(){
   this.nextElementSibling.value = this.value;

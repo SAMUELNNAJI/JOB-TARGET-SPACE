@@ -559,6 +559,16 @@ class BlogPost(models.Model):
     def body_paragraphs(self):
         return [p.strip() for p in self.body.split("\n\n") if p.strip()]
 
+    @property
+    def has_rich_body(self):
+        """Keep existing plain-text articles compatible with the new editor."""
+        return "<" in self.body and ">" in self.body
+
+    @property
+    def body_html(self):
+        from .rich_text import safe_blog_html
+        return safe_blog_html(self.body)
+
 
 class BlogComment(models.Model):
     """A comment on a blog post.

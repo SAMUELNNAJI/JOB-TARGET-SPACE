@@ -2724,13 +2724,14 @@ def admin_blog_list(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def admin_blog_create(request):
     from django.utils.text import slugify
+    from .rich_text import sanitize_blog_html
     error = None
     if request.method == "POST":
         title        = request.POST.get("title", "").strip()
         slug_input   = request.POST.get("slug", "").strip() or slugify(title)
         category     = request.POST.get("category", BlogPost.Category.CAREER)
         excerpt      = request.POST.get("excerpt", "").strip()
-        body         = request.POST.get("body", "").strip()
+        body         = sanitize_blog_html(request.POST.get("body", "").strip())
         cover_color  = request.POST.get("cover_color", "#d90429").strip()
         author       = request.POST.get("author", "Target JobSpace Team").strip()
         is_published = request.POST.get("is_published") == "1"
@@ -2770,6 +2771,7 @@ def admin_blog_create(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def admin_blog_edit(request, post_id):
     from django.utils.text import slugify
+    from .rich_text import sanitize_blog_html
     post  = get_object_or_404(BlogPost, pk=post_id)
     error = None
     if request.method == "POST":
@@ -2777,7 +2779,7 @@ def admin_blog_edit(request, post_id):
         slug_input   = request.POST.get("slug", "").strip() or slugify(title)
         category     = request.POST.get("category", post.category)
         excerpt      = request.POST.get("excerpt", "").strip()
-        body         = request.POST.get("body", "").strip()
+        body         = sanitize_blog_html(request.POST.get("body", "").strip())
         cover_color  = request.POST.get("cover_color", post.cover_color).strip()
         author       = request.POST.get("author", post.author).strip()
         is_published = request.POST.get("is_published") == "1"

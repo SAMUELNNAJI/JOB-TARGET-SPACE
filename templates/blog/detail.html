@@ -139,9 +139,13 @@
 
       {# Body paragraphs #}
       <div class="bdet-body">
-        {% for paragraph in post.body_paragraphs %}
-          <p>{{ paragraph }}</p>
-        {% endfor %}
+        {% if post.has_rich_body %}
+          {{ post.body_html }}
+        {% else %}
+          {% for paragraph in post.body_paragraphs %}
+            <p>{{ paragraph }}</p>
+          {% endfor %}
+        {% endif %}
       </div>
 
       {# Share strip #}
