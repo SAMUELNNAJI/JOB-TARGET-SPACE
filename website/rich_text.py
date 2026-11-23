@@ -2,13 +2,14 @@
 
 from html import escape
 from html.parser import HTMLParser
+import re
 from urllib.parse import urlparse
 
 from django.utils.safestring import mark_safe
 
 
 ALLOWED_TAGS = {
-    "p", "br", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s",
+    "p", "div", "br", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "del", "strike",
     "ul", "ol", "li", "blockquote", "pre", "code", "hr", "table", "thead",
     "tbody", "tr", "th", "td", "a", "span",
 }
@@ -18,6 +19,8 @@ ALLOWED_ATTRS = {
     "th": {"colspan", "rowspan"},
     "td": {"colspan", "rowspan"},
     "span": {"style"},
+    "p": {"style"},
+    "div": {"style"},
 }
 
 
@@ -26,6 +29,26 @@ def _safe_url(value):
     value = value.strip()
     scheme = urlparse(value).scheme.lower()
     return value if scheme in {"", "http", "https", "mailto"} else ""
+
+
+def _safe_style(value):
+    """Preserve the harmless text styles commonly supplied by office editors."""
+    allowed = []
+    for declaration in value.split(";"):
+        match = re.fullmatch(r"\s*([\w-]+)\s*:\s*(.*?)\s*", declaration, flags=re.I)
+        if not match:
+            continue
+        name, style_value = match.group(1).lower(), match.group(2)
+        normalized = style_value.lower()
+        if name == "color" and re.fullmatch(r"(?:#[0-9a-f]{3,8}|(?:rgb|rgba)\([0-9.,%\s]+\)|[a-z]+)", normalized):
+            allowed.append(f"color: {style_value}")
+        elif name == "font-weight" and (normalized in {"normal", "bold", "bolder", "lighter"} or re.fullmatch(r"[1-9]00", normalized)):
+            allowed.append(f"font-weight: {style_value}")
+        elif name == "font-style" and normalized in {"normal", "italic", "oblique"}:
+            allowed.append(f"font-style: {style_value}")
+        elif name == "text-decoration" and re.fullmatch(r"(?:none|underline|line-through)(?:\s+(?:underline|line-through))?", normalized):
+            allowed.append(f"text-decoration: {style_value}")
+    return "; ".join(allowed)
 
 
 class _BlogHTMLSanitizer(HTMLParser):
@@ -59,11 +82,9 @@ class _BlogHTMLSanitizer(HTMLParser):
             if name == "rel":
                 value = "noopener noreferrer"
             if name == "style":
-                # Summernote's colour toolbar only needs this declaration.
-                declarations = [d.strip() for d in value.split(";") if d.strip().lower().startswith("color:")]
-                if not declarations:
+                value = _safe_style(value)
+                if not value:
                     continue
-                value = "; ".join(declarations)
             clean_attrs.append(f' {name}="{escape(value, quote=True)}"')
         if tag == "a" and any(name == "target" and value == "_blank" for name, value in attrs):
             if not any(attr.startswith(" rel=") for attr in clean_attrs):

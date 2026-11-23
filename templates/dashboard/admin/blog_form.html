@@ -186,7 +186,16 @@ $(function () {
       ['insert', ['link', 'table', 'hr']],
       ['view', ['codeview', 'help']]
     ],
-    styleTags: ['p', 'blockquote', 'h2', 'h3', 'h4', 'pre']
+    styleTags: ['p', 'blockquote', 'h2', 'h3', 'h4', 'pre'],
+    callbacks: {
+      onKeydown: function (event) {
+        // Make Enter consistently start a new paragraph; Shift+Enter stays a line break.
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          $('#blogBody').summernote('insertParagraph');
+        }
+      }
+    }
   });
 });
 // Sync colour picker → text input

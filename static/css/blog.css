@@ -323,9 +323,11 @@
   letter-spacing: -.02em;
   margin: 42px 0 15px;
 }
+.bdet-body h1 { color: #fff; font: 800 31px/1.2 'Montserrat', sans-serif; letter-spacing: -.02em; margin: 42px 0 15px; }
 .bdet-body h2 { font-size: 27px; }
 .bdet-body h3 { font-size: 22px; }
 .bdet-body h4 { font-size: 18px; }
+.bdet-body div { font-size: 16px; line-height: 1.9; margin: 0 0 20px; }
 .bdet-body ul, .bdet-body ol { margin: 0 0 24px; padding-left: 26px; }
 .bdet-body li { font-size: 16px; line-height: 1.85; margin: 7px 0; }
 .bdet-body a { color: #ff5c7a; text-decoration: underline; text-underline-offset: 3px; }
